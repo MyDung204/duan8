@@ -63,12 +63,13 @@ new class extends Component {
         
         // Kiểm tra có danh mục con không
         if ($category->hasChildren()) {
-            session()->flash('error', 'Không thể xóa danh mục có danh mục con.');
-            return;
-        }
-
-        $category->delete();
-        session()->flash('success', 'Danh mục đã được xóa thành công.');
+    // Dùng dispatch() thay vì session()
+    $this->dispatch('show-toast', title: 'Có lỗi!', text: 'Không thể xóa danh mục có danh mục con.', icon: 'error');
+    return;
+}
+$category->delete();
+// Dùng dispatch() thay vì session()
+$this->dispatch('show-toast', text: 'Danh mục đã được xóa thành công.', icon: 'success');
     }
 
     // Bật/tắt trạng thái hiển thị
@@ -76,9 +77,9 @@ new class extends Component {
     {
         $category = ImageCategory::findOrFail($id);
         $category->update(['is_active' => !$category->is_active]);
-        
-        $status = $category->is_active ? 'hiển thị' : 'ẩn';
-        session()->flash('success', "Danh mục đã được {$status}.");
+$status = $category->is_active ? 'hiển thị' : 'ẩn';
+// Dùng dispatch() thay vì session()
+$this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon: 'success');
     }
 
     // Reset tất cả bộ lọc
@@ -121,25 +122,29 @@ new class extends Component {
             </p>
         </div>
         <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
-            <flux:icon name="plus" class="size-4" />
-            Thêm danh mục mới
-        </flux:button>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <flux:icon name="plus" class="size-4" />
+        <span>Thêm danh mục mới</span>
+    </div>
+</flux:button>
     </div>
 
-    <!-- Phần bộ lọc và tìm kiếm -->
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Ô tìm kiếm -->
+<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 space-y-4">
+        
+        <div class="grid grid-cols-1">
             <flux:field>
                 <flux:label>Tìm kiếm</flux:label>
-                        <flux:input 
-                            wire:model.live.debounce.300ms="search" 
-                            placeholder="Tìm theo tiêu đề, mô tả..."
-                            icon="magnifying-glass"
-                        />
+                <flux:input 
+                    wire:model.live.debounce.300ms="search" 
+                    placeholder="Tìm theo tiêu đề, mô tả..."
+                    icon="magnifying-glass"
+                    id="searchInput" {{-- Thêm ID --}}
+                />
             </flux:field>
+        </div>
 
-            <!-- Bộ lọc theo danh mục cha -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
             <flux:field>
                 <flux:label>Danh mục cha</flux:label>
                 <flux:select wire:model.live="parentFilter">
@@ -151,7 +156,6 @@ new class extends Component {
                 </flux:select>
             </flux:field>
 
-            <!-- Bộ lọc theo loại danh mục -->
             <flux:field>
                 <flux:label>Loại danh mục</flux:label>
                 <flux:select wire:model.live="categoryTypeFilter">
@@ -161,33 +165,16 @@ new class extends Component {
                 </flux:select>
             </flux:field>
 
-            <!-- Bộ lọc sắp xếp -->
             <flux:field>
-                <flux:label>Sắp xếp</flux:label>
-                <flux:select wire:model.live="sortField">
-                    <option value="title">Tiêu đề</option>
-                    <option value="created_at">Ngày tạo</option>
-                </flux:select>
-            </flux:field>
-        </div>
-
-        <!-- Nút sắp xếp và reset -->
-        <div class="mt-4 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <flux:button 
-                    variant="outline" 
-                    size="sm"
-                    wire:click="sortBy('{{ $sortField }}')"
-                >
-                    <flux:icon name="{{ $sortDirection === 'asc' ? 'arrow-up' : 'arrow-down' }}" class="size-4" />
-                    {{ $sortDirection === 'asc' ? 'A-Z' : 'Z-A' }}
+                <flux:label class="invisible">Reset</flux:label>
+                
+                <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                        <flux:icon name="arrow-path" class="size-4" />
+                        <span>Reset</span>
+                    </div>
                 </flux:button>
-            </div>
-            
-            <flux:button variant="outline" size="sm" wire:click="resetFilters">
-                <flux:icon name="arrow-path" class="size-4" />
-                Reset bộ lọc
-            </flux:button>
+            </flux:field>
         </div>
     </div>
 
@@ -318,13 +305,13 @@ new class extends Component {
                                         
                                         <!-- Nút xóa -->
                                         <flux:button 
-                                            variant="danger" 
-                                            size="sm"
-                                            wire:click="delete({{ $category->id }})"
-                                            wire:confirm="Bạn có chắc chắn muốn xóa danh mục này?"
-                                        >
-                                            <flux:icon name="trash" class="size-4" />
-                                        </flux:button>
+    variant="danger" 
+    size="sm"
+    {{-- Sửa: Dùng onclick để gọi Javascript --}}
+    onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->title) }}')"
+>
+    <flux:icon name="trash" class="size-4" />
+</flux:button>
                                     </div>
                                 </td>
                             </tr>
@@ -338,17 +325,26 @@ new class extends Component {
                 {{ $this->categories->links() }}
             </div>
         @else
-            <!-- Trạng thái không có dữ liệu -->
-            <div class="text-center pt-12 pb-24">
+            <div 
+                class="text-center" 
+                style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;" {{-- << SỬA 1: Dùng style cho padding --}}
+            > 
+                
                 <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
+                
                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có danh mục nào</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
                     Bắt đầu bằng cách tạo danh mục đầu tiên của bạn.
                 </p>
+                
                 <div class="mt-6">
+                    {{-- SỬA 2: Sửa lại nút bấm BẰNG STYLE (Code của bạn vẫn đang lỗi ở đây) --}}
                     <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
-                        <flux:icon name="plus" class="size-4" />
-                        Thêm danh mục mới
+                        <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                            <flux:icon name="plus" class="size-4" />
+                            <span>Thêm danh mục mới</span>
+                        </div>
                     </flux:button>
                 </div>
             </div>
@@ -356,15 +352,67 @@ new class extends Component {
     </div>
 
     <!-- Thông báo thành công/lỗi -->
-    @if (session()->has('success'))
-        <div class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if (session()->has('error'))
-        <div class="fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
-            {{ session('error') }}
-        </div>
-    @endif
+    {{-- THÊM KHỐI CODE NÀY VÀO CUỐI FILE --}}
+@push('scripts')
+<script>
+    // Lắng nghe sự kiện khi Livewire điều hướng xong (thay cho document.ready)
+    document.addEventListener('livewire:navigated', () => {
+        
+        // Kiểm tra xem Blade có render session 'success' không
+        
+    });
+</script>
+@endpush
 </div>
+@push('scripts')
+<script>
+    function confirmDelete(id, title) {
+        Swal.fire({
+            title: 'Bạn có chắc chắn?',
+            text: `Bạn chuẩn bị xóa danh mục "${title}". Bạn sẽ không thể hoàn tác!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Vâng, xóa nó!',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            // Nếu người dùng nhấn "Vâng, xóa nó!"
+            if (result.isConfirmed) {
+                // Gọi hàm 'delete' trong component Livewire
+                @this.call('delete', id);
+            }
+        });
+    }
+</script>
+@endpush
+<script>
+    document.addEventListener('livewire:navigated', () => {
+        const searchInput = document.getElementById('searchInput');
+        let loadingIcon = searchInput.querySelector('.loading-icon-class'); // Thay '.loading-icon-class' bằng class thực tế của icon loading bên trong flux:input
+
+        if (loadingIcon) {
+            loadingIcon.style.display = 'none'; // Ẩn mặc định
+
+            // Lắng nghe khi Livewire bắt đầu tải
+            Livewire.hook('message.sent', (message, component) => {
+                if (message.updateQueue.find(update => update.payload.id === @this.id && update.method === 'updateSearch')) {
+                    loadingIcon.style.display = 'inline-block'; // Hiện icon
+                }
+            });
+
+            // Lắng nghe khi Livewire tải xong
+            Livewire.hook('message.processed', (message, component) => {
+                 loadingIcon.style.display = 'none'; // Ẩn icon
+            });
+        } else {
+            console.warn("Không tìm thấy icon loading bên trong input tìm kiếm.");
+        }
+
+        // Gọi hàm xác nhận xóa (nếu bạn vẫn dùng nó)
+        window.confirmDelete = function(id, title) { /* ... code hàm confirmDelete ... */ };
+    });
+
+    // Đảm bảo hàm confirmDelete có sẵn ngay cả khi không navigate
+    window.confirmDelete = function(id, title) { /* ... code hàm confirmDelete ... */ }; 
+</script>

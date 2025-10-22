@@ -34,7 +34,12 @@ return new class extends Migration
      * Reverse the migrations.
      */
     public function down(): void
-    {
-        Schema::dropIfExists('image_categories');
-    }
+{
+    // Thêm 2 dòng này để tắt/bật kiểm tra khóa ngoại
+    Schema::disableForeignKeyConstraints();
+
+    Schema::dropIfExists('image_categories');
+
+    Schema::enableForeignKeyConstraints();
+}
 };

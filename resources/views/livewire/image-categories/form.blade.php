@@ -269,13 +269,16 @@ new class extends Component {
             </div>
 
             <!-- Form Actions -->
-            <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-end gap-4 border-t border-gray-200 dark:border-gray-700" style="padding-top: 1.5rem;">
                 <flux:button type="button" variant="outline" wire:click="cancel">
                     Hủy
                 </flux:button>
-                <flux:button type="submit" variant="primary">
-                    <flux:icon name="{{ $this->isEditing ? 'check' : 'plus' }}" class="size-4" />
-                    {{ $this->submitButtonText }}
+                <flux:button type="submit" variant="primary" >
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <flux:icon name="{{ $this->isEditing ? 'check' : 'plus' }}" class="size-4" />
+                        {{ $this->submitButtonText }}
+                    </div>
+                   
                 </flux:button>
             </div>
         </form>
