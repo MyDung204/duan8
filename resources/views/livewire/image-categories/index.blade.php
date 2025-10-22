@@ -113,7 +113,7 @@ new class extends Component {
 
 <div class="space-y-6">
     <!-- Phần tiêu đề và nút thêm mới -->
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6 ">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý danh mục</h1>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -238,7 +238,7 @@ new class extends Component {
                                 </td>
 
                                 <!-- Cột ảnh banner -->
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <td class="px-4 py-6 text-center whitespace-nowrap">
                                     @if($category->banner_image)
                                         <img 
                                             src="{{ $category->banner_image_url }}" 
@@ -339,7 +339,7 @@ new class extends Component {
             </div>
         @else
             <!-- Trạng thái không có dữ liệu -->
-            <div class="text-center py-12">
+            <div class="text-center pt-12 pb-24">
                 <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có danh mục nào</h3>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
