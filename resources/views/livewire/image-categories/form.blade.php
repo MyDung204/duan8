@@ -123,15 +123,23 @@ new class extends Component {
                 $bannerPath = $this->bannerImage->store('image-categories/banners', 'public');
                 $data['banner_image'] = $bannerPath;
             }
+           $message = ''; // Khởi tạo message
             if ($this->isEditing) {
                 $category = ImageCategory::findOrFail($this->categoryId);
                 $category->update($data);
-                session()->flash('success', 'Danh mục đã được cập nhật thành công.');
+                $message = 'Danh mục đã được cập nhật thành công.';
             } else {
                 ImageCategory::create($data);
-                session()->flash('success', 'Danh mục đã được tạo thành công.');
+                $message = 'Danh mục đã được tạo thành công.';
             }
+            session()->put('show_toast_message', [
+                'text' => $message,
+                'icon' => 'success'
+            ]);
 
+           
+
+            // Vẫn chuyển hướng như cũ
             $this->redirect(route('image-categories.index'), navigate: true);
         } catch (\Exception $e) {
             session()->flash('error', 'Có lỗi xảy ra: ' . $e->getMessage());

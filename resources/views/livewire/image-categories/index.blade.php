@@ -6,6 +6,21 @@ use Livewire\WithPagination;
 
 new class extends Component {
     use WithPagination;
+    
+public function mount(): void
+    {
+        // Dùng session()->pull() để "LẤY và XÓA" tin nhắn
+        $messageData = session()->pull('show_toast_message');
+
+        if ($messageData) {
+            // Nếu có tin nhắn, bắn sự kiện cho app.blade.php bắt
+            $this->dispatch(
+                'show-toast', 
+                text: $messageData['text'], 
+                icon: $messageData['icon']
+            );
+        }
+    }
 
     // Thuộc tính cho tìm kiếm và bộ lọc
     public string $search = ''; // Từ khóa tìm kiếm
@@ -353,10 +368,7 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
 
 @push('scripts')
 
-@php
-    $successMessage = session('success');
-    $errorMessage = session('error');
-@endphp
+
 
 <script>
     function confirmDelete(id, title) {
@@ -378,31 +390,7 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
     }
 
 
-    @if (isset($successMessage) && $successMessage)
-        Swal.fire({
-            title: 'Thành công!',
-            text: '{{ $successMessage }}',
-            icon: 'success',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3500,
-            timerProgressBar: true
-        });
-    @endif
-    
-    @if (isset($errorMessage) && $errorMessage)
-        Swal.fire({
-            title: 'Có lỗi!',
-            text: '{{ $errorMessage }}',
-            icon: 'error',
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 4000,
-            timerProgressBar: true
-        });
-    @endif
+   
 
 </script>
 @endpush
