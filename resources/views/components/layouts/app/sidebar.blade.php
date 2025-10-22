@@ -15,6 +15,7 @@
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                     <flux:navlist.item icon="photo" :href="route('image-categories.index')" :current="request()->routeIs('image-categories.*')" wire:navigate>{{ __('Quản lý danh mục') }}</flux:navlist.item>
+                    <!-- <flux:navlist.item icon="photo" :href="route('posts.index')" :current="request()->routeIs('image-posts.*')" wire:navigate>{{ __('Quản lý bài viết') }}</flux:navlist.item> -->
                 </flux:navlist.group>
             </flux:navlist>
 

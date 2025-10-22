@@ -113,7 +113,7 @@ new class extends Component {
 
 <div class="space-y-6">
     <!-- Phần tiêu đề và nút thêm mới -->
-    <div class="flex items-center justify-between">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý danh mục</h1>
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
@@ -211,7 +211,7 @@ new class extends Component {
                                     <flux:icon name="{{ $sortDirection === 'asc' ? 'arrow-up' : 'arrow-down' }}" class="size-4 ml-1 inline" />
                                 @endif
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mô tả ngắn</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ">Mô tả ngắn</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Danh mục cha</th>
                             <th 
                                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
