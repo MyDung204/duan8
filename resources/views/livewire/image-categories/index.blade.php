@@ -351,20 +351,13 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
         @endif
     </div>
 
-    <!-- Thông báo thành công/lỗi -->
-    {{-- THÊM KHỐI CODE NÀY VÀO CUỐI FILE --}}
 @push('scripts')
-<script>
-    // Lắng nghe sự kiện khi Livewire điều hướng xong (thay cho document.ready)
-    document.addEventListener('livewire:navigated', () => {
-        
-        // Kiểm tra xem Blade có render session 'success' không
-        
-    });
-</script>
-@endpush
-</div>
-@push('scripts')
+
+@php
+    $successMessage = session('success');
+    $errorMessage = session('error');
+@endphp
+
 <script>
     function confirmDelete(id, title) {
         Swal.fire({
@@ -377,42 +370,39 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
             confirmButtonText: 'Vâng, xóa nó!',
             cancelButtonText: 'Hủy'
         }).then((result) => {
-            // Nếu người dùng nhấn "Vâng, xóa nó!"
             if (result.isConfirmed) {
                 // Gọi hàm 'delete' trong component Livewire
                 @this.call('delete', id);
             }
         });
     }
+
+
+    @if (isset($successMessage) && $successMessage)
+        Swal.fire({
+            title: 'Thành công!',
+            text: '{{ $successMessage }}',
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true
+        });
+    @endif
+    
+    @if (isset($errorMessage) && $errorMessage)
+        Swal.fire({
+            title: 'Có lỗi!',
+            text: '{{ $errorMessage }}',
+            icon: 'error',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 4000,
+            timerProgressBar: true
+        });
+    @endif
+
 </script>
 @endpush
-<script>
-    document.addEventListener('livewire:navigated', () => {
-        const searchInput = document.getElementById('searchInput');
-        let loadingIcon = searchInput.querySelector('.loading-icon-class'); // Thay '.loading-icon-class' bằng class thực tế của icon loading bên trong flux:input
-
-        if (loadingIcon) {
-            loadingIcon.style.display = 'none'; // Ẩn mặc định
-
-            // Lắng nghe khi Livewire bắt đầu tải
-            Livewire.hook('message.sent', (message, component) => {
-                if (message.updateQueue.find(update => update.payload.id === @this.id && update.method === 'updateSearch')) {
-                    loadingIcon.style.display = 'inline-block'; // Hiện icon
-                }
-            });
-
-            // Lắng nghe khi Livewire tải xong
-            Livewire.hook('message.processed', (message, component) => {
-                 loadingIcon.style.display = 'none'; // Ẩn icon
-            });
-        } else {
-            console.warn("Không tìm thấy icon loading bên trong input tìm kiếm.");
-        }
-
-        // Gọi hàm xác nhận xóa (nếu bạn vẫn dùng nó)
-        window.confirmDelete = function(id, title) { /* ... code hàm confirmDelete ... */ };
-    });
-
-    // Đảm bảo hàm confirmDelete có sẵn ngay cả khi không navigate
-    window.confirmDelete = function(id, title) { /* ... code hàm confirmDelete ... */ }; 
-</script>
