@@ -15,10 +15,11 @@ Route::view('dashboard', 'dashboard')
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
-    // Image Categories Routes
-    Volt::route('image-categories', 'image-categories.index')->name('image-categories.index');
-    Volt::route('image-categories/create', 'image-categories.form')->name('image-categories.create');
-    Volt::route('image-categories/{id}/edit', 'image-categories.form')->name('image-categories.edit');
+    // Image Categories Routes (ĐÃ SỬA THÀNH 'quanlydanhmuc')
+    Volt::route('quanlydanhmuc', 'image-categories.index')->name('image-categories.index');
+    Volt::route('quanlydanhmuc/create', 'image-categories.form')->name('image-categories.create');
+    Volt::route('quanlydanhmuc/{id}/edit', 'image-categories.form')->name('image-categories.edit');
+    
     // Posts Routes
     Volt::route('posts', 'posts.index')->name('posts.index');
     Volt::route('posts/create', 'posts.form')->name('posts.create'); 
@@ -39,3 +40,4 @@ Route::middleware(['auth'])->group(function () {
         )
         ->name('two-factor.show');
 });
+
