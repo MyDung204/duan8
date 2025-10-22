@@ -243,7 +243,7 @@ new class extends Component {
                                         <img 
                                             src="{{ $category->banner_image_url }}" 
                                             alt="{{ $category->title }}"
-                                            class="w-16 h-16 rounded-lg object-cover mx-auto"
+                                            class="h-16 w-16 rounded-lg object-contain mx-auto"
                                         />
                                     @else
                                         <div class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">

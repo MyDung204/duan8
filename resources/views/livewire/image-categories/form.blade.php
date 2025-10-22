@@ -14,14 +14,12 @@ new class extends Component {
     public string $content = '';
     public string $author_name = '';
     public $bannerImage; // Ảnh banner
-    public $galleryImages = []; // Mảng ảnh gallery
     public ?int $parent_id = null;
     public bool $is_active = true;
 
     // Trạng thái component
     public ?int $categoryId = null;
     public $bannerPreview = null; // Preview ảnh banner
-    public array $galleryPreviews = []; // Preview các ảnh gallery
     public bool $isEditing = false;
 
     // Quy tắc validation
@@ -33,7 +31,6 @@ new class extends Component {
             'content' => 'nullable|string',
             'author_name' => 'nullable|string|max:255',
             'bannerImage' => 'nullable|image|max:2048', // Giới hạn 2MB
-            'galleryImages.*' => 'nullable|image|max:2048', // Mỗi ảnh gallery giới hạn 2MB
             'parent_id' => 'nullable|exists:image_categories,id',
             'is_active' => 'boolean',
         ];
@@ -90,11 +87,6 @@ new class extends Component {
             if ($category->banner_image) {
                 $this->bannerPreview = $category->banner_image_url;
             }
-            
-            // Load ảnh gallery hiện tại
-            if ($category->gallery_images) {
-                $this->galleryPreviews = $category->gallery_image_urls;
-            }
         }
     }
 
@@ -104,42 +96,13 @@ new class extends Component {
         $this->validateOnly('bannerImage');
         $this->bannerPreview = $this->bannerImage->temporaryUrl();
     }
-
-    // Xử lý khi upload ảnh gallery
-    public function updatedGalleryImages(): void
-    {
-        $this->validateOnly('galleryImages.*');
-        $this->galleryPreviews = [];
-        
-        foreach ($this->galleryImages as $image) {
-            $this->galleryPreviews[] = $image->temporaryUrl();
-        }
-    }
-
+    
     // Xóa ảnh banner
     public function removeBannerImage(): void
     {
         $this->bannerImage = null;
         $this->bannerPreview = null;
     }
-
-    // Xóa ảnh gallery theo index
-    public function removeGalleryImage(int $index): void
-    {
-        unset($this->galleryImages[$index]);
-        unset($this->galleryPreviews[$index]);
-        
-        // Re-index array
-        $this->galleryImages = array_values($this->galleryImages);
-        $this->galleryPreviews = array_values($this->galleryPreviews);
-    }
-
-    // Thêm ảnh vào gallery
-    public function addGalleryImage(): void
-    {
-        $this->galleryImages[] = null;
-    }
-
     // Lưu danh mục
     public function save(): void
     {
@@ -160,20 +123,6 @@ new class extends Component {
                 $bannerPath = $this->bannerImage->store('image-categories/banners', 'public');
                 $data['banner_image'] = $bannerPath;
             }
-
-            // Xử lý upload ảnh gallery
-            $galleryPaths = [];
-            foreach ($this->galleryImages as $image) {
-                if ($image) {
-                    $galleryPath = $image->store('image-categories/gallery', 'public');
-                    $galleryPaths[] = $galleryPath;
-                }
-            }
-            
-            if (!empty($galleryPaths)) {
-                $data['gallery_images'] = $galleryPaths;
-            }
-
             if ($this->isEditing) {
                 $category = ImageCategory::findOrFail($this->categoryId);
                 $category->update($data);
@@ -292,59 +241,7 @@ new class extends Component {
                         <flux:description>Chọn ảnh banner cho danh mục (tối đa 2MB)</flux:description>
                     </flux:field>
 
-                    <!-- Gallery Images Upload -->
-                    <flux:field>
-                        <flux:label>Thư viện ảnh</flux:label>
-                        
-                        <!-- Hiển thị preview các ảnh gallery -->
-                        @if(!empty($galleryPreviews))
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                @foreach($galleryPreviews as $index => $preview)
-                                    <div class="relative">
-                                        <img 
-                                            src="{{ $preview }}" 
-                                            alt="Gallery Preview {{ $index + 1 }}" 
-                                            class="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
-                                        />
-                                        <flux:button 
-                                            type="button" 
-                                            variant="danger" 
-                                            size="sm"
-                                            class="absolute top-2 right-2"
-                                            wire:click="removeGalleryImage({{ $index }})"
-                                        >
-                                            <flux:icon name="trash" class="size-3" />
-                                        </flux:button>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-
-                        <!-- Upload input cho từng ảnh gallery -->
-                        @foreach($galleryImages as $index => $galleryImage)
-                            <div class="mb-4">
-                                <flux:input 
-                                    type="file" 
-                                    wire:model="galleryImages.{{ $index }}"
-                                    accept="image/*"
-                                />
-                                <flux:description>Ảnh gallery {{ $index + 1 }} (tối đa 2MB)</flux:description>
-                            </div>
-                        @endforeach
-
-                        <!-- Nút thêm ảnh gallery mới -->
-                        <flux:button 
-                            type="button" 
-                            variant="outline" 
-                            size="sm"
-                            wire:click="addGalleryImage"
-                        >
-                            <flux:icon name="plus" class="size-4" />
-                            Thêm ảnh gallery
-                        </flux:button>
-                        
-                        <flux:description>Thêm nhiều ảnh vào thư viện (mỗi ảnh tối đa 2MB)</flux:description>
-                    </flux:field>
+                    
 
                     <!-- Parent Category -->
                     <flux:field>

@@ -21,7 +21,6 @@ class ImageCategory extends Model
         'content',
         'author_name',
         'banner_image', // Ảnh banner chính
-        'gallery_images', // Mảng JSON các ảnh trong thư viện
         'parent_id',
         'order',
         'is_active',
@@ -35,7 +34,6 @@ class ImageCategory extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'order' => 'integer',
-        'gallery_images' => 'array', // Cast JSON thành array
     ];
 
     /**
@@ -192,28 +190,6 @@ class ImageCategory extends Model
     public function getCreatedTimeAttribute(): string
     {
         return $this->created_at->format('H:i:s');
-    }
-
-    /**
-     * Method: Thêm ảnh vào gallery
-     */
-    public function addToGallery(string $imagePath): void
-    {
-        $gallery = $this->gallery_images ?? [];
-        $gallery[] = $imagePath;
-        $this->update(['gallery_images' => $gallery]);
-    }
-
-    /**
-     * Method: Xóa ảnh khỏi gallery
-     */
-    public function removeFromGallery(string $imagePath): void
-    {
-        $gallery = $this->gallery_images ?? [];
-        $gallery = array_filter($gallery, function ($path) use ($imagePath) {
-            return $path !== $imagePath;
-        });
-        $this->update(['gallery_images' => array_values($gallery)]);
     }
 
     /**
