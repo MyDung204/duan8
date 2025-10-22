@@ -19,6 +19,8 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('image-categories', 'image-categories.index')->name('image-categories.index');
     Volt::route('image-categories/create', 'image-categories.form')->name('image-categories.create');
     Volt::route('image-categories/{id}/edit', 'image-categories.form')->name('image-categories.edit');
+    // Posts Routes
+    Volt::route('posts', 'posts.index')->name('posts.index');
 
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
