@@ -154,6 +154,7 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                     placeholder="Tìm theo tiêu đề, mô tả..."
                     icon="magnifying-glass"
                     id="searchInput" {{-- Thêm ID --}}
+                    class="[&>div>svg]:animate-none"
                 />
             </flux:field>
         </div>
