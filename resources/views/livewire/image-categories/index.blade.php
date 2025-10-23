@@ -162,7 +162,6 @@ new class extends Component {
                 <flux:label>Lọc danh mục cha</flux:label>
                 <flux:select wire:model.live="parentFilter">
                     <option value="all">Tất cả</option>
-                    <option value="is_parent">Chỉ danh mục cha (gốc)</option>
                 </flux:select>
             </flux:field>
 
@@ -170,7 +169,6 @@ new class extends Component {
                 <flux:label>Lọc danh mục con</flux:label>
                 <flux:select wire:model.live="childFilter">
                     <option value="all">Tất cả</option>
-                    <option value="is_child">Chỉ danh mục con</option>
                 </flux:select>
             </flux:field>
 
