@@ -210,6 +210,11 @@ class ImageCategory extends Model
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
+
+        // ===== BẮT ĐẦU THAY ĐỔI =====
+        // Đảm bảo chỉ danh mục GỐC mới được làm cha
+        $query->whereNull('parent_id');
+        // ===== KẾT THÚC THAY ĐỔI =====
         
         return $query->orderBy('title')->get()->toArray();
     }
@@ -219,10 +224,14 @@ class ImageCategory extends Model
      */
     public static function getTreeForSelect(?int $excludeId = null): array
     {
-        $categories = static::active()
+        // ===== BẮT ĐẦU THAY ĐỔI =====
+        // Sửa query để chỉ lấy danh mục GỐC (parent_id = null)
+        $query = static::active()
             ->where('id', '!=', $excludeId)
-            ->orderBy('title')
-            ->get();
+            ->whereNull('parent_id'); // <-- Chỉ lấy danh mục gốc
+            
+        $categories = $query->orderBy('title')->get();
+        // ===== KẾT THÚC THAY ĐỔI =====
             
         $tree = [];
         
@@ -230,7 +239,8 @@ class ImageCategory extends Model
             $tree[] = [
                 'id' => $category->id,
                 'title' => $category->title,
-                'full_path' => $category->full_path,
+                // full_path của danh mục gốc chính là title của nó
+                'full_path' => $category->full_path, 
                 'parent_id' => $category->parent_id,
             ];
         }

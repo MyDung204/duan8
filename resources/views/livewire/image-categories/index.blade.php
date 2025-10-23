@@ -24,11 +24,9 @@ new class extends Component {
 
     // Thuộc tính cho tìm kiếm và bộ lọc
     public string $search = ''; // Từ khóa tìm kiếm
-    // ĐÃ XÓA: public string $createdDateFilter = 'all';
-    // ĐÃ XÓA: public string $categoryTypeFilter = 'all';
     public string $parentFilter = 'all'; // Lọc danh mục cha (MỚI)
     public string $childFilter = 'all'; // Lọc danh mục con (MỚI)
-    public string $sortField = 'title'; // Trường sắp xếp (title/created_at)
+    public string $sortField = 'title'; // Trường sắp xếp (chỉ còn 'title')
     public string $sortDirection = 'asc'; // Hướng sắp xếp (asc/desc)
     public int $perPage = 10; // Số danh mục hiển thị mỗi trang
 
@@ -36,33 +34,31 @@ new class extends Component {
     public function getCategoriesProperty()
     {
         $query = ImageCategory::query()
-            ->with('parent') // Load danh mục cha để hiển thị
+            ->with('parent') // Load 'parent' để dùng cho hiển thị path
+            ->withCount('children') // Load count để dùng cho confirm delete
             ->when($this->search, fn($q) => $q->search($this->search)) // Tìm kiếm theo từ khóa
-            // ĐÃ XÓA: ->when($this->createdDateFilter...
-            // ĐÃ THAY THẾ: ->when($this->categoryTypeFilter...
             ->when($this->parentFilter === 'is_parent', fn($q) => $q->whereNull('parent_id')) // Lọc: Chỉ là danh mục cha (MỚI)
             ->when($this->childFilter === 'is_child', fn($q) => $q->whereNotNull('parent_id')); // Lọc: Chỉ là danh mục con (MỚI)
 
         // Áp dụng sắp xếp
         match ($this->sortField) {
             'title' => $query->sortByTitle($this->sortDirection), // Sắp xếp theo tiêu đề
-            'created_at' => $query->orderBy('created_at', $this->sortDirection), // Sắp xếp theo ngày tạo
             default => $query->sortByTitle($this->sortDirection),
         };
 
         return $query->paginate($this->perPage); // Phân trang
     }
 
-    // ĐÃ XÓA: Toàn bộ hàm getCreatedDatesProperty
-    
     // Phương thức sắp xếp
     public function sortBy(string $field): void
     {
+        if ($field !== 'title') {
+            $field = 'title';
+        }
+
         if ($this->sortField === $field) {
-            // Nếu đang sắp xếp theo trường này, đảo ngược hướng
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            // Nếu sắp xếp theo trường mới, đặt hướng mặc định là asc
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
@@ -73,13 +69,9 @@ new class extends Component {
     {
         $category = ImageCategory::findOrFail($id);
         
-        // Kiểm tra có danh mục con không
-        if ($category->hasChildren()) {
-            // Dùng dispatch() thay vì session()
-            $this->dispatch('show-toast', title: 'Có lỗi!', text: 'Không thể xóa danh mục có danh mục con.', icon: 'error');
-            return;
-        }
+        // Chỉ cần thực thi xóa. Database sẽ tự động set null cho các con.
         $category->delete();
+        
         // Dùng dispatch() thay vì session()
         $this->dispatch('show-toast', text: 'Danh mục đã được xóa thành công.', icon: 'success');
     }
@@ -98,10 +90,8 @@ new class extends Component {
     public function resetFilters(): void
     {
         $this->search = '';
-        // ĐÃ XÓA: $this->createdDateFilter = 'all';
-        // ĐÃ XÓA: $this->categoryTypeFilter = 'all';
-        $this->parentFilter = 'all'; // (MỚI)
-        $this->childFilter = 'all'; // (MỚI)
+        $this->parentFilter = 'all'; 
+        $this->childFilter = 'all'; 
         $this->sortField = 'title';
         $this->sortDirection = 'asc';
         $this->resetPage(); // Reset về trang đầu
@@ -113,14 +103,11 @@ new class extends Component {
         $this->resetPage();
     }
 
-    // ĐÃ XÓA: hàm updatedCreatedDateFilter
-    
-    // ĐÃ XÓA: hàm updatedCategoryTypeFilter
-
     // Reset trang khi thay đổi loại danh mục cha (MỚI)
     public function updatedParentFilter(string $value): void
     {
         if ($value !== 'all') {
+            // ===== ĐÃ SỬA LỖI TẠI ĐÂY =====
             $this->childFilter = 'all'; // Reset bộ lọc con
         }
         $this->resetPage();
@@ -207,7 +194,9 @@ new class extends Component {
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">STT</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-20">Banner</th>
+                            
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">Banner</th>
+                            
                             <th 
                                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                                 wire:click="sortBy('title')"
@@ -217,17 +206,9 @@ new class extends Component {
                                     <flux:icon name="{{ $sortDirection === 'asc' ? 'arrow-up' : 'arrow-down' }}" class="size-4 ml-1 inline" />
                                 @endif
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ">Mô tả ngắn</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Danh mục cha</th>
-                            <th 
-                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                                wire:click="sortBy('created_at')"
-                            >
-                                Ngày tạo
-                                @if($sortField === 'created_at')
-                                    <flux:icon name="{{ $sortDirection === 'asc' ? 'arrow-up' : 'arrow-down' }}" class="size-4 ml-1 inline" />
-                                @endif
-                            </th>
+                            
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Danh mục</th>
+                            
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trạng thái</th>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Thao tác</th>
                         </tr>
@@ -246,11 +227,11 @@ new class extends Component {
                                         <img 
                                             src="{{ $category->banner_image_url }}" 
                                             alt="{{ $category->title }}"
-                                            class="h-16 w-16 rounded-lg object-contain mx-auto"
+                                            class="h-12 w-12 rounded-lg object-contain mx-auto"
                                         />
                                     @else
-                                        <div class="w-16 h-16 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
-                                            <flux:icon name="photo" class="size-8 text-gray-400" />
+                                        <div class="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
+                                            <flux:icon name="photo" class="size-6 text-gray-400" />
                                         </div>
                                     @endif
                                 </td>
@@ -261,27 +242,21 @@ new class extends Component {
                                     </div>
                                 </td>
 
-                                <td class="px-4 py-4">
-                                    <div class="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
-                                        {{ $category->short_description ?: 'Chưa có mô tả' }}
-                                    </div>
-                                </td>
-
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     @if($category->parent)
-                                        <flux:badge variant="outline">
-                                            {{ $category->parent->title }}
+                                        {{-- Đây là danh mục Con (Cha / Con) --}}
+                                        <flux:badge variant="outline" size="sm">
+                                            <span>{{ $category->parent->title }}</span>
+                                            <span class="mx-1">/</span>
+                                            {{-- Dùng font-medium để tên con rõ hơn một chút --}}
+                                            <span class="font-medium text-gray-800 dark:text-gray-100">{{ $category->title }}</span>
                                         </flux:badge>
                                     @else
-                                        <flux:badge variant="primary">Danh mục gốc</flux:badge>
+                                        {{-- Đây là danh mục Cha (Gốc) --}}
+                                        <flux:badge variant="primary" size="sm">
+                                            {{ $category->title }}
+                                        </flux:badge>
                                     @endif
-                                </td>
-
-                                <td class="px-4 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-600 dark:text-gray-300">
-                                        <div class="font-medium">{{ $category->created_date }}</div>
-                                        <div class="text-xs text-gray-500">{{ $category->created_time }}</div>
-                                    </div>
                                 </td>
 
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
@@ -314,8 +289,7 @@ new class extends Component {
                                         <flux:button 
                                             variant="danger" 
                                             size="sm"
-                                            {{-- Sửa: Dùng onclick để gọi Javascript --}}
-                                            onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->title) }}')"
+                                            onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->title) }}', {{ $category->children_count }})"
                                         >
                                             <flux:icon name="trash" class="size-4" />
                                         </flux:button>
@@ -333,7 +307,7 @@ new class extends Component {
         @else
             <div 
                 class="text-center" 
-                style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;" {{-- << SỬA 1: Dùng style cho padding --}}
+                style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;"
             > 
                 
                 <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
@@ -345,7 +319,6 @@ new class extends Component {
                 </p>
                 
                 <div class="mt-6">
-                    {{-- SỬA 2: Sửa lại nút bấm BẰNG STYLE (Code của bạn vẫn đang lỗi ở đây) --}}
                     <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
                         <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                             <flux:icon name="plus" class="size-4" />
@@ -359,15 +332,28 @@ new class extends Component {
 
 @push('scripts')
 <script>
-    function confirmDelete(id, title) {
+    // Cập nhật hàm để chấp nhận tham số childrenCount
+    function confirmDelete(id, title, childrenCount) {
+        
+        let warningText = `Bạn chuẩn bị xóa danh mục "${title}". Bạn sẽ không thể hoàn tác!`;
+        let confirmButtonText = 'Vâng, xóa nó!';
+
+        // Nếu có danh mục con, thay đổi nội dung cảnh báo
+        if (childrenCount > 0) {
+            warningText = `Danh mục "${title}" CÓ ${childrenCount} DANH MỤC CON. 
+                           Xóa danh mục này sẽ GỠ LIÊN KẾT (set null) các danh mục con đó (chúng sẽ trở thành danh mục gốc). 
+                           Bạn có chắc chắn không?`;
+            confirmButtonText = 'Vâng, vẫn xóa!';
+        }
+
         Swal.fire({
             title: 'Bạn có chắc chắn?',
-            text: `Bạn chuẩn bị xóa danh mục "${title}". Bạn sẽ không thể hoàn tác!`,
+            text: warningText, // Sử dụng nội dung cảnh báo động
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Vâng, xóa nó!',
+            confirmButtonText: confirmButtonText,
             cancelButtonText: 'Hủy'
         }).then((result) => {
             if (result.isConfirmed) {
@@ -378,3 +364,4 @@ new class extends Component {
     }
 </script>
 @endpush
+</div>
