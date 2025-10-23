@@ -24,7 +24,12 @@ new class extends Component {
 
     // Thuộc tính cho tìm kiếm và bộ lọc
     public string $search = ''; // Từ khóa tìm kiếm
-    public string $parentFilter = 'all'; // Lọc danh mục cha (MỚI)
+    
+    // ===== BẮT ĐẦU THAY ĐỔI =====
+    // Thay đổi giá trị mặc định từ 'all' thành 'is_parent'
+    public string $parentFilter = 'is_parent'; // Lọc danh mục cha (MỚI)
+    // ===== KẾT THÚC THAY ĐỔI =====
+
     public string $childFilter = 'all'; // Lọc danh mục con (MỚI)
     public string $sortField = 'title'; // Trường sắp xếp (chỉ còn 'title')
     public string $sortDirection = 'asc'; // Hướng sắp xếp (asc/desc)
@@ -37,7 +42,20 @@ new class extends Component {
             ->with('parent') // Load 'parent' để dùng cho hiển thị path
             ->withCount('children') // Load count để dùng cho confirm delete
             ->when($this->search, fn($q) => $q->search($this->search)) // Tìm kiếm theo từ khóa
-            ->when($this->parentFilter === 'is_parent', fn($q) => $q->whereNull('parent_id')) // Lọc: Chỉ là danh mục cha (MỚI)
+            
+            // Logic này vẫn giữ nguyên, nó xử lý 'all' (ẩn), 'is_parent', và ID
+            ->when($this->parentFilter !== 'all', function ($q) {
+                if ($this->parentFilter === 'is_parent') {
+                    // Lọc: Chỉ là danh mục cha (gốc)
+                    $q->whereNull('parent_id');
+                } else {
+                    // Lọc: Con của một danh mục cha cụ thể (theo ID)
+                    if (is_numeric($this->parentFilter)) {
+                        $q->where('parent_id', $this->parentFilter);
+                    }
+                }
+            })
+            
             ->when($this->childFilter === 'is_child', fn($q) => $q->whereNotNull('parent_id')); // Lọc: Chỉ là danh mục con (MỚI)
 
         // Áp dụng sắp xếp
@@ -47,6 +65,13 @@ new class extends Component {
         };
 
         return $query->paginate($this->perPage); // Phân trang
+    }
+
+    // Thuộc tính tính toán - Lấy danh mục gốc (cha)
+    public function getRootCategoriesProperty()
+    {
+        // Lấy tất cả danh mục GỐC (parent_id = null) đang active
+        return ImageCategory::roots()->active()->orderBy('title')->get();
     }
 
     // Phương thức sắp xếp
@@ -68,11 +93,7 @@ new class extends Component {
     public function delete(int $id): void
     {
         $category = ImageCategory::findOrFail($id);
-        
-        // Chỉ cần thực thi xóa. Database sẽ tự động set null cho các con.
         $category->delete();
-        
-        // Dùng dispatch() thay vì session()
         $this->dispatch('show-toast', text: 'Danh mục đã được xóa thành công.', icon: 'success');
     }
 
@@ -82,7 +103,6 @@ new class extends Component {
         $category = ImageCategory::findOrFail($id);
         $category->update(['is_active' => !$category->is_active]);
         $status = $category->is_active ? 'hiển thị' : 'ẩn';
-        // Dùng dispatch() thay vì session()
         $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon: 'success');
     }
 
@@ -90,7 +110,12 @@ new class extends Component {
     public function resetFilters(): void
     {
         $this->search = '';
-        $this->parentFilter = 'all'; 
+        
+        // ===== BẮT ĐẦU THAY ĐỔI =====
+        // Reset về 'is_parent' thay vì 'all'
+        $this->parentFilter = 'is_parent'; 
+        // ===== KẾT THÚC THAY ĐỔI =====
+        
         $this->childFilter = 'all'; 
         $this->sortField = 'title';
         $this->sortDirection = 'asc';
@@ -107,7 +132,6 @@ new class extends Component {
     public function updatedParentFilter(string $value): void
     {
         if ($value !== 'all') {
-            // ===== ĐÃ SỬA LỖI TẠI ĐÂY =====
             $this->childFilter = 'all'; // Reset bộ lọc con
         }
         $this->resetPage();
@@ -117,6 +141,9 @@ new class extends Component {
     public function updatedChildFilter(string $value): void
     {
         if ($value !== 'all') {
+            // Chỗ này vẫn set về 'all' (một giá trị nội bộ)
+            // để logic getCategoriesProperty bỏ qua bộ lọc cha
+            // khi ta đang lọc theo con. Điều này là ĐÚNG.
             $this->parentFilter = 'all'; // Reset bộ lọc cha
         }
         $this->resetPage();
@@ -158,17 +185,33 @@ new class extends Component {
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
+            {{-- ===== BẮT ĐẦU THAY ĐỔI ===== --}}
             <flux:field>
                 <flux:label>Lọc danh mục cha</flux:label>
                 <flux:select wire:model.live="parentFilter">
-                    <option value="all">Tất cả</option>
+                    {{-- Đã XÓA option value="all" --}}
+                    
+                    {{-- Đổi text cho rõ nghĩa hơn --}}
+                    <option value="is_parent">Tất cả danh mục cha (gốc)</option>
+                    
+                    {{-- Thêm vòng lặp để hiển thị các danh mục cha --}}
+                    @if($this->rootCategories->count() > 0)
+                        {{-- Đổi text và value của option disabled --}}
+                        <option value="is_parent" disabled>--- Hoặc lọc con của ---</option>
+                        @foreach($this->rootCategories as $rootCategory)
+                            <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
+                        @endforeach
+                    @endif
+                    
                 </flux:select>
             </flux:field>
+            {{-- ===== KẾT THÚC THAY ĐỔI ===== --}}
 
             <flux:field>
                 <flux:label>Lọc danh mục con</flux:label>
                 <flux:select wire:model.live="childFilter">
                     <option value="all">Tất cả</option>
+                    <option value="is_child">Chỉ danh mục con</option>
                 </flux:select>
             </flux:field>
 
@@ -186,6 +229,7 @@ new class extends Component {
     </div>
 
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        {{-- PHẦN CÒN LẠI CỦA FILE GIỮ NGUYÊN NHƯ CŨ --}}
         @if($this->categories->count() > 0)
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
