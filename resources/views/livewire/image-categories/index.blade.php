@@ -7,7 +7,7 @@ use Livewire\WithPagination;
 new class extends Component {
     use WithPagination;
     
-public function mount(): void
+    public function mount(): void
     {
         // Dùng session()->pull() để "LẤY và XÓA" tin nhắn
         $messageData = session()->pull('show_toast_message');
@@ -24,8 +24,10 @@ public function mount(): void
 
     // Thuộc tính cho tìm kiếm và bộ lọc
     public string $search = ''; // Từ khóa tìm kiếm
-    public string $createdDateFilter = 'all'; // Lọc theo ngày tạo
-    public string $categoryTypeFilter = 'all'; // Lọc theo loại danh mục (all/parent/child)
+    // ĐÃ XÓA: public string $createdDateFilter = 'all';
+    // ĐÃ XÓA: public string $categoryTypeFilter = 'all';
+    public string $parentFilter = 'all'; // Lọc danh mục cha (MỚI)
+    public string $childFilter = 'all'; // Lọc danh mục con (MỚI)
     public string $sortField = 'title'; // Trường sắp xếp (title/created_at)
     public string $sortDirection = 'asc'; // Hướng sắp xếp (asc/desc)
     public int $perPage = 10; // Số danh mục hiển thị mỗi trang
@@ -36,8 +38,10 @@ public function mount(): void
         $query = ImageCategory::query()
             ->with('parent') // Load danh mục cha để hiển thị
             ->when($this->search, fn($q) => $q->search($this->search)) // Tìm kiếm theo từ khóa
-            ->when($this->createdDateFilter !== 'all', fn($q) => $q->whereDate('created_at', $this->createdDateFilter)) // Lọc theo ngày tạo
-            ->when($this->categoryTypeFilter !== 'all', fn($q) => $q->byType($this->categoryTypeFilter)); // Lọc theo loại
+            // ĐÃ XÓA: ->when($this->createdDateFilter...
+            // ĐÃ THAY THẾ: ->when($this->categoryTypeFilter...
+            ->when($this->parentFilter === 'is_parent', fn($q) => $q->whereNull('parent_id')) // Lọc: Chỉ là danh mục cha (MỚI)
+            ->when($this->childFilter === 'is_child', fn($q) => $q->whereNotNull('parent_id')); // Lọc: Chỉ là danh mục con (MỚI)
 
         // Áp dụng sắp xếp
         match ($this->sortField) {
@@ -49,23 +53,8 @@ public function mount(): void
         return $query->paginate($this->perPage); // Phân trang
     }
 
-// Lấy danh sách các ngày đã tạo (duy nhất) để lọc
-    public function getCreatedDatesProperty()
-    {
-        return ImageCategory::query()
-            ->selectRaw('DATE(created_at) as date') // Chỉ lấy ngày
-            ->distinct() // Lấy duy nhất
-            ->orderBy('date', 'desc') // Sắp xếp mới nhất trước
-            ->pluck('date') // Chỉ lấy cột 'date'
-            ->map(function ($date) {
-                // Định dạng lại ngày tháng cho dễ đọc
-                return [
-                    'value' => $date, // Giá trị để lọc (VD: 2025-10-23)
-                    'label' => \Carbon\Carbon::parse($date)->format('d/m/Y'), // Hiển thị (VD: 23/10/2025)
-                ];
-            });
-    }
-
+    // ĐÃ XÓA: Toàn bộ hàm getCreatedDatesProperty
+    
     // Phương thức sắp xếp
     public function sortBy(string $field): void
     {
@@ -86,13 +75,13 @@ public function mount(): void
         
         // Kiểm tra có danh mục con không
         if ($category->hasChildren()) {
-    // Dùng dispatch() thay vì session()
-    $this->dispatch('show-toast', title: 'Có lỗi!', text: 'Không thể xóa danh mục có danh mục con.', icon: 'error');
-    return;
-}
-$category->delete();
-// Dùng dispatch() thay vì session()
-$this->dispatch('show-toast', text: 'Danh mục đã được xóa thành công.', icon: 'success');
+            // Dùng dispatch() thay vì session()
+            $this->dispatch('show-toast', title: 'Có lỗi!', text: 'Không thể xóa danh mục có danh mục con.', icon: 'error');
+            return;
+        }
+        $category->delete();
+        // Dùng dispatch() thay vì session()
+        $this->dispatch('show-toast', text: 'Danh mục đã được xóa thành công.', icon: 'success');
     }
 
     // Bật/tắt trạng thái hiển thị
@@ -100,17 +89,19 @@ $this->dispatch('show-toast', text: 'Danh mục đã được xóa thành công.
     {
         $category = ImageCategory::findOrFail($id);
         $category->update(['is_active' => !$category->is_active]);
-$status = $category->is_active ? 'hiển thị' : 'ẩn';
-// Dùng dispatch() thay vì session()
-$this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon: 'success');
+        $status = $category->is_active ? 'hiển thị' : 'ẩn';
+        // Dùng dispatch() thay vì session()
+        $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon: 'success');
     }
 
     // Reset tất cả bộ lọc
     public function resetFilters(): void
     {
         $this->search = '';
-        $this->createdDateFilter = 'all';
-        $this->categoryTypeFilter = 'all';
+        // ĐÃ XÓA: $this->createdDateFilter = 'all';
+        // ĐÃ XÓA: $this->categoryTypeFilter = 'all';
+        $this->parentFilter = 'all'; // (MỚI)
+        $this->childFilter = 'all'; // (MỚI)
         $this->sortField = 'title';
         $this->sortDirection = 'asc';
         $this->resetPage(); // Reset về trang đầu
@@ -122,21 +113,30 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
         $this->resetPage();
     }
 
-        // Reset trang khi thay đổi bộ lọc ngày tạo
-    public function updatedCreatedDateFilter(): void
+    // ĐÃ XÓA: hàm updatedCreatedDateFilter
+    
+    // ĐÃ XÓA: hàm updatedCategoryTypeFilter
+
+    // Reset trang khi thay đổi loại danh mục cha (MỚI)
+    public function updatedParentFilter(string $value): void
     {
+        if ($value !== 'all') {
+            $this->childFilter = 'all'; // Reset bộ lọc con
+        }
         $this->resetPage();
     }
 
-    // Reset trang khi thay đổi loại danh mục
-    public function updatedCategoryTypeFilter(): void
+    // Reset trang khi thay đổi loại danh mục con (MỚI)
+    public function updatedChildFilter(string $value): void
     {
+        if ($value !== 'all') {
+            $this->parentFilter = 'all'; // Reset bộ lọc cha
+        }
         $this->resetPage();
     }
 }; ?>
 
 <div class="space-y-6">
-    <!-- Phần tiêu đề và nút thêm mới -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6 ">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý danh mục</h1>
@@ -145,51 +145,45 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
             </p>
         </div>
         <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
-    <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <flux:icon name="plus" class="size-4" />
-        <span>Thêm danh mục mới</span>
-    </div>
-</flux:button>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <flux:icon name="plus" class="size-4" />
+                <span>Thêm danh mục mới</span>
+            </div>
+        </flux:button>
     </div>
 
-<div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 space-y-4">
+    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 space-y-4">
         
         <div class="grid grid-cols-1">
             <flux:field>
                 <flux:label>Tìm kiếm</flux:label>
                 
                 <flux:input 
-                    wire:model.live.debounce.300ms="search"  {{-- 1. THÊM .live TRỞ LẠI --}}
+                    wire:model.live.debounce.300ms="search"
                     placeholder="Tìm theo tiêu đề, mô tả..."
                     icon="magnifying-glass"
                     id="searchInput"
                     :spinner="false"
-                    class="![&_svg:not(:first-child)]:hidden" {{-- 2. GIỮ LẠI CLASS NÀY --}}
+                    class="![&_svg:not(:first-child)]:hidden"
                 />
             </flux:field>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-           
             <flux:field>
-                <flux:label>Ngày tạo</flux:label>
-                <flux:select wire:model.live="createdDateFilter">
-                    <option value="all">Tất cả </option>
-                    @foreach($this->createdDates as $date)
-                        <option value="{{ $date['value'] }}" wire:key="date-{{ $date['value'] }}">
-                            {{ $date['label'] }}
-                        </option>
-                    @endforeach
+                <flux:label>Lọc danh mục cha</flux:label>
+                <flux:select wire:model.live="parentFilter">
+                    <option value="all">Tất cả</option>
+                    <option value="is_parent">Chỉ danh mục cha (gốc)</option>
                 </flux:select>
             </flux:field>
 
             <flux:field>
-                <flux:label>Loại danh mục</flux:label>
-                <flux:select wire:model.live="categoryTypeFilter">
+                <flux:label>Lọc danh mục con</flux:label>
+                <flux:select wire:model.live="childFilter">
                     <option value="all">Tất cả</option>
-                    <option value="parent">Danh mục cha</option>
-                    <option value="child">Danh mục con</option>
+                    <option value="is_child">Chỉ danh mục con</option>
                 </flux:select>
             </flux:field>
 
@@ -206,13 +200,10 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
         </div>
     </div>
 
-    <!-- Phần hiển thị kết quả -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         @if($this->categories->count() > 0)
-            <!-- Bảng danh sách danh mục -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <!-- Header của bảng -->
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">STT</th>
@@ -241,18 +232,15 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Thao tác</th>
                         </tr>
                     </thead>
-                    <!-- Nội dung của bảng -->
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach($this->categories as $index => $category)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <!-- Cột số thứ tự -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ ($this->categories->currentPage() - 1) * $this->categories->perPage() + $index + 1 }}
                                     </div>
                                 </td>
 
-                                <!-- Cột ảnh banner -->
                                 <td class="px-4 py-6 text-center whitespace-nowrap">
                                     @if($category->banner_image)
                                         <img 
@@ -267,21 +255,18 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                                     @endif
                                 </td>
 
-                                <!-- Cột tiêu đề danh mục -->
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="font-medium text-gray-900 dark:text-white">
                                         {{ $category->title }}
                                     </div>
                                 </td>
 
-                                <!-- Cột mô tả ngắn -->
                                 <td class="px-4 py-4">
                                     <div class="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate">
                                         {{ $category->short_description ?: 'Chưa có mô tả' }}
                                     </div>
                                 </td>
 
-                                <!-- Cột danh mục cha -->
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     @if($category->parent)
                                         <flux:badge variant="outline">
@@ -292,7 +277,6 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                                     @endif
                                 </td>
 
-                                <!-- Cột ngày tạo -->
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-600 dark:text-gray-300">
                                         <div class="font-medium">{{ $category->created_date }}</div>
@@ -300,7 +284,6 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                                     </div>
                                 </td>
 
-                                <!-- Cột trạng thái hiển thị -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <flux:badge 
                                         variant="{{ $category->is_active ? 'success' : 'danger' }}"
@@ -309,10 +292,8 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                                     </flux:badge>
                                 </td>
 
-                                <!-- Cột các thao tác -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="flex items-center justify-center gap-2">
-                                        <!-- Nút chỉnh sửa -->
                                         <flux:button 
                                             variant="outline" 
                                             size="sm"
@@ -322,7 +303,6 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                                             <flux:icon name="pencil" class="size-4" />
                                         </flux:button>
                                         
-                                        <!-- Nút bật/tắt hiển thị -->
                                         <flux:button 
                                             variant="outline" 
                                             size="sm"
@@ -331,15 +311,14 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                                             <flux:icon name="{{ $category->is_active ? 'eye-slash' : 'eye' }}" class="size-4" />
                                         </flux:button>
                                         
-                                        <!-- Nút xóa -->
                                         <flux:button 
-    variant="danger" 
-    size="sm"
-    {{-- Sửa: Dùng onclick để gọi Javascript --}}
-    onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->title) }}')"
->
-    <flux:icon name="trash" class="size-4" />
-</flux:button>
+                                            variant="danger" 
+                                            size="sm"
+                                            {{-- Sửa: Dùng onclick để gọi Javascript --}}
+                                            onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->title) }}')"
+                                        >
+                                            <flux:icon name="trash" class="size-4" />
+                                        </flux:button>
                                     </div>
                                 </td>
                             </tr>
@@ -348,7 +327,6 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                 </table>
             </div>
 
-            <!-- Phân trang -->
             <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
                 {{ $this->categories->links() }}
             </div>
@@ -380,9 +358,6 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
     </div>
 
 @push('scripts')
-
-
-
 <script>
     function confirmDelete(id, title) {
         Swal.fire({
@@ -401,9 +376,5 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
             }
         });
     }
-
-
-   
-
 </script>
 @endpush
