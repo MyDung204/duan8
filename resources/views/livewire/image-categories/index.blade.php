@@ -24,13 +24,8 @@ new class extends Component {
 
     // Thuộc tính cho tìm kiếm và bộ lọc
     public string $search = ''; // Từ khóa tìm kiếm
-    
-    // ===== BẮT ĐẦU THAY ĐỔI =====
-    // Thay đổi giá trị mặc định từ 'all' thành 'is_parent'
-    public string $parentFilter = 'is_parent'; // Lọc danh mục cha (MỚI)
-    // ===== KẾT THÚC THAY ĐỔI =====
-
-    public string $childFilter = 'all'; // Lọc danh mục con (MỚI)
+    public string $parentFilter = 'is_parent'; // Mặc định: Lọc cha
+    public string $childFilter = 'all'; // Mặc định: Tắt lọc con
     public string $sortField = 'title'; // Trường sắp xếp (chỉ còn 'title')
     public string $sortDirection = 'asc'; // Hướng sắp xếp (asc/desc)
     public int $perPage = 10; // Số danh mục hiển thị mỗi trang
@@ -43,20 +38,34 @@ new class extends Component {
             ->withCount('children') // Load count để dùng cho confirm delete
             ->when($this->search, fn($q) => $q->search($this->search)) // Tìm kiếm theo từ khóa
             
-            // Logic này vẫn giữ nguyên, nó xử lý 'all' (ẩn), 'is_parent', và ID
+            // Xử lý lọc cha
             ->when($this->parentFilter !== 'all', function ($q) {
                 if ($this->parentFilter === 'is_parent') {
-                    // Lọc: Chỉ là danh mục cha (gốc)
+                    // Lọc: Tất cả danh mục cha (gốc)
                     $q->whereNull('parent_id');
                 } else {
-                    // Lọc: Con của một danh mục cha cụ thể (theo ID)
+                    // ===== BẮT ĐẦU THAY ĐỔI QUAN TRỌNG =====
+                    // Lọc: MỘT danh mục cha CỤ THỂ (theo ID của chính nó)
                     if (is_numeric($this->parentFilter)) {
-                        $q->where('parent_id', $this->parentFilter);
+                        // Sửa 'parent_id' thành 'id'
+                        $q->where('id', $this->parentFilter); 
                     }
+                    // ===== KẾT THÚC THAY ĐỔI QUAN TRỌNG =====
                 }
             })
             
-            ->when($this->childFilter === 'is_child', fn($q) => $q->whereNotNull('parent_id')); // Lọc: Chỉ là danh mục con (MỚI)
+            // Xử lý lọc con
+            ->when($this->childFilter !== 'all', function ($q) {
+                if ($this->childFilter === 'is_child') {
+                    // Lọc: Tất cả danh mục con
+                    $q->whereNotNull('parent_id');
+                } else {
+                    // Lọc: Một danh mục con cụ thể (theo ID của chính nó)
+                    if (is_numeric($this->childFilter)) {
+                        $q->where('id', $this->childFilter);
+                    }
+                }
+            });
 
         // Áp dụng sắp xếp
         match ($this->sortField) {
@@ -70,8 +79,18 @@ new class extends Component {
     // Thuộc tính tính toán - Lấy danh mục gốc (cha)
     public function getRootCategoriesProperty()
     {
-        // Lấy tất cả danh mục GỐC (parent_id = null) đang active
         return ImageCategory::roots()->active()->orderBy('title')->get();
+    }
+
+    // Thuộc tính tính toán - Lấy TẤT CẢ danh mục con
+    public function getAllChildCategoriesProperty()
+    {
+        // Lấy tất cả danh mục CON (parent_id != null) đang active
+        return ImageCategory::whereNotNull('parent_id')
+                            ->with('parent') 
+                            ->active()
+                            ->orderBy('title')
+                            ->get();
     }
 
     // Phương thức sắp xếp
@@ -110,13 +129,8 @@ new class extends Component {
     public function resetFilters(): void
     {
         $this->search = '';
-        
-        // ===== BẮT ĐẦU THAY ĐỔI =====
-        // Reset về 'is_parent' thay vì 'all'
-        $this->parentFilter = 'is_parent'; 
-        // ===== KẾT THÚC THAY ĐỔI =====
-        
-        $this->childFilter = 'all'; 
+        $this->parentFilter = 'is_parent'; // Reset về 'is_parent' (Lọc cha)
+        $this->childFilter = 'all'; // Reset về 'all' (Tắt lọc con)
         $this->sortField = 'title';
         $this->sortDirection = 'asc';
         $this->resetPage(); // Reset về trang đầu
@@ -128,23 +142,20 @@ new class extends Component {
         $this->resetPage();
     }
 
-    // Reset trang khi thay đổi loại danh mục cha (MỚI)
+    // Khi lọc cha thay đổi -> TẮT lọc con
     public function updatedParentFilter(string $value): void
     {
         if ($value !== 'all') {
-            $this->childFilter = 'all'; // Reset bộ lọc con
+            $this->childFilter = 'all'; // Reset bộ lọc con về 'all' (tắt)
         }
         $this->resetPage();
     }
 
-    // Reset trang khi thay đổi loại danh mục con (MỚI)
+    // Khi lọc con thay đổi -> TẮT lọc cha
     public function updatedChildFilter(string $value): void
     {
         if ($value !== 'all') {
-            // Chỗ này vẫn set về 'all' (một giá trị nội bộ)
-            // để logic getCategoriesProperty bỏ qua bộ lọc cha
-            // khi ta đang lọc theo con. Điều này là ĐÚNG.
-            $this->parentFilter = 'all'; // Reset bộ lọc cha
+            $this->parentFilter = 'all'; // Reset bộ lọc cha về 'all' (tắt)
         }
         $this->resetPage();
     }
@@ -185,19 +196,14 @@ new class extends Component {
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-            {{-- ===== BẮT ĐẦU THAY ĐỔI ===== --}}
             <flux:field>
                 <flux:label>Lọc danh mục cha</flux:label>
                 <flux:select wire:model.live="parentFilter">
-                    {{-- Đã XÓA option value="all" --}}
-                    
-                    {{-- Đổi text cho rõ nghĩa hơn --}}
                     <option value="is_parent">Tất cả danh mục cha (gốc)</option>
                     
-                    {{-- Thêm vòng lặp để hiển thị các danh mục cha --}}
                     @if($this->rootCategories->count() > 0)
-                        {{-- Đổi text và value của option disabled --}}
-                        <option value="is_parent" disabled>--- Hoặc lọc con của ---</option>
+                        {{-- Thay đổi text này cho rõ nghĩa hơn --}}
+                        <option value="is_parent" disabled>--- Hoặc lọc theo tên cha ---</option>
                         @foreach($this->rootCategories as $rootCategory)
                             <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
                         @endforeach
@@ -205,13 +211,18 @@ new class extends Component {
                     
                 </flux:select>
             </flux:field>
-            {{-- ===== KẾT THÚC THAY ĐỔI ===== --}}
 
             <flux:field>
                 <flux:label>Lọc danh mục con</flux:label>
                 <flux:select wire:model.live="childFilter">
-                    <option value="all">Tất cả</option>
-                    <option value="is_child">Chỉ danh mục con</option>
+                    <option value="is_child">Tất cả danh mục con</option>
+                    
+                    @if($this->allChildCategories->count() > 0)
+                        <option value="all" disabled>--- Lọc theo tên con ---</option>
+                        @foreach($this->allChildCategories as $childCategory)
+                            <option value="{{ $childCategory->id }}">{{ $childCategory->title }}</option>
+                        @endforeach
+                    @endif
                 </flux:select>
             </flux:field>
 
@@ -229,7 +240,6 @@ new class extends Component {
     </div>
 
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        {{-- PHẦN CÒN LẠI CỦA FILE GIỮ NGUYÊN NHƯ CŨ --}}
         @if($this->categories->count() > 0)
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
