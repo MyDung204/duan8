@@ -24,7 +24,7 @@ public function mount(): void
 
     // Thuộc tính cho tìm kiếm và bộ lọc
     public string $search = ''; // Từ khóa tìm kiếm
-    public ?int $parentFilter = null; // Lọc theo danh mục cha
+    public string $createdDateFilter = 'all'; // Lọc theo ngày tạo
     public string $categoryTypeFilter = 'all'; // Lọc theo loại danh mục (all/parent/child)
     public string $sortField = 'title'; // Trường sắp xếp (title/created_at)
     public string $sortDirection = 'asc'; // Hướng sắp xếp (asc/desc)
@@ -36,7 +36,7 @@ public function mount(): void
         $query = ImageCategory::query()
             ->with('parent') // Load danh mục cha để hiển thị
             ->when($this->search, fn($q) => $q->search($this->search)) // Tìm kiếm theo từ khóa
-            ->when($this->parentFilter !== null, fn($q) => $q->byParent($this->parentFilter)) // Lọc theo danh mục cha
+            ->when($this->createdDateFilter !== 'all', fn($q) => $q->whereDate('created_at', $this->createdDateFilter)) // Lọc theo ngày tạo
             ->when($this->categoryTypeFilter !== 'all', fn($q) => $q->byType($this->categoryTypeFilter)); // Lọc theo loại
 
         // Áp dụng sắp xếp
@@ -49,13 +49,21 @@ public function mount(): void
         return $query->paginate($this->perPage); // Phân trang
     }
 
-    // Lấy danh sách danh mục cha để hiển thị trong dropdown
-    public function getParentCategoriesProperty()
+// Lấy danh sách các ngày đã tạo (duy nhất) để lọc
+    public function getCreatedDatesProperty()
     {
-        return ImageCategory::active()
-            ->roots() // Chỉ lấy danh mục gốc
-            ->orderBy('title')
-            ->get();
+        return ImageCategory::query()
+            ->selectRaw('DATE(created_at) as date') // Chỉ lấy ngày
+            ->distinct() // Lấy duy nhất
+            ->orderBy('date', 'desc') // Sắp xếp mới nhất trước
+            ->pluck('date') // Chỉ lấy cột 'date'
+            ->map(function ($date) {
+                // Định dạng lại ngày tháng cho dễ đọc
+                return [
+                    'value' => $date, // Giá trị để lọc (VD: 2025-10-23)
+                    'label' => \Carbon\Carbon::parse($date)->format('d/m/Y'), // Hiển thị (VD: 23/10/2025)
+                ];
+            });
     }
 
     // Phương thức sắp xếp
@@ -101,7 +109,7 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
     public function resetFilters(): void
     {
         $this->search = '';
-        $this->parentFilter = null;
+        $this->createdDateFilter = 'all';
         $this->categoryTypeFilter = 'all';
         $this->sortField = 'title';
         $this->sortDirection = 'asc';
@@ -114,8 +122,8 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
         $this->resetPage();
     }
 
-    // Reset trang khi thay đổi bộ lọc danh mục cha
-    public function updatedParentFilter(): void
+        // Reset trang khi thay đổi bộ lọc ngày tạo
+    public function updatedCreatedDateFilter(): void
     {
         $this->resetPage();
     }
@@ -149,25 +157,29 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
         <div class="grid grid-cols-1">
             <flux:field>
                 <flux:label>Tìm kiếm</flux:label>
+                
                 <flux:input 
-                    wire:model.live.debounce.300ms="search" 
+                    wire:model.live.debounce.300ms="search"  {{-- 1. THÊM .live TRỞ LẠI --}}
                     placeholder="Tìm theo tiêu đề, mô tả..."
                     icon="magnifying-glass"
-                    id="searchInput" {{-- Thêm ID --}}
-                    class="[&>div>svg]:animate-none"
+                    id="searchInput"
+                    :spinner="false"
+                    class="![&_svg:not(:first-child)]:hidden" {{-- 2. GIỮ LẠI CLASS NÀY --}}
                 />
             </flux:field>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
+           
             <flux:field>
-                <flux:label>Danh mục cha</flux:label>
-                <flux:select wire:model.live="parentFilter">
-                    <option value="">Tất cả</option>
-                    <option value="null">Danh mục gốc</option>
-                    @foreach($this->parentCategories as $parent)
-                        <option value="{{ $parent->id }}">{{ $parent->title }}</option>
+                <flux:label>Ngày tạo</flux:label>
+                <flux:select wire:model.live="createdDateFilter">
+                    <option value="all">Tất cả </option>
+                    @foreach($this->createdDates as $date)
+                        <option value="{{ $date['value'] }}" wire:key="date-{{ $date['value'] }}">
+                            {{ $date['label'] }}
+                        </option>
                     @endforeach
                 </flux:select>
             </flux:field>
@@ -185,7 +197,7 @@ $this->dispatch('show-toast', text: "Danh mục đã được {$status}.", icon:
                 <flux:label class="invisible">Reset</flux:label>
                 
                 <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; padding: 5px 0">
                         <flux:icon name="arrow-path" class="size-4" />
                         <span>Reset</span>
                     </div>
