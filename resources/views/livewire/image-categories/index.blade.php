@@ -24,8 +24,13 @@ new class extends Component {
 
     // Thuộc tính cho tìm kiếm và bộ lọc
     public string $search = ''; // Từ khóa tìm kiếm
-    public string $parentFilter = 'is_parent'; // Mặc định: Lọc cha
-    public string $childFilter = 'all'; // Mặc định: Tắt lọc con
+    
+    // ===== THAY ĐỔI QUAN TRỌNG =====
+    // Mặc định là 'all' (hiển thị tất cả cha và con)
+    public string $parentFilter = 'all'; 
+    
+    public string $childFilter = 'all'; // Mặc định: 'all' (TẮT)
+    
     public string $sortField = 'title'; // Trường sắp xếp (chỉ còn 'title')
     public string $sortDirection = 'asc'; // Hướng sắp xếp (asc/desc)
     public int $perPage = 10; // Số danh mục hiển thị mỗi trang
@@ -38,23 +43,20 @@ new class extends Component {
             ->withCount('children') // Load count để dùng cho confirm delete
             ->when($this->search, fn($q) => $q->search($this->search)) // Tìm kiếm theo từ khóa
             
-            // Xử lý lọc cha
+            // Xử lý lọc cha: Chỉ chạy khi $parentFilter KHÔNG PHẢI LÀ 'all'
             ->when($this->parentFilter !== 'all', function ($q) {
                 if ($this->parentFilter === 'is_parent') {
                     // Lọc: Tất cả danh mục cha (gốc)
                     $q->whereNull('parent_id');
                 } else {
-                    // ===== BẮT ĐẦU THAY ĐỔI QUAN TRỌNG =====
                     // Lọc: MỘT danh mục cha CỤ THỂ (theo ID của chính nó)
                     if (is_numeric($this->parentFilter)) {
-                        // Sửa 'parent_id' thành 'id'
                         $q->where('id', $this->parentFilter); 
                     }
-                    // ===== KẾT THÚC THAY ĐỔI QUAN TRỌNG =====
                 }
             })
             
-            // Xử lý lọc con
+            // Xử lý lọc con: Chỉ chạy khi $childFilter KHÔNG PHẢI LÀ 'all'
             ->when($this->childFilter !== 'all', function ($q) {
                 if ($this->childFilter === 'is_child') {
                     // Lọc: Tất cả danh mục con
@@ -87,7 +89,7 @@ new class extends Component {
     {
         // Lấy tất cả danh mục CON (parent_id != null) đang active
         return ImageCategory::whereNotNull('parent_id')
-                            ->with('parent') 
+                            ->with('parent') // Load parent để phòng trường hợp cần dùng
                             ->active()
                             ->orderBy('title')
                             ->get();
@@ -129,8 +131,12 @@ new class extends Component {
     public function resetFilters(): void
     {
         $this->search = '';
-        $this->parentFilter = 'is_parent'; // Reset về 'is_parent' (Lọc cha)
-        $this->childFilter = 'all'; // Reset về 'all' (Tắt lọc con)
+        
+        // ===== THAY ĐỔI QUAN TRỌNG =====
+        // Reset về 'all' để hiển thị tất cả cha và con
+        $this->parentFilter = 'all'; 
+        $this->childFilter = 'all'; 
+        
         $this->sortField = 'title';
         $this->sortDirection = 'asc';
         $this->resetPage(); // Reset về trang đầu
@@ -199,10 +205,14 @@ new class extends Component {
             <flux:field>
                 <flux:label>Lọc danh mục cha</flux:label>
                 <flux:select wire:model.live="parentFilter">
+                    
+                    {{-- ===== THAY ĐỔI QUAN TRỌNG ===== --}}
+                    {{-- Thêm lại tùy chọn 'all' (Mặc định) --}}
+                    <option value="all">Tất cả (Cha & Con)</option>
+                    
                     <option value="is_parent">Tất cả danh mục cha (gốc)</option>
                     
                     @if($this->rootCategories->count() > 0)
-                        {{-- Thay đổi text này cho rõ nghĩa hơn --}}
                         <option value="is_parent" disabled>--- Hoặc lọc theo tên cha ---</option>
                         @foreach($this->rootCategories as $rootCategory)
                             <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
@@ -215,6 +225,11 @@ new class extends Component {
             <flux:field>
                 <flux:label>Lọc danh mục con</flux:label>
                 <flux:select wire:model.live="childFilter">
+                    
+                    {{-- ===== THAY ĐỔI QUAN TRỌNG ===== --}}
+                    {{-- Thêm lại tùy chọn 'all' (Mặc định) --}}
+                    <option value="all">Tất cả (Cha & Con)</option>
+
                     <option value="is_child">Tất cả danh mục con</option>
                     
                     @if($this->allChildCategories->count() > 0)
@@ -296,11 +311,10 @@ new class extends Component {
 
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     @if($category->parent)
-                                        {{-- Đây là danh mục Con (Cha / Con) --}}
+                                        {{-- Đây là danh mục Con (Cha -> Con) --}}
                                         <flux:badge variant="outline" size="sm">
                                             <span>{{ $category->parent->title }}</span>
-                                            <span class="mx-1">/</span>
-                                            {{-- Dùng font-medium để tên con rõ hơn một chút --}}
+                                            <span class="mx-1">→</span>
                                             <span class="font-medium text-gray-800 dark:text-gray-100">{{ $category->title }}</span>
                                         </flux:badge>
                                     @else
