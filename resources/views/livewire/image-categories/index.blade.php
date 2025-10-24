@@ -107,6 +107,9 @@ new class extends Component {
     {
         $category = ImageCategory::findOrFail($id);
         $category->delete();
+        if ($this->getCategoriesProperty()->count() === 0 && $this->getPage() > 1) {
+            $this->previousPage();
+        }
         $this->dispatch('show-toast', text: 'Danh mục đã được xóa thành công.', icon: 'success');
     }
 
@@ -259,32 +262,32 @@ new class extends Component {
             <flux:field>
                 <flux:label>Tìm kiếm</flux:label>
                 
-                 <flux:input 
-                     wire:model.live.debounce.300ms="search"
-                     placeholder="Tìm theo tiêu đề, mô tả..."
-                     icon="magnifying-glass"
-                     id="searchInput"
-                 />
+                <flux:input 
+                    wire:model.live.debounce.300ms="search"
+                    placeholder="Tìm theo tiêu đề, mô tả..."
+                    icon="magnifying-glass"
+                    id="searchInput"
+                />
             </flux:field>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-             <flux:field>
-                 <flux:label>Lọc danh mục cha</flux:label>
-                 <flux:select wire:model.live="parentFilter">
-                     
-                     <option value="all">Tất cả danh mục cha (gốc)</option>
-                     
-                     @if($this->rootCategories->count() > 0)
-                         <option value="is_parent" disabled>--- Hoặc lọc theo tên cha ---</option>
-                         @foreach($this->rootCategories as $rootCategory)
-                             <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
-                         @endforeach
-                     @endif
-                     
-                 </flux:select>
-             </flux:field>
+            <flux:field>
+                <flux:label>Lọc danh mục cha</flux:label>
+                <flux:select wire:model.live="parentFilter">
+                    
+                    <option value="all">Tất cả danh mục cha (gốc)</option>
+                    
+                    @if($this->rootCategories->count() > 0)
+                        <option value="is_parent" disabled>--- Hoặc lọc theo tên cha ---</option>
+                        @foreach($this->rootCategories as $rootCategory)
+                            <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
+                        @endforeach
+                    @endif
+                    
+                </flux:select>
+            </flux:field>
 
             <flux:field>
                 <flux:label>Lọc danh mục con</flux:label>
@@ -320,13 +323,14 @@ new class extends Component {
             <div class="overflow-x-auto categories-table-container">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 categories-table">
                     <thead class="bg-gray-50 dark:bg-gray-800">
+                        
                         <tr>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">STT</th>
                             
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">Banner</th>
                             
                             <th 
-                                class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                                class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                                 wire:click="sortBy('title')"
                             >
                                 Tiêu đề
@@ -335,7 +339,7 @@ new class extends Component {
                                 @endif
                             </th>
                             
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Danh mục</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Danh mục</th>
                             
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trạng thái</th>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Thao tác</th>
@@ -343,34 +347,35 @@ new class extends Component {
                     </thead>
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach($this->categories as $index => $category)
+
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <td class="px-4 py-4 text-center whitespace-nowrap align-middle">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ ($this->categories->currentPage() - 1) * $this->categories->perPage() + $index + 1 }}
                                     </div>
                                 </td>
 
-                                 <td class="px-4 py-6 text-center whitespace-nowrap">
-                                     @if($category->banner_image)
-                                         <img 
-                                             src="{{ $category->banner_image_url }}" 
-                                             alt="{{ $category->title }}"
-                                             class="h-12 w-12 rounded-lg object-contain mx-auto"
-                                         />
-                                     @else
-                                         <div class="h-12 w-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
-                                             <flux:icon name="photo" class="size-6 text-gray-400" />
-                                         </div>
-                                     @endif
-                                 </td>
+                                <td class="px-4 py-6 text-center whitespace-nowrap align-middle">
+                                    @if($category->banner_image)
+                                        <img 
+                                            src="{{ $category->banner_image_url }}" 
+                                            alt="{{ $category->title }}"
+                                            class="h-12 w-12 rounded-lg object-contain mx-auto"
+                                        />
+                                    @else
+                                        <div class="h-12 w-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
+                                            <flux:icon name="photo" class="size-6 text-gray-400" />
+                                        </div>
+                                    @endif
+                                </td>
 
-                                <td class="px-4 py-4 whitespace-nowrap">
+                                <td class="px-4 py-4 whitespace-nowrap text-center align-middle">
                                     <div class="font-medium text-gray-900 dark:text-white">
                                         {{ $category->title }}
                                     </div>
                                 </td>
 
-                                <td class="px-4 py-4 whitespace-nowrap">
+                                <td class="px-4 py-4 whitespace-nowrap text-center align-middle">
                                     @if($category->parent)
                                         {{-- Đây là danh mục Con (Cha -> Con) --}}
                                         <flux:badge variant="outline" size="sm">
@@ -406,7 +411,7 @@ new class extends Component {
                                     @endif
                                 </td>
 
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <td class="px-4 py-4 text-center whitespace-nowrap align-middle">
                                     <flux:badge 
                                         variant="{{ $category->is_active ? 'success' : 'danger' }}"
                                     >
@@ -414,7 +419,7 @@ new class extends Component {
                                     </flux:badge>
                                 </td>
 
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <td class="px-4 py-4 text-center whitespace-nowrap align-middle">
                                     <div class="flex items-center justify-center gap-2">
                                         <flux:button 
                                             variant="outline" 
@@ -448,34 +453,33 @@ new class extends Component {
                 </table>
             </div>
 
-            <!-- Phân trang luôn hiển thị -->
             <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
                 {{ $this->categories->links() }}
             </div>
-         @else
-             <div 
-                 class="text-center" 
-                 style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;"
-             > 
-                 
-                 <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
-                 
-                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có danh mục nào</h3>
-                 
-                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                     Bắt đầu bằng cách tạo danh mục đầu tiên của bạn.
-                 </p>
-                 
-                 <div class="mt-6">
-                     <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
-                         <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                             <flux:icon name="plus" class="size-4" />
-                             <span>Thêm danh mục mới</span>
-                         </div>
-                     </flux:button>
-                 </div>
-             </div>
-         @endif
+        @else
+            <div 
+                class="text-center" 
+                style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;"
+            > 
+                
+                <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
+                
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có danh mục nào</h3>
+                
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                    Bắt đầu bằng cách tạo danh mục đầu tiên của bạn.
+                </p>
+                
+                <div class="mt-6">
+                    <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                            <flux:icon name="plus" class="size-4" />
+                            <span>Thêm danh mục mới</span>
+                        </div>
+                    </flux:button>
+                </div>
+            </div>
+        @endif
     </div>
 
 @push('scripts')
