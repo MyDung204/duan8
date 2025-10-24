@@ -14,6 +14,7 @@ class Post extends Model
      */
     protected $fillable = [
         'title',
+        'short_description',
         'content', 
         'banner_image',
         'gallery_images',
@@ -108,6 +109,22 @@ class Post extends Model
     public function getFormattedCreatedAtAttribute(): string
     {
         return $this->created_at->format('d/m/Y H:i:s');
+    }
+
+    /**
+     * Accessor: Ngày tạo format ngắn gọn cho bảng
+     */
+    public function getCreatedDateAttribute(): string
+    {
+        return $this->created_at->format('d/m/Y');
+    }
+
+    /**
+     * Accessor: Giờ tạo format ngắn gọn cho bảng
+     */
+    public function getCreatedTimeAttribute(): string
+    {
+        return $this->created_at->format('H:i');
     }
 
     /**

@@ -6,3 +6,4 @@ return [
     'of' => 'trong tổng số',
     'results' => 'kết quả',
 ];
+

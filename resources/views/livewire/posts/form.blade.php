@@ -13,12 +13,14 @@ new class extends Component
     // Thuộc tính form
     public $postId = null;
     public $title = '';
+    public $shortDescription = '';
     public $content = '';
     public $bannerImage = null;
     public $galleryImages = [];
     public $authorName = '';
     public $categoryId = null;
     public $isPublished = false;
+    public $publishNow = false;
 
     // Thuộc tính preview
     public $bannerPreview = null;
@@ -37,6 +39,7 @@ new class extends Component
             $post = Post::findOrFail($id);
             $this->postId = $post->id;
             $this->title = $post->title;
+            $this->shortDescription = $post->short_description ?? '';
             $this->content = $post->content;
             $this->authorName = $post->author_name;
             $this->categoryId = $post->category_id;
@@ -58,6 +61,7 @@ new class extends Component
     {
         return [
             'title' => 'required|string|max:255',
+            'shortDescription' => 'required|string|max:500',
             'content' => 'required|string',
             'bannerImage' => 'nullable|image|max:2048',
             'galleryImages.*' => 'nullable|image|max:2048',
@@ -73,6 +77,8 @@ new class extends Component
     {
         return [
             'title.required' => 'Tiêu đề là bắt buộc.',
+            'shortDescription.required' => 'Mô tả ngắn là bắt buộc.',
+            'shortDescription.max' => 'Mô tả ngắn không được vượt quá 500 ký tự.',
             'content.required' => 'Nội dung là bắt buộc.',
             'bannerImage.image' => 'Ảnh banner phải là file ảnh.',
             'bannerImage.max' => 'Ảnh banner không được vượt quá 2MB.',
@@ -90,7 +96,9 @@ new class extends Component
     public function updatedBannerImage(): void
     {
         $this->validateOnly('bannerImage');
-        $this->bannerPreview = $this->bannerImage->temporaryUrl();
+        if ($this->bannerImage) {
+            $this->bannerPreview = $this->bannerImage->temporaryUrl();
+        }
     }
 
     // Updated gallery images
@@ -99,7 +107,9 @@ new class extends Component
         $this->validateOnly('galleryImages');
         $this->galleryPreviews = [];
         foreach ($this->galleryImages as $image) {
-            $this->galleryPreviews[] = $image->temporaryUrl();
+            if ($image) {
+                $this->galleryPreviews[] = $image->temporaryUrl();
+            }
         }
     }
 
@@ -119,21 +129,35 @@ new class extends Component
         $this->galleryPreviews = array_values($this->galleryPreviews);
     }
 
-    // Add gallery image
-    public function addGalleryImage(): void
+    // Sync content from CKEditor
+    public function syncContent($content): void
     {
-        if (count($this->galleryImages) < 5) {
-            $this->galleryImages[] = null;
-        }
+        $this->content = $content;
+    }
+
+    // Listen for sync-content event
+    protected $listeners = ['sync-content' => 'syncContent'];
+
+    // Method để xử lý HTML content
+    public function getProcessedContentProperty(): string
+    {
+        return $this->content ?: '';
+    }
+
+    // Method để khởi tạo lại editor
+    public function reinitializeEditor(): void
+    {
+        $this->dispatch('editor:reinit');
     }
 
     // Save post
-    public function save(): void
+    public function save()
     {
         $this->validate();
 
         $data = [
             'title' => $this->title,
+            'short_description' => $this->shortDescription,
             'content' => $this->content,
             'author_name' => $this->authorName,
             'category_id' => $this->categoryId,
@@ -166,10 +190,10 @@ new class extends Component
         if ($this->postId) {
             $post = Post::findOrFail($this->postId);
             $post->update($data);
-            session()->flash('success', 'Bài đăng đã được cập nhật thành công!');
+            $this->dispatch('show-success', message: 'Bài đăng đã được cập nhật thành công!');
         } else {
             Post::create($data);
-            session()->flash('success', 'Bài đăng đã được tạo thành công!');
+            $this->dispatch('show-success', message: 'Bài đăng đã được tạo thành công!');
         }
 
         return redirect()->route('posts.index');
@@ -228,21 +252,47 @@ new class extends Component
                     <flux:error name="title" />
                 </flux:field>
 
+                <!-- Mô tả ngắn -->
+                <flux:field>
+                    <flux:label>Mô tả ngắn <span class="text-red-500">*</span></flux:label>
+                    <flux:textarea 
+                        wire:model="shortDescription" 
+                        placeholder="Nhập mô tả ngắn về bài đăng..."
+                        rows="3"
+                        required
+                    />
+                    <flux:error name="shortDescription" />
+                    <flux:description>Tóm tắt ngắn gọn về nội dung bài đăng (tối đa 500 ký tự)</flux:description>
+                </flux:field>
+
                 <!-- Nội dung -->
                 <flux:field>
                     <flux:label>Nội dung bài đăng <span class="text-red-500">*</span></flux:label>
                     <div class="mt-1">
+                        <!-- Textarea ẩn để backup -->
                         <textarea 
                             wire:model="content" 
-                            rows="15"
-                            class="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                            placeholder="Nhập nội dung bài đăng..."
-                            required
+                            id="content-backup"
+                            style="display: none;"
                         ></textarea>
+                        
+                        <!-- Trix Editor -->
+                        <trix-editor 
+                            input="content-input"
+                            class="trix-content"
+                            placeholder="Nhập nội dung bài đăng..."
+                        ></trix-editor>
+                        
+                        <!-- Hidden input để sync với Livewire -->
+                        <input 
+                            id="content-input" 
+                            type="hidden" 
+                            wire:model="content"
+                        >
                     </div>
                     <flux:error name="content" />
                     <flux:description>
-                        Sử dụng các thẻ HTML để định dạng văn bản: &lt;b&gt;đậm&lt;/b&gt;, &lt;i&gt;nghiêng&lt;/i&gt;, &lt;u&gt;gạch chân&lt;/u&gt;
+                        Sử dụng Rich Text Editor với giao diện giống Microsoft Word: in đậm, nghiêng, gạch chân, căn chỉnh, danh sách, liên kết...
                     </flux:description>
                 </flux:field>
 
@@ -312,50 +362,43 @@ new class extends Component
                 <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-medium text-gray-900 dark:text-white">Thư viện ảnh</h3>
-                        @if(count($galleryImages) < 5)
-                            <flux:button 
-                                type="button" 
-                                variant="outline" 
-                                size="sm" 
-                                wire:click="addGalleryImage"
-                            >
-                                <flux:icon name="plus" class="size-4" />
-                                Thêm ảnh
-                            </flux:button>
-                        @endif
                     </div>
                     
                     <flux:field>
                         <flux:label>Upload ảnh thư viện <span class="text-red-500">*</span></flux:label>
-                        <flux:description>Yêu cầu: 2-5 ảnh, mỗi ảnh tối đa 2MB</flux:description>
+                        <input 
+                            type="file" 
+                            wire:model="galleryImages" 
+                            accept="image/*"
+                            multiple
+                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-600 dark:file:text-gray-200 dark:hover:file:bg-gray-500"
+                        />
                         <flux:error name="galleryImages" />
+                        <flux:description>Chọn 2-5 ảnh cùng một lần, mỗi ảnh tối đa 2MB</flux:description>
                     </flux:field>
 
-                    @foreach($galleryImages as $index => $image)
-                        <div class="mt-4 p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-                            <flux:input 
-                                type="file" 
-                                wire:model="galleryImages.{{ $index }}" 
-                                accept="image/*"
-                            />
-                            
-                            @if(isset($galleryPreviews[$index]))
-                                <div class="mt-2">
-                                    <img src="{{ $galleryPreviews[$index] }}" alt="Gallery Preview" class="w-full h-24 object-cover rounded">
-                                    <flux:button 
-                                        type="button" 
-                                        variant="outline" 
-                                        size="sm" 
-                                        wire:click="removeGalleryImage({{ $index }})"
-                                        class="mt-2"
-                                    >
-                                        <flux:icon name="trash" class="size-4" />
-                                        Xóa ảnh
-                                    </flux:button>
-                                </div>
-                            @endif
+                    <!-- Hiển thị preview các ảnh đã chọn -->
+                    @if(count($galleryPreviews) > 0)
+                        <div class="mt-4">
+                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Ảnh đã chọn ({{ count($galleryPreviews) }}/5):
+                            </h4>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                @foreach($galleryPreviews as $index => $preview)
+                                    <div class="relative group">
+                                        <img src="{{ $preview }}" alt="Gallery Preview {{ $index + 1 }}" class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                        <button 
+                                            type="button" 
+                                            wire:click="removeGalleryImage({{ $index }})"
+                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
-                    @endforeach
+                    @endif
                 </div>
 
                 <!-- Cài đặt -->
@@ -385,4 +428,267 @@ new class extends Component
             </flux:button>
         </div>
     </form>
-</div>
+
+    <!-- Trix Editor -->
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
+    <script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
+    
+    <style>
+/* Trix Editor Custom Styling - Cải thiện độ tương phản */
+trix-editor {
+    min-height: 400px;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 14pt;
+    line-height: 1.6;
+    background-color: #ffffff;
+    color: #1f2937;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+trix-editor:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    outline: none;
+}
+
+.dark trix-editor {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+    color: #1f2937;
+}
+
+/* Trix Toolbar Styling - Sáng và nổi bật */
+trix-toolbar {
+    border: 2px solid #e5e7eb;
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+    background-color: #ffffff;
+    padding: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark trix-toolbar {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+}
+
+/* Trix Button Styling */
+trix-toolbar .trix-button-group {
+    border-right: 1px solid #d1d5db;
+}
+
+.dark trix-toolbar .trix-button-group {
+    border-color: #4b5563;
+}
+
+trix-toolbar .trix-button {
+    border: none;
+    background: white;
+    color: #374151;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    margin: 0.125rem;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+trix-toolbar .trix-button:hover {
+    background-color: #f8fafc;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+trix-toolbar .trix-button.trix-active {
+    background-color: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.dark trix-toolbar .trix-button {
+    background: #374151;
+    color: #f9fafb;
+    border: 1px solid #4b5563;
+}
+
+.dark trix-toolbar .trix-button:hover {
+    background-color: #4b5563;
+    border-color: #6b7280;
+}
+
+.dark trix-toolbar .trix-button.trix-active {
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* Content Styling */
+trix-editor h1 {
+    font-size: 24pt;
+    font-weight: bold;
+    margin: 0 0 0.5em 0;
+}
+
+trix-editor h2 {
+    font-size: 18pt;
+    font-weight: bold;
+    margin: 0 0 0.5em 0;
+}
+
+trix-editor h3 {
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 0 0 0.5em 0;
+}
+
+trix-editor p {
+    margin: 0 0 1em 0;
+}
+
+trix-editor ul,
+trix-editor ol {
+    margin: 0 0 1em 0;
+    padding-left: 1.5em;
+}
+
+trix-editor blockquote {
+    border-left: 4px solid #3b82f6;
+    margin: 1em 0;
+    padding-left: 1em;
+    font-style: italic;
+    color: #6b7280;
+}
+
+trix-editor a {
+    color: #3b82f6;
+    text-decoration: underline;
+}
+
+trix-editor img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.25rem;
+}
+
+/* Cải thiện độ tương phản cho các nút */
+trix-toolbar .trix-button {
+    border: 2px solid #e5e7eb !important;
+    background: #ffffff !important;
+    color: #1f2937 !important;
+    padding: 0.75rem !important;
+    border-radius: 0.375rem !important;
+    margin: 0.25rem !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+}
+
+trix-toolbar .trix-button:hover {
+    background-color: #f3f4f6 !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-2px) !important;
+    color: #3b82f6 !important;
+}
+
+trix-toolbar .trix-button.trix-active {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Cải thiện placeholder text */
+trix-editor:empty:before {
+    color: #9ca3af !important;
+    font-style: italic !important;
+    font-size: 14pt !important;
+}
+
+/* Cải thiện dropdown */
+trix-toolbar .trix-dialog {
+    background-color: #ffffff !important;
+    border: 2px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+}
+
+trix-toolbar .trix-dialog .trix-button {
+    background-color: #f9fafb !important;
+    color: #374151 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+trix-toolbar .trix-dialog .trix-button:hover {
+    background-color: #3b82f6 !important;
+    color: #ffffff !important;
+    border-color: #3b82f6 !important;
+}
+</style>
+<script>
+// Trix Editor Integration với Livewire
+document.addEventListener('DOMContentLoaded', function() {
+    const trixEditor = document.querySelector('trix-editor');
+    const hiddenInput = document.getElementById('content-input');
+    
+    if (trixEditor && hiddenInput) {
+        // Set initial content
+        const initialContent = '{{ addslashes($this->content) }}' || '';
+        if (initialContent) {
+            trixEditor.editor.loadHTML(initialContent);
+        }
+        
+        // Sync với Livewire khi nội dung thay đổi
+        trixEditor.addEventListener('trix-change', function(event) {
+            const content = event.target.innerHTML;
+            hiddenInput.value = content;
+            Livewire.dispatch('sync-content', { content: content });
+        });
+        
+        // Sync khi paste
+        trixEditor.addEventListener('trix-paste', function(event) {
+            setTimeout(function() {
+                const content = trixEditor.innerHTML;
+                hiddenInput.value = content;
+                Livewire.dispatch('sync-content', { content: content });
+            }, 100);
+        });
+        
+        console.log('Trix Editor đã khởi tạo thành công');
+    }
+    
+    // Sync trước khi submit form
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const trixEditor = document.querySelector('trix-editor');
+        const hiddenInput = document.getElementById('content-input');
+        
+        if (trixEditor && hiddenInput) {
+            const content = trixEditor.innerHTML;
+            hiddenInput.value = content;
+            Livewire.dispatch('sync-content', { content: content });
+        }
+    });
+        });
+        </script>
+
+        <!-- SweetAlert2 -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('show-success', (event) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: event.message,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            });
+        });
+        </script>
+    </div>
+

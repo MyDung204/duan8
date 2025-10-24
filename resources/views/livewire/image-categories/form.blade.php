@@ -26,11 +26,11 @@ new class extends Component {
     protected function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'short_description' => 'nullable|string|max:500',
-            'content' => 'nullable|string',
-            'author_name' => 'nullable|string|max:255',
-            'bannerImage' => 'nullable|image|max:2048', // Giới hạn 2MB
+            'title' => 'required|string|max:100',
+            'short_description' => 'required|string|max:200',
+            'content' => 'required|string|max:1000',
+            'author_name' => 'required|string|max:50',
+            'bannerImage' => 'required|image|max:2048', // Giới hạn 2MB
             'parent_id' => 'nullable|exists:image_categories,id',
             'is_active' => 'boolean',
         ];
@@ -41,13 +41,16 @@ new class extends Component {
     {
         return [
             'title.required' => 'Tiêu đề là bắt buộc.',
-            'title.max' => 'Tiêu đề không được vượt quá 255 ký tự.',
-            'short_description.max' => 'Mô tả ngắn không được vượt quá 500 ký tự.',
-            'author_name.max' => 'Tên tác giả không được vượt quá 255 ký tự.',
+            'title.max' => 'Tiêu đề không được vượt quá 100 ký tự.',
+            'short_description.required' => 'Mô tả ngắn là bắt buộc.',
+            'short_description.max' => 'Mô tả ngắn không được vượt quá 200 ký tự.',
+            'content.required' => 'Nội dung chi tiết là bắt buộc.',
+            'content.max' => 'Nội dung chi tiết không được vượt quá 1000 ký tự.',
+            'author_name.required' => 'Tên tác giả là bắt buộc.',
+            'author_name.max' => 'Tên tác giả không được vượt quá 50 ký tự.',
+            'bannerImage.required' => 'Ảnh banner là bắt buộc.',
             'bannerImage.image' => 'File banner phải là hình ảnh.',
             'bannerImage.max' => 'Kích thước ảnh banner không được vượt quá 2MB.',
-            'galleryImages.*.image' => 'File gallery phải là hình ảnh.',
-            'galleryImages.*.max' => 'Kích thước ảnh gallery không được vượt quá 2MB.',
             'parent_id.exists' => 'Danh mục cha không tồn tại.',
         ];
     }
@@ -94,8 +97,67 @@ new class extends Component {
     public function updatedBannerImage(): void
     {
         $this->validateOnly('bannerImage');
-        $this->bannerPreview = $this->bannerImage->temporaryUrl();
+        if ($this->bannerImage) {
+            $this->bannerPreview = $this->bannerImage->temporaryUrl();
+        }
     }
+
+    // Kiểm tra giới hạn ký tự và hiển thị cảnh báo
+    public function checkCharacterLimit($field, $value): void
+    {
+        $limits = [
+            'title' => 100,
+            'short_description' => 200,
+            'content' => 1000,
+            'author_name' => 50,
+        ];
+
+        if (isset($limits[$field])) {
+            $limit = $limits[$field];
+            $currentLength = strlen($value);
+            
+            if ($currentLength >= $limit) {
+                $this->dispatch('show-limit-warning', [
+                    'field' => $field,
+                    'current' => $currentLength,
+                    'limit' => $limit
+                ]);
+            }
+        }
+    }
+
+    // Xử lý khi thay đổi tiêu đề
+    public function updatedTitle($value): void
+    {
+        $this->checkCharacterLimit('title', $value);
+    }
+
+    // Xử lý khi thay đổi mô tả ngắn
+    public function updatedShortDescription($value): void
+    {
+        $this->checkCharacterLimit('short_description', $value);
+    }
+
+    // Xử lý khi thay đổi nội dung
+    public function updatedContent($value): void
+    {
+        $this->checkCharacterLimit('content', $value);
+    }
+
+    // Xử lý khi thay đổi tên tác giả
+    public function updatedAuthorName($value): void
+    {
+        $this->checkCharacterLimit('author_name', $value);
+    }
+
+    // Phương thức để kiểm tra giới hạn từ JavaScript
+    public function checkLimitFromJS($field, $value): void
+    {
+        $this->checkCharacterLimit($field, $value);
+    }
+
+    // Listeners
+    protected $listeners = ['checkLimitFromJS'];
     
     // Xóa ảnh banner
     public function removeBannerImage(): void
@@ -106,6 +168,9 @@ new class extends Component {
     // Lưu danh mục
     public function save(): void
     {
+        // Kiểm tra giới hạn ký tự trước khi validate
+        $this->checkAllLimits();
+
         $this->validate();
 
         try {
@@ -146,6 +211,21 @@ new class extends Component {
         }
     }
 
+    // Kiểm tra tất cả giới hạn
+    public function checkAllLimits(): void
+    {
+        $fields = [
+            'title' => $this->title,
+            'short_description' => $this->short_description,
+            'content' => $this->content,
+            'author_name' => $this->author_name,
+        ];
+
+        foreach ($fields as $field => $value) {
+            $this->checkCharacterLimit($field, $value);
+        }
+    }
+
     // Hủy và quay lại
     public function cancel(): void
     {
@@ -178,39 +258,64 @@ new class extends Component {
                     <flux:field>
                         <flux:label>Tiêu đề <span class="text-red-500">*</span></flux:label>
                         <flux:input 
-                            wire:model.blur="title" 
+                            wire:model.live="title" 
                             placeholder="Nhập tiêu đề danh mục..."
+                            maxlength="100"
+                            id="title"
+                            :spinner="false"
                         />
+                        <flux:error name="title" />
+                        <div class="text-sm text-gray-500 mt-1">
+                            <span id="title-count">{{ strlen($title) }}</span>/100 ký tự
+                        </div>
                     </flux:field>
 
                     <!-- Short Description -->
                     <flux:field>
-                        <flux:label>Mô tả ngắn</flux:label>
+                        <flux:label>Mô tả ngắn <span class="text-red-500">*</span></flux:label>
                         <flux:textarea 
-                            wire:model.blur="short_description" 
+                            wire:model.live="short_description" 
                             placeholder="Nhập mô tả ngắn về danh mục..."
                             rows="3"
+                            maxlength="200"
+                            id="short_description"
                         />
-                        <flux:description>Tối đa 500 ký tự</flux:description>
+                        <flux:error name="short_description" />
+                        <div class="text-sm text-gray-500 mt-1">
+                            <span id="short-description-count">{{ strlen($short_description) }}</span>/200 ký tự
+                        </div>
                     </flux:field>
 
                     <!-- Content -->
                     <flux:field>
-                        <flux:label>Nội dung chi tiết</flux:label>
+                        <flux:label>Nội dung chi tiết <span class="text-red-500">*</span></flux:label>
                         <flux:textarea 
-                            wire:model.blur="content" 
+                            wire:model.live="content" 
                             placeholder="Nhập nội dung chi tiết về danh mục..."
                             rows="6"
+                            maxlength="1000"
+                            id="content"
                         />
+                        <flux:error name="content" />
+                        <div class="text-sm text-gray-500 mt-1">
+                            <span id="content-count">{{ strlen($content) }}</span>/1000 ký tự
+                        </div>
                     </flux:field>
 
                     <!-- Author Name -->
                     <flux:field>
-                        <flux:label>Tên tác giả</flux:label>
+                        <flux:label>Tên tác giả <span class="text-red-500">*</span></flux:label>
                         <flux:input 
-                            wire:model.blur="author_name" 
+                            wire:model.live="author_name" 
                             placeholder="Nhập tên tác giả..."
+                            maxlength="50"
+                            id="author_name"
+                            :spinner="false"
                         />
+                        <flux:error name="author_name" />
+                        <div class="text-sm text-gray-500 mt-1">
+                            <span id="author-name-count">{{ strlen($author_name) }}</span>/50 ký tự
+                        </div>
                     </flux:field>
                 </div>
 
@@ -218,7 +323,7 @@ new class extends Component {
                 <div class="space-y-6">
                     <!-- Banner Image Upload -->
                     <flux:field>
-                        <flux:label>Ảnh Banner</flux:label>
+                        <flux:label>Ảnh Banner <span class="text-red-500">*</span></flux:label>
                         
                         @if($bannerPreview)
                             <div class="mb-4">
@@ -246,6 +351,7 @@ new class extends Component {
                             wire:model="bannerImage"
                             accept="image/*"
                         />
+                        <flux:error name="bannerImage" />
                         <flux:description>Chọn ảnh banner cho danh mục (tối đa 2MB)</flux:description>
                     </flux:field>
 
@@ -304,4 +410,83 @@ new class extends Component {
             {{ session('error') }}
         </div>
     @endif
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    document.addEventListener('livewire:init', () => {
+        // Lắng nghe sự kiện cảnh báo giới hạn ký tự
+        Livewire.on('show-limit-warning', (event) => {
+            const data = event[0];
+            const fieldNames = {
+                'title': 'Tiêu đề',
+                'short_description': 'Mô tả ngắn',
+                'content': 'Nội dung chi tiết',
+                'author_name': 'Tên tác giả'
+            };
+            
+            Swal.fire({
+                icon: 'warning',
+                title: 'Đã đạt giới hạn ký tự!',
+                text: `${fieldNames[data.field]} đã đạt ${data.current}/${data.limit} ký tự. Bạn không thể nhập thêm nội dung.`,
+                confirmButtonText: 'Đã hiểu',
+                confirmButtonColor: '#ef4444'
+            });
+        });
+
+        // Cập nhật số ký tự real-time và kiểm tra giới hạn
+        function updateCharacterCount(fieldId, countId, fieldName) {
+            const field = document.getElementById(fieldId);
+            const count = document.getElementById(countId);
+            
+            if (field && count) {
+                field.addEventListener('input', function() {
+                    const currentLength = this.value.length;
+                    count.textContent = currentLength;
+                    
+                    // Đổi màu khi gần đạt giới hạn
+                    const maxLength = parseInt(this.getAttribute('maxlength'));
+                    
+                    if (currentLength >= maxLength * 0.9) {
+                        count.style.color = '#ef4444';
+                    } else if (currentLength >= maxLength * 0.8) {
+                        count.style.color = '#f59e0b';
+                    } else {
+                        count.style.color = '#6b7280';
+                    }
+
+                    // Kiểm tra giới hạn và hiển thị cảnh báo
+                    if (currentLength >= maxLength) {
+                        // Gọi Livewire method để hiển thị SweetAlert2
+                        Livewire.dispatch('checkLimitFromJS', {
+                            field: fieldName,
+                            value: this.value
+                        });
+                    }
+                });
+
+                // Kiểm tra khi paste
+                field.addEventListener('paste', function(e) {
+                    setTimeout(() => {
+                        const currentLength = this.value.length;
+                        const maxLength = parseInt(this.getAttribute('maxlength'));
+                        
+                        if (currentLength >= maxLength) {
+                            Livewire.dispatch('checkLimitFromJS', {
+                                field: fieldName,
+                                value: this.value
+                            });
+                        }
+                    }, 10);
+                });
+            }
+        }
+
+        // Khởi tạo cho tất cả các trường
+        updateCharacterCount('title', 'title-count', 'title');
+        updateCharacterCount('short_description', 'short-description-count', 'short_description');
+        updateCharacterCount('content', 'content-count', 'content');
+        updateCharacterCount('author_name', 'author-name-count', 'author_name');
+    });
+    </script>
 </div>

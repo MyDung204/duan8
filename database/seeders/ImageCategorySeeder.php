@@ -139,3 +139,4 @@ class ImageCategorySeeder extends Seeder
         ]);
     }
 }
+

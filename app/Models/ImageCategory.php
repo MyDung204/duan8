@@ -74,6 +74,14 @@ class ImageCategory extends Model
     }
 
     /**
+     * Relationship: Các bài viết thuộc danh mục này
+     */
+    public function posts(): HasMany
+    {
+        return $this->hasMany(Post::class, 'category_id');
+    }
+
+    /**
      * Scope: Chỉ lấy danh mục đang kích hoạt
      */
     public function scopeActive(Builder $query): Builder

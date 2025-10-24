@@ -40,7 +40,7 @@ new class extends Component {
     {
         $query = ImageCategory::query()
             ->with('parent') // Load 'parent' để dùng cho hiển thị path
-            ->withCount('children'); // Load count để dùng cho confirm delete
+            ->withCount(['children', 'posts']); // Load count để dùng cho confirm delete và hiển thị số bài viết
 
         // Tìm kiếm theo từ khóa
         if ($this->search) {
@@ -378,11 +378,31 @@ new class extends Component {
                                             <span class="mx-1">→</span>
                                             <span class="font-medium text-gray-800 dark:text-gray-100">{{ $category->title }}</span>
                                         </flux:badge>
+                                        <div class="mt-1">
+                                            <flux:button 
+                                                variant="ghost" 
+                                                size="xs"
+                                                :href="route('posts.index', ['category' => $category->id])"
+                                                wire:navigate
+                                            >
+                                                {{ $category->posts_count ?? 0 }} bài viết
+                                            </flux:button>
+                                        </div>
                                     @else
                                         {{-- Đây là danh mục Cha (Gốc) --}}
                                         <flux:badge variant="primary" size="sm">
                                             {{ $category->title }}
                                         </flux:badge>
+                                        <div class="mt-1">
+                                            <flux:button 
+                                                variant="ghost" 
+                                                size="xs"
+                                                :href="route('posts.index', ['category' => $category->id])"
+                                                wire:navigate
+                                            >
+                                                {{ $category->posts_count ?? 0 }} bài viết
+                                            </flux:button>
+                                        </div>
                                     @endif
                                 </td>
 
