@@ -26,13 +26,24 @@ new class extends Component {
     // Quy tắc validation
     protected function rules(): array
     {
+        // ĐÃ SỬA: Logic validation cho ảnh banner
+        // Nếu đang chỉnh sửa VÀ đã có ảnh (bannerPreview tồn tại)
+        // thì bannerImage (file upload mới) là không bắt buộc (nullable)
+        if ($this->isEditing && $this->bannerPreview) {
+            $bannerRule = 'nullable|image|max:2048';
+        } else {
+            // Ngược lại (hoặc là tạo mới, hoặc là chỉnh sửa nhưng chưa có ảnh)
+            // thì bannerImage là bắt buộc
+            $bannerRule = 'required|image|max:2048';
+        }
+
         return [
             'title' => 'required|string|max:100',
             'slug' => 'required|string|max:255|unique:image_categories,slug,' . $this->categoryId,
             'short_description' => 'required|string|max:200',
             'content' => 'required|string|max:1000',
             'author_name' => 'required|string|max:50',
-            'bannerImage' => 'required|image|max:2048', // Giới hạn 2MB
+            'bannerImage' => $bannerRule, // Sử dụng quy tắc động
             'parent_id' => 'nullable|exists:image_categories,id',
             'is_active' => 'boolean',
         ];
@@ -102,7 +113,10 @@ new class extends Component {
     // Xử lý khi upload ảnh banner
     public function updatedBannerImage(): void
     {
-        $this->validateOnly('bannerImage');
+        // ĐÃ SỬA: Chỉ validate quy tắc hình ảnh, không validate 'required' khi chỉ cập nhật
+        $this->validate([
+            'bannerImage' => 'image|max:2048'
+        ]); 
         if ($this->bannerImage) {
             $this->bannerPreview = $this->bannerImage->temporaryUrl();
         }
@@ -192,7 +206,7 @@ new class extends Component {
                 'is_active' => $this->is_active,
             ];
 
-            // Xử lý upload ảnh banner
+            // Xử lý upload ảnh banner (Chỉ lưu nếu có bannerImage MỚI)
             if ($this->bannerImage) {
                 $bannerPath = $this->bannerImage->store('image-categories/banners', 'public');
                 $data['banner_image'] = $bannerPath;
@@ -337,6 +351,7 @@ new class extends Component {
                     <flux:field>
                         <flux:label>Ảnh Banner <span class="text-red-500">*</span></flux:label>
                         
+                        {{-- ĐÃ SỬA: Chỉ hiển thị ảnh và nút xóa trong @if --}}
                         @if($bannerPreview)
                             <div class="mb-4">
                                 <img 
@@ -344,7 +359,6 @@ new class extends Component {
                                     alt="Banner Preview" 
                                     class="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                                 />
-                                {{-- ĐÃ SỬA: Tăng mt-2 thành mt-4 để thêm khoảng cách --}}
                                 <div class="mt-4 flex gap-2"> 
                                     <flux:button 
                                         type="button" 
@@ -361,11 +375,15 @@ new class extends Component {
                             </div>
                         @endif
 
+                        {{-- ĐÃ SỬA: Đưa input ra ngoài @if để chỉ có 1 input duy nhất --}}
                         <flux:input 
                             type="file" 
                             wire:model="bannerImage"
                             accept="image/*"
                         />
+                        
+                        {{-- ĐÃ SỬA: Xóa khối @else --}}
+
                         <flux:error name="bannerImage" />
                         <flux:description>Chọn ảnh banner cho danh mục (tối đa 2MB)</flux:description>
                     </flux:field>
