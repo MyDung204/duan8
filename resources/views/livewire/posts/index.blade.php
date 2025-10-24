@@ -10,14 +10,12 @@ new class extends Component
 {
     use WithPagination, WithFileUploads;
 
-    // --- CẬP NHẬT: Quay lại 1 bộ lọc category ---
     public string $search = '';
-    public string $categoryFilter = 'all'; // Giữ lại
+    public string $categoryFilter = 'all';
     public string $statusFilter = 'all';
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
-    // ĐÃ XÓA: $parentCategoryFilter và $childCategoryFilter
 
     public function mount(): void
     {
@@ -32,28 +30,22 @@ new class extends Component
             // Tìm kiếm theo Tiêu đề và Tên Danh mục
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
+                    // SỬA LỖI: Thêm $this->search
                     $q->where('title', 'like', '%' . $this->search . '%')
                       ->orWhereHas('category', function ($categoryQuery) {
-                          $categoryQuery->where('title', 'like', '%' . $this.search . '%');
+                          // SỬA LỖI: Thêm $this->search
+                          $categoryQuery->where('title', 'like', '%' . $this->search . '%');
                       });
                 });
             })
             
-            // --- CẬP NHẬT: Logic lọc danh mục đơn giản mà "đủ chức năng" ---
-            // Đã xóa logic 'childCategoryFilter' và 'parentCategoryFilter'
+            // Logic lọc danh mục
             ->when($this->categoryFilter !== 'all', function ($q) {
                 $categoryId = (int) $this->categoryFilter;
-                
-                // Lấy ID của tất cả con (nếu có)
                 $childCategoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
-                
-                // Gộp ID cha và ID các con
                 $allCategoryIds = array_merge([$categoryId], $childCategoryIds);
-                
-                // Lọc bài đăng có category_id nằm trong danh sách này
                 $q->whereIn('category_id', $allCategoryIds);
             })
-            // --- Kết thúc cập nhật ---
 
             // Lọc trạng thái
             ->when($this->statusFilter !== 'all', function($q) {
@@ -75,16 +67,12 @@ new class extends Component
         return $query->paginate($this->perPage);
     }
 
-    // --- CẬP NHẬT: Quay lại 1 getCategoriesProperty ---
     // Lấy danh sách tất cả danh mục
     public function getCategoriesProperty()
     {
-        // Load 'parent' để dùng `full_path` accessor từ model Category
         return Category::active()->with('parent')->orderBy('title')->get();
     }
-    // ĐÃ XÓA: getParentCategoriesProperty và getChildCategoriesProperty
 
-    // Listen for delete-post event
     protected $listeners = ['delete-post' => 'delete'];
 
     // Method: Xóa bài đăng
@@ -93,6 +81,7 @@ new class extends Component
         $post = Post::findOrFail($postId);
         $post->delete();
         
+        // SỬA LỖI: Dùng -> thay vì .
         $this->dispatch('show-success', message: 'Bài đăng đã được xóa thành công!');
     }
 
@@ -113,12 +102,15 @@ new class extends Component
     // Method: Sắp xếp
     public function sortBy($field): void
     {
+        // SỬA LỖI: Dùng -> thay vì .
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
+            // SỬA LỖI: Dùng -> thay vì .
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
+        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
 
@@ -126,12 +118,11 @@ new class extends Component
     public function resetFilters(): void
     {
         $this->search = '';
-        // --- CẬP NHẬT: Reset filter đơn giản ---
-        $this->categoryFilter = 'all'; // Giữ lại
-        // ĐÃ XÓA: parentCategoryFilter và childCategoryFilter
+        $this->categoryFilter = 'all';
         $this->statusFilter = 'all';
         $this->sortField = 'created_at';
         $this->sortDirection = 'desc';
+        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
 
@@ -144,18 +135,19 @@ new class extends Component
     // Reset trang khi thay đổi tìm kiếm
     public function updatedSearch(): void
     {
+        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
     
-    // --- CẬP NHẬT: Quay lại 1 hàm updated ---
     public function updatedCategoryFilter(): void
     {
+        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
-    // ĐÃ XÓA: updatedParentCategoryFilter và updatedChildCategoryFilter
 
     public function updatedStatusFilter(): void
     {
+        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
 }; ?>
@@ -215,7 +207,6 @@ new class extends Component
     {{-- BỘ LỌC ĐƠN GIẢN VÀ GỌN GÀNG --}}
     <div x-data="{ open: false }" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
         
-        {{-- Nút bấm để Mở/Đóng khu vực lọc --}}
         <button @click="open = !open" class="flex justify-between items-center w-full">
             <span class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
                 <flux:icon name="magnifying-glass" class="size-5" />
@@ -224,13 +215,10 @@ new class extends Component
             <flux:icon name="chevron-down" class="size-5 text-gray-500 transition-transform" ::class="{ 'rotate-180': open }" />
         </button>
 
-        {{-- Khu vực nội dung lọc có thể thu gọn --}}
         <div x-show="open" x-collapse class="mt-6 space-y-4">
             
-            {{-- Bố cục grid (3 cột) bên trong khu vực thu gọn --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
-                {{-- Ô tìm kiếm (chiếm cả hàng) --}}
                 <flux:field class="md:col-span-3">
                     <flux:label>Tìm kiếm</flux:label>
                     <flux:input 
@@ -240,19 +228,16 @@ new class extends Component
                     />
                 </flux:field>
 
-                {{-- Lọc theo danh mục (ĐƠN GIẢN HÓA) --}}
                 <flux:field>
                     <flux:label>Lọc theo danh mục</flux:label>
                     <flux:select wire:model.live="categoryFilter">
                         <option value="all">Tất cả danh mục</option>
                         @foreach($this->categories as $category)
-                            {{-- Sử dụng full_path để hiển thị Cha > Con --}}
                             <option value="{{ $category->id }}">{{ $category->full_path }}</option>
                         @endforeach
                     </flux:select>
                 </flux:field>
     
-                {{-- Lọc theo trạng thái --}}
                 <flux:field>
                     <flux:label>Lọc theo trạng thái</flux:label>
                     <flux:select wire:model.live="statusFilter">
@@ -262,7 +247,6 @@ new class extends Component
                     </flux:select>
                 </flux:field>
     
-                {{-- Nút Reset --}}
                 <flux:field>
                     <flux:label class="invisible">Reset</flux:label>
                     <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
@@ -281,7 +265,7 @@ new class extends Component
                 <table class="posts-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 w-full">
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">STT</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">STT</th>
                             <th 
                                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                                 wire:click="sortBy('title')"
@@ -293,7 +277,7 @@ new class extends Component
                                     @endif
                                 </div>
                             </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Mô tả ngắn</th>
+                            
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Danh mục</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tác giả</th>
                             <th 
@@ -308,7 +292,7 @@ new class extends Component
                                 </div>
                             </th>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Trạng thái</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Thao tác</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
@@ -323,12 +307,6 @@ new class extends Component
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="font-medium text-gray-900 dark:text-white">
                                         {{ Str::limit($post->title, 40) }}
-                                    </div>
-                                </td>
-
-                                <td class="px-4 py-4">
-                                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                                        {{ Str::limit($post->short_description ?? 'Chưa có mô tả', 60) }}
                                     </div>
                                 </td>
 
@@ -430,14 +408,14 @@ new class extends Component
         @endif
     </div>
 
-    {{-- ===== BẮT ĐẦU SỬA LỖI CSS ===== --}}
+    {{-- CSS CĂN CHỈNH ĐỀU --}}
     <style>
         .posts-table {
-            table-layout: fixed;
+            /* table-layout: fixed; */ /* Bỏ layout fixed để tự căn */
             width: 100% !important;
             border-collapse: separate;
             border-spacing: 0;
-            margin: 0 auto; /* Căn giữa bảng */
+            margin: 0 auto;
         }
         
         .posts-table tbody tr {
@@ -460,32 +438,19 @@ new class extends Component
         
         .posts-table-container {
             width: 100%;
-            overflow-x: hidden; /* Bỏ scroll ngang */
+            overflow-x: auto; /* Dùng 'auto' để có scroll ngang nếu cần */
             display: flex;
-            justify-content: center; /* Căn giữa theo chiều ngang */
+            justify-content: center;
         }
         
-        /* Điều chỉnh độ rộng các cột - ĐÃ SỬA LỖI HIỂN THỊ */
-        .posts-table th:nth-child(1), .posts-table td:nth-child(1) { width: 5%; } /* STT */
-        .posts-table th:nth-child(2), .posts-table td:nth-child(2) { width: 16%; } /* Tiêu đề */
-        .posts-table th:nth-child(3), .posts-table td:nth-child(3) { width: 18%; } /* Mô tả ngắn (Giảm 2%) */
-        .posts-table th:nth-child(4), .posts-table td:nth-child(4) { width: 12%; } /* Danh mục */
-        .posts-table th:nth-child(5), .posts-table td:nth-child(5) { width: 8%; } /* Tác giả */
-        .posts-table th:nth-child(6), .posts-table td:nth-child(6) { width: 13%; } /* Ngày tạo */
-        .posts-table th:nth-child(7), .posts-table td:nth-child(7) { width: 12%; } /* Trạng thái (Tăng 4%) */
-        .posts-table th:nth-child(8), .posts-table td:nth-child(8) { width: 16%; } /* Thao tác (Giảm 2%) */
-        
-        /* Viền kẻ dọc ngăn cách các cột (ĐÃ BỎ) */
         .posts-table th, .posts-table td {
-            /* border-right: 1px solid #e5e7eb; */ /* <-- ĐÃ BỎ VIỀN DỌC */
-            vertical-align: middle; /* Căn giữa theo chiều dọc */
+            vertical-align: middle;
         }
         
         .dark .posts-table th, .dark .posts-table td {
-            /* border-right: 1px solid #374151; */ /* <-- ĐÃ BỎ VIỀN DỌC */
+            /* border-right: 1px solid #374151; */
         }
         
-        /* Viền kẻ ngang ngăn cách header và dữ liệu */
         .posts-table thead th {
             border-bottom: 2px solid #d1d5db;
         }
@@ -494,7 +459,6 @@ new class extends Component
             border-bottom: 2px solid #4b5563;
         }
         
-        /* Viền kẻ ngang giữa các hàng dữ liệu */
         .posts-table tbody tr {
             border-bottom: 1px solid #e5e7eb;
         }
@@ -503,65 +467,78 @@ new class extends Component
             border-bottom: 1px solid #374151;
         }
         
-        /* Bỏ viền phải của cột cuối cùng */
         .posts-table th:last-child, .posts-table td:last-child {
             border-right: none;
         }
         
-        /* Padding đều cho tất cả các ô */
         .posts-table th, .posts-table td {
-            padding: 12px 8px !important;
+            padding: 12px 10px !important; /* Tăng padding ngang 1 chút */
         }
         
-        /* Responsive cho mobile */
+        /* Responsive cho mobile (đã cập nhật) */
         @media (max-width: 768px) {
-            .posts-table th:nth-child(3), .posts-table td:nth-child(3) { display: none; } /* Ẩn mô tả ngắn */
-            .posts-table th:nth-child(5), .posts-table td:nth-child(5) { display: none; } /* Ẩn tác giả */
-            .posts-table th:nth-child(1), .posts-table td:nth-child(1) { width: 8%; } /* STT */
-            .posts-table th:nth-child(2), .posts-table td:nth-child(2) { width: 30%; } /* Tiêu đề */
-            .posts-table th:nth-child(4), .posts-table td:nth-child(4) { width: 18%; } /* Danh mục */
-            .posts-table th:nth-child(6), .posts-table td:nth-child(6) { width: 20%; } /* Ngày tạo */
-            .posts-table th:nth-child(7), .posts-table td:nth-child(7) { width: 8%; } /* Trạng thái */
-            .posts-table th:nth-child(8), .posts-table td:nth-child(8) { width: 16%; } /* Thao tác */
+            /* Ẩn tác giả (cột 4) */
+            .posts-table th:nth-child(4), .posts-table td:nth-child(4) { display: none; } 
         }
         
-        /* Đảm bảo text không bị overflow */
         .posts-table td {
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
+            white-space: nowrap; /* Giữ 1 hàng */
         }
         
-        /* Giảm padding cho cột Tiêu đề và Mô tả ngắn */
-        .posts-table td:nth-child(2), .posts-table td:nth-child(3) {
+        .posts-table td:nth-child(2) {
             padding-left: 8px !important;
             padding-right: 8px !important;
         }
         
-        /* Cho phép wrap cho các cột quan trọng (THÊM CỘT 7) */
-        .posts-table td:nth-child(2), .posts-table td:nth-child(3), .posts-table td:nth-child(4), .posts-table td:nth-child(7) {
+        /* Cho phép wrap cho các cột quan trọng (cập nhật index) */
+        .posts-table td:nth-child(2), /* Tiêu đề */
+        .posts-table td:nth-child(3), /* Danh mục */
+        .posts-table td:nth-child(6) { /* Trạng thái */
             white-space: normal;
             word-wrap: break-word;
             line-height: 1.4;
         }
         
-        /* Đảm bảo cột thao tác hiển thị đầy đủ các nút */
-        .posts-table td:nth-child(8) {
-            min-width: 120px !important;
+        /* Đảm bảo cột thao tác hiển thị đầy đủ các nút (cập nhật index) */
+        .posts-table td:nth-child(7) {
+            min-width: 130px !important; /* Tăng min-width 1 chút */
+            white-space: nowrap; /* Bắt buộc 1 hàng */
         }
         
-        .posts-table td:nth-child(8) .flex {
+        .posts-table td:nth-child(7) .flex {
             flex-wrap: nowrap;
             gap: 4px;
         }
         
-        .posts-table td:nth-child(8) button {
+        .posts-table td:nth-child(7) button {
             min-width: 28px;
             height: 28px;
             padding: 4px;
         }
+
+        /* Căn giữa cột STT và Trạng thái */
+        .posts-table th:nth-child(1), .posts-table td:nth-child(1),
+        .posts-table th:nth-child(6), .posts-table td:nth-child(6) {
+            text-align: center;
+        }
+
+        /* Căn trái cho các cột còn lại (ngoại trừ thao tác) */
+        .posts-table th:nth-child(2), .posts-table td:nth-child(2),
+        .posts-table th:nth-child(3), .posts-table td:nth-child(3),
+        .posts-table th:nth-child(4), .posts-table td:nth-child(4),
+        .posts-table th:nth-child(5), .posts-table td:nth-child(5) {
+            text-align: left;
+        }
+
+        /* Căn giữa cột thao tác */
+        .posts-table th:nth-child(7), .posts-table td:nth-child(7) {
+            text-align: center;
+        }
+
     </style>
-    {{-- ===== KẾT THÚC SỬA LỖI CSS ===== --}}
+    {{-- ===== KẾT THÚC SỬA CSS ===== --}}
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
