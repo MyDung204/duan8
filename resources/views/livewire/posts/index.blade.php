@@ -10,22 +10,18 @@ new class extends Component
 {
     use WithPagination, WithFileUploads;
 
-    // Thuộc tính cho tìm kiếm và lọc
+    // --- CẬP NHẬT: Quay lại 1 bộ lọc category ---
     public string $search = '';
-    public string $categoryFilter = 'all';
+    public string $categoryFilter = 'all'; // Giữ lại
     public string $statusFilter = 'all';
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';
     public int $perPage = 10;
+    // ĐÃ XÓA: $parentCategoryFilter và $childCategoryFilter
 
-    // Mount component với parameter từ URL
     public function mount(): void
     {
-        // Lấy category từ request parameter
-        $categoryId = request()->get('category');
-        if ($categoryId) {
-            $this->categoryFilter = $categoryId;
-        }
+        // (Không có logic mount)
     }
 
     // Thuộc tính tính toán - lấy danh sách bài đăng
@@ -33,20 +29,33 @@ new class extends Component
     {
         $query = Post::query()
             ->with('category')
-            // TỐI ƯU THEO YÊU CẦU: Chỉ tìm kiếm theo Tiêu đề và Tên Danh mục
+            // Tìm kiếm theo Tiêu đề và Tên Danh mục
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    // 1. Tìm theo tiêu đề bài đăng (posts.title)
                     $q->where('title', 'like', '%' . $this->search . '%')
-                      
-                      // 2. Tìm theo tên danh mục (categories.title) qua relationship
                       ->orWhereHas('category', function ($categoryQuery) {
-                          $categoryQuery->where('title', 'like', '%' . $this->search . '%');
+                          $categoryQuery->where('title', 'like', '%' . $this.search . '%');
                       });
                 });
             })
-            // Giữ nguyên các bộ lọc khác
-            ->when($this->categoryFilter !== 'all', fn($q) => $q->byCategory($this->categoryFilter))
+            
+            // --- CẬP NHẬT: Logic lọc danh mục đơn giản mà "đủ chức năng" ---
+            // Đã xóa logic 'childCategoryFilter' và 'parentCategoryFilter'
+            ->when($this->categoryFilter !== 'all', function ($q) {
+                $categoryId = (int) $this->categoryFilter;
+                
+                // Lấy ID của tất cả con (nếu có)
+                $childCategoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
+                
+                // Gộp ID cha và ID các con
+                $allCategoryIds = array_merge([$categoryId], $childCategoryIds);
+                
+                // Lọc bài đăng có category_id nằm trong danh sách này
+                $q->whereIn('category_id', $allCategoryIds);
+            })
+            // --- Kết thúc cập nhật ---
+
+            // Lọc trạng thái
             ->when($this->statusFilter !== 'all', function($q) {
                 if ($this->statusFilter === 'published') {
                     $q->published();
@@ -66,11 +75,14 @@ new class extends Component
         return $query->paginate($this->perPage);
     }
 
-    // Thuộc tính tính toán - Lấy danh sách danh mục cho filter
+    // --- CẬP NHẬT: Quay lại 1 getCategoriesProperty ---
+    // Lấy danh sách tất cả danh mục
     public function getCategoriesProperty()
     {
-        return Category::active()->orderBy('title')->get();
+        // Load 'parent' để dùng `full_path` accessor từ model Category
+        return Category::active()->with('parent')->orderBy('title')->get();
     }
+    // ĐÃ XÓA: getParentCategoriesProperty và getChildCategoriesProperty
 
     // Listen for delete-post event
     protected $listeners = ['delete-post' => 'delete'];
@@ -114,7 +126,9 @@ new class extends Component
     public function resetFilters(): void
     {
         $this->search = '';
-        $this->categoryFilter = 'all';
+        // --- CẬP NHẬT: Reset filter đơn giản ---
+        $this->categoryFilter = 'all'; // Giữ lại
+        // ĐÃ XÓA: parentCategoryFilter và childCategoryFilter
         $this->statusFilter = 'all';
         $this->sortField = 'created_at';
         $this->sortDirection = 'desc';
@@ -124,7 +138,6 @@ new class extends Component
     // Method: Xuất Excel
     public function exportExcel(): void
     {
-        // TODO: Implement Excel export
         session()->flash('info', 'Tính năng xuất Excel sẽ được triển khai sớm!');
     }
 
@@ -133,12 +146,13 @@ new class extends Component
     {
         $this->resetPage();
     }
-
-    // Reset trang khi thay đổi filter
+    
+    // --- CẬP NHẬT: Quay lại 1 hàm updated ---
     public function updatedCategoryFilter(): void
     {
         $this->resetPage();
     }
+    // ĐÃ XÓA: updatedParentCategoryFilter và updatedChildCategoryFilter
 
     public function updatedStatusFilter(): void
     {
@@ -198,45 +212,68 @@ new class extends Component
     </div>
     @endif
 
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <flux:field>
-                <flux:label>Tìm kiếm</flux:label>
-                <flux:input 
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="Tìm theo tiêu đề, danh mục..."
-                    icon="magnifying-glass"
-                />
-            </flux:field>
+    {{-- BỘ LỌC ĐƠN GIẢN VÀ GỌN GÀNG --}}
+    <div x-data="{ open: false }" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+        
+        {{-- Nút bấm để Mở/Đóng khu vực lọc --}}
+        <button @click="open = !open" class="flex justify-between items-center w-full">
+            <span class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                <flux:icon name="magnifying-glass" class="size-5" />
+                Tìm kiếm & Lọc
+            </span>
+            <flux:icon name="chevron-down" class="size-5 text-gray-500 transition-transform" ::class="{ 'rotate-180': open }" />
+        </button>
 
-            <flux:field>
-                <flux:label>Lọc theo danh mục</flux:label>
-                <flux:select wire:model.live="categoryFilter">
-                    <option value="all">Tất cả danh mục</option>
-                    @foreach($this->categories as $category)
-                        <option value="{{ $category->id }}">{{ $category->title }}</option>
-                    @endforeach
-                </flux:select>
-            </flux:field>
+        {{-- Khu vực nội dung lọc có thể thu gọn --}}
+        <div x-show="open" x-collapse class="mt-6 space-y-4">
+            
+            {{-- Bố cục grid (3 cột) bên trong khu vực thu gọn --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {{-- Ô tìm kiếm (chiếm cả hàng) --}}
+                <flux:field class="md:col-span-3">
+                    <flux:label>Tìm kiếm</flux:label>
+                    <flux:input 
+                        wire:model.live.debounce.300ms="search"
+                        placeholder="Tìm theo tiêu đề, danh mục..."
+                        icon="magnifying-glass"
+                    />
+                </flux:field>
 
-            <flux:field>
-                <flux:label>Lọc theo trạng thái</flux:label>
-                <flux:select wire:model.live="statusFilter">
-                    <option value="all">Tất cả trạng thái</option>
-                    <option value="published">Đã xuất bản</option>
-                    <option value="draft">Bản nháp</option>
-                </flux:select>
-            </flux:field>
-
-            <flux:field>
-                <flux:label class="invisible">Reset</flux:label>
-                <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
-                    <flux:icon name="arrow-path" class="size-4" />
-                    Reset bộ lọc
-                </flux:button>
-            </flux:field>
+                {{-- Lọc theo danh mục (ĐƠN GIẢN HÓA) --}}
+                <flux:field>
+                    <flux:label>Lọc theo danh mục</flux:label>
+                    <flux:select wire:model.live="categoryFilter">
+                        <option value="all">Tất cả danh mục</option>
+                        @foreach($this->categories as $category)
+                            {{-- Sử dụng full_path để hiển thị Cha > Con --}}
+                            <option value="{{ $category->id }}">{{ $category->full_path }}</option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+    
+                {{-- Lọc theo trạng thái --}}
+                <flux:field>
+                    <flux:label>Lọc theo trạng thái</flux:label>
+                    <flux:select wire:model.live="statusFilter">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="published">Đã xuất bản</option>
+                        <option value="draft">Bản nháp</option>
+                    </flux:select>
+                </flux:field>
+    
+                {{-- Nút Reset --}}
+                <flux:field>
+                    <flux:label class="invisible">Reset</flux:label>
+                    <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
+                        <flux:icon name="arrow-path" class="size-4" />
+                        Reset bộ lọc
+                    </flux:button>
+                </flux:field>
+            </div>
         </div>
     </div>
+    {{-- KẾT THÚC BỘ LỌC --}}
 
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mx-auto max-w-7xl">
         @if($this->posts->count() > 0)
@@ -393,6 +430,7 @@ new class extends Component
         @endif
     </div>
 
+    {{-- ===== BẮT ĐẦU SỬA LỖI CSS ===== --}}
     <style>
         .posts-table {
             table-layout: fixed;
@@ -427,15 +465,15 @@ new class extends Component
             justify-content: center; /* Căn giữa theo chiều ngang */
         }
         
-        /* Điều chỉnh độ rộng các cột - tối ưu để hiển thị đầy đủ */
+        /* Điều chỉnh độ rộng các cột - ĐÃ SỬA LỖI HIỂN THỊ */
         .posts-table th:nth-child(1), .posts-table td:nth-child(1) { width: 5%; } /* STT */
         .posts-table th:nth-child(2), .posts-table td:nth-child(2) { width: 16%; } /* Tiêu đề */
-        .posts-table th:nth-child(3), .posts-table td:nth-child(3) { width: 20%; } /* Mô tả ngắn */
+        .posts-table th:nth-child(3), .posts-table td:nth-child(3) { width: 18%; } /* Mô tả ngắn (Giảm 2%) */
         .posts-table th:nth-child(4), .posts-table td:nth-child(4) { width: 12%; } /* Danh mục */
         .posts-table th:nth-child(5), .posts-table td:nth-child(5) { width: 8%; } /* Tác giả */
         .posts-table th:nth-child(6), .posts-table td:nth-child(6) { width: 13%; } /* Ngày tạo */
-        .posts-table th:nth-child(7), .posts-table td:nth-child(7) { width: 8%; } /* Trạng thái */
-        .posts-table th:nth-child(8), .posts-table td:nth-child(8) { width: 18%; } /* Thao tác */
+        .posts-table th:nth-child(7), .posts-table td:nth-child(7) { width: 12%; } /* Trạng thái (Tăng 4%) */
+        .posts-table th:nth-child(8), .posts-table td:nth-child(8) { width: 16%; } /* Thao tác (Giảm 2%) */
         
         /* Viền kẻ dọc ngăn cách các cột (ĐÃ BỎ) */
         .posts-table th, .posts-table td {
@@ -500,8 +538,8 @@ new class extends Component
             padding-right: 8px !important;
         }
         
-        /* Cho phép wrap cho các cột quan trọng */
-        .posts-table td:nth-child(2), .posts-table td:nth-child(3), .posts-table td:nth-child(4) {
+        /* Cho phép wrap cho các cột quan trọng (THÊM CỘT 7) */
+        .posts-table td:nth-child(2), .posts-table td:nth-child(3), .posts-table td:nth-child(4), .posts-table td:nth-child(7) {
             white-space: normal;
             word-wrap: break-word;
             line-height: 1.4;
@@ -523,6 +561,7 @@ new class extends Component
             padding: 4px;
         }
     </style>
+    {{-- ===== KẾT THÚC SỬA LỖI CSS ===== --}}
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>

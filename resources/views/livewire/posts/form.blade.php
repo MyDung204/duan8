@@ -318,7 +318,7 @@ new class extends Component
                                     </div>
                                 </td>
 
-                                <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <td class="px-4 py-4 text-center">
                                     @if($post->is_published)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                                             Đã xuất bản
