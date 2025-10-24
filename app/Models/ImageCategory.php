@@ -17,6 +17,7 @@ class ImageCategory extends Model
      */
     protected $fillable = [
         'title',
+        'slug',
         'short_description',
         'content',
         'author_name',

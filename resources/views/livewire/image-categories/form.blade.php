@@ -10,6 +10,7 @@ new class extends Component {
 
     // Thuộc tính form
     public string $title = '';
+    public string $slug = '';
     public string $short_description = '';
     public string $content = '';
     public string $author_name = '';
@@ -27,6 +28,7 @@ new class extends Component {
     {
         return [
             'title' => 'required|string|max:100',
+            'slug' => 'required|string|max:255|unique:image_categories,slug,' . $this->categoryId,
             'short_description' => 'required|string|max:200',
             'content' => 'required|string|max:1000',
             'author_name' => 'required|string|max:50',
@@ -42,6 +44,9 @@ new class extends Component {
         return [
             'title.required' => 'Tiêu đề là bắt buộc.',
             'title.max' => 'Tiêu đề không được vượt quá 100 ký tự.',
+            'slug.required' => 'Slug là bắt buộc.',
+            'slug.max' => 'Slug không được vượt quá 255 ký tự.',
+            'slug.unique' => 'Slug này đã tồn tại.',
             'short_description.required' => 'Mô tả ngắn là bắt buộc.',
             'short_description.max' => 'Mô tả ngắn không được vượt quá 200 ký tự.',
             'content.required' => 'Nội dung chi tiết là bắt buộc.',
@@ -80,6 +85,7 @@ new class extends Component {
         if ($this->isEditing) {
             $category = ImageCategory::findOrFail($id);
             $this->title = $category->title;
+            $this->slug = $category->slug ?? '';
             $this->short_description = $category->short_description ?? '';
             $this->content = $category->content ?? '';
             $this->author_name = $category->author_name ?? '';
@@ -130,6 +136,8 @@ new class extends Component {
     public function updatedTitle($value): void
     {
         $this->checkCharacterLimit('title', $value);
+        // Tự động tạo slug từ tiêu đề
+        $this->slug = Str::slug($value);
     }
 
     // Xử lý khi thay đổi mô tả ngắn
@@ -176,6 +184,7 @@ new class extends Component {
         try {
             $data = [
                 'title' => $this->title,
+                'slug' => $this->slug,
                 'short_description' => $this->short_description,
                 'content' => $this->content,
                 'author_name' => $this->author_name,
@@ -268,6 +277,19 @@ new class extends Component {
                         <div class="text-sm text-gray-500 mt-1">
                             <span id="title-count">{{ strlen($title) }}</span>/100 ký tự
                         </div>
+                    </flux:field>
+
+                    <!-- Slug -->
+                    <flux:field>
+                        <flux:label>Slug <span class="text-red-500">*</span></flux:label>
+                        <flux:input 
+                            wire:model="slug" 
+                            placeholder="Slug sẽ được tạo tự động..."
+                            readonly
+                            class="bg-gray-50 dark:bg-gray-700"
+                        />
+                        <flux:error name="slug" />
+                        <flux:description>URL-friendly version của tiêu đề (tự động tạo)</flux:description>
                     </flux:field>
 
                     <!-- Short Description -->
