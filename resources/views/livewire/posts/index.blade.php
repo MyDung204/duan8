@@ -33,7 +33,19 @@ new class extends Component
     {
         $query = Post::query()
             ->with('category')
-            ->when($this->search, fn($q) => $q->search($this->search))
+            // TỐI ƯU THEO YÊU CẦU: Chỉ tìm kiếm theo Tiêu đề và Tên Danh mục
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    // 1. Tìm theo tiêu đề bài đăng (posts.title)
+                    $q->where('title', 'like', '%' . $this->search . '%')
+                      
+                      // 2. Tìm theo tên danh mục (categories.title) qua relationship
+                      ->orWhereHas('category', function ($categoryQuery) {
+                          $categoryQuery->where('title', 'like', '%' . $this->search . '%');
+                      });
+                });
+            })
+            // Giữ nguyên các bộ lọc khác
             ->when($this->categoryFilter !== 'all', fn($q) => $q->byCategory($this->categoryFilter))
             ->when($this->statusFilter !== 'all', function($q) {
                 if ($this->statusFilter === 'published') {
@@ -135,7 +147,6 @@ new class extends Component
 }; ?>
 
 <div class="space-y-6">
-    <!-- Header -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý bài đăng</h1>
@@ -157,7 +168,6 @@ new class extends Component
         </div>
     </div>
 
-    <!-- Flash Messages -->
     @if (session()->has('success'))
         <div class="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
             <div class="flex">
@@ -188,20 +198,17 @@ new class extends Component
     </div>
     @endif
 
-    <!-- Filters -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <!-- Tìm kiếm -->
             <flux:field>
                 <flux:label>Tìm kiếm</flux:label>
                 <flux:input 
                     wire:model.live.debounce.300ms="search"
-                    placeholder="Tìm theo tiêu đề, nội dung, tác giả..."
+                    placeholder="Tìm theo tiêu đề, danh mục..."
                     icon="magnifying-glass"
                 />
             </flux:field>
 
-            <!-- Lọc theo danh mục -->
             <flux:field>
                 <flux:label>Lọc theo danh mục</flux:label>
                 <flux:select wire:model.live="categoryFilter">
@@ -212,7 +219,6 @@ new class extends Component
                 </flux:select>
             </flux:field>
 
-            <!-- Lọc theo trạng thái -->
             <flux:field>
                 <flux:label>Lọc theo trạng thái</flux:label>
                 <flux:select wire:model.live="statusFilter">
@@ -222,7 +228,6 @@ new class extends Component
                 </flux:select>
             </flux:field>
 
-            <!-- Reset -->
             <flux:field>
                 <flux:label class="invisible">Reset</flux:label>
                 <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
@@ -233,7 +238,6 @@ new class extends Component
         </div>
     </div>
 
-    <!-- Data Table -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mx-auto max-w-7xl">
         @if($this->posts->count() > 0)
             <div class="posts-table-container">
@@ -273,28 +277,24 @@ new class extends Component
                     <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach($this->posts as $index => $post)
                             <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 w-full">
-                                <!-- STT -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ ($this->posts->currentPage() - 1) * $this->posts->perPage() + $index + 1 }}
                                     </div>
                                 </td>
 
-                                <!-- Tiêu đề -->
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="font-medium text-gray-900 dark:text-white">
                                         {{ Str::limit($post->title, 40) }}
                                     </div>
                                 </td>
 
-                                <!-- Mô tả ngắn -->
                                 <td class="px-4 py-4">
                                     <div class="text-sm text-gray-600 dark:text-gray-400">
                                         {{ Str::limit($post->short_description ?? 'Chưa có mô tả', 60) }}
                                     </div>
                                 </td>
 
-                                <!-- Danh mục -->
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     @if($post->category)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -305,14 +305,12 @@ new class extends Component
                                     @endif
                                 </td>
 
-                                <!-- Tác giả -->
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-white">
                                         {{ Str::limit($post->author_name ?: 'Chưa có', 15) }}
                                     </div>
                                 </td>
 
-                                <!-- Ngày tạo -->
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-600 dark:text-gray-300">
                                         <div class="font-medium">{{ $post->created_date }}</div>
@@ -320,7 +318,6 @@ new class extends Component
                                     </div>
                                 </td>
 
-                                <!-- Trạng thái -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     @if($post->is_published)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -333,10 +330,8 @@ new class extends Component
                                     @endif
                                 </td>
 
-                                <!-- Thao tác -->
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="flex items-center justify-center gap-2">
-                                        <!-- Xem -->
                                         <flux:button 
                                             variant="outline" 
                                             size="sm"
@@ -346,7 +341,6 @@ new class extends Component
                                             <flux:icon name="eye" class="size-4" />
                                         </flux:button>
                                         
-                                        <!-- Sửa -->
                                         <flux:button 
                                             variant="outline" 
                                             size="sm"
@@ -356,7 +350,6 @@ new class extends Component
                                             <flux:icon name="pencil" class="size-4" />
                                         </flux:button>
                                         
-                                        <!-- Xuất bản/Hủy xuất bản -->
                                         <flux:button 
                                             variant="outline" 
                                             size="sm"
@@ -365,7 +358,6 @@ new class extends Component
                                             <flux:icon name="{{ $post->is_published ? 'eye-slash' : 'eye' }}" class="size-4" />
                                         </flux:button>
                                         
-                                        <!-- Xóa -->
                                         <flux:button 
                                             variant="outline" 
                                             size="sm"
@@ -381,7 +373,6 @@ new class extends Component
                 </table>
             </div>
 
-            <!-- Phân trang -->
             <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
                 {{ $this->posts->links() }}
             </div>
@@ -402,7 +393,6 @@ new class extends Component
         @endif
     </div>
 
-    <!-- Custom CSS để đảm bảo bảng gọn và không scroll ngang -->
     <style>
         .posts-table {
             table-layout: fixed;
@@ -447,14 +437,14 @@ new class extends Component
         .posts-table th:nth-child(7), .posts-table td:nth-child(7) { width: 8%; } /* Trạng thái */
         .posts-table th:nth-child(8), .posts-table td:nth-child(8) { width: 18%; } /* Thao tác */
         
-        /* Viền kẻ dọc ngăn cách các cột */
+        /* Viền kẻ dọc ngăn cách các cột (ĐÃ BỎ) */
         .posts-table th, .posts-table td {
-            border-right: 1px solid #e5e7eb;
+            /* border-right: 1px solid #e5e7eb; */ /* <-- ĐÃ BỎ VIỀN DỌC */
             vertical-align: middle; /* Căn giữa theo chiều dọc */
         }
         
         .dark .posts-table th, .dark .posts-table td {
-            border-right: 1px solid #374151;
+            /* border-right: 1px solid #374151; */ /* <-- ĐÃ BỎ VIỀN DỌC */
         }
         
         /* Viền kẻ ngang ngăn cách header và dữ liệu */
@@ -534,7 +524,6 @@ new class extends Component
         }
     </style>
 
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
     document.addEventListener('livewire:init', () => {
