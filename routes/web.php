@@ -15,9 +15,9 @@ Route::view('dashboard', 'dashboard')
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
-    Volt::route('categories', 'image-categories.index')->name('image-categories.index');
-    Volt::route('image-categories/create', 'image-categories.form')->name('image-categories.create');
-    Volt::route('image-categories/edit/{id}', 'image-categories.form')->name('image-categories.edit');
+    Volt::route('categories', 'categories.index')->name('categories.index');
+    Volt::route('categories/create', 'categories.form')->name('categories.create');
+    Volt::route('categories/edit/{id}', 'categories.form')->name('categories.edit');
     
     // Posts Routes
     Volt::route('posts', 'posts.index')->name('posts.index');

@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Post;
-use App\Models\ImageCategory;
+use App\Models\Category;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -57,7 +57,7 @@ new class extends Component
     // Thuộc tính tính toán - Lấy danh sách danh mục cho filter
     public function getCategoriesProperty()
     {
-        return ImageCategory::active()->orderBy('title')->get();
+        return Category::active()->orderBy('title')->get();
     }
 
     // Listen for delete-post event

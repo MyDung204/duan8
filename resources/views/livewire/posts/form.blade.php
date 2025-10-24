@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Post;
-use App\Models\ImageCategory;
+use App\Models\Category;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
@@ -29,7 +29,7 @@ new class extends Component
     // Thuộc tính tính toán - Lấy danh sách danh mục
     public function getCategoriesProperty()
     {
-        return ImageCategory::active()->orderBy('title')->get();
+        return Category::active()->orderBy('title')->get();
     }
 
     // Mount component
@@ -67,7 +67,7 @@ new class extends Component
             'galleryImages.*' => 'nullable|image|max:2048',
             'galleryImages' => 'nullable|array|min:2|max:5',
             'authorName' => 'required|string|max:255',
-            'categoryId' => 'required|exists:image_categories,id',
+            'categoryId' => 'required|exists:categories,id',
             'isPublished' => 'boolean',
         ];
     }

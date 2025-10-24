@@ -248,7 +248,7 @@ new class extends Component {
                 Quản lý các danh mục với cấu trúc cấp cha-con
             </p>
         </div>
-        <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
+        <flux:button variant="primary" :href="route('categories.create')" wire:navigate>
             <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <flux:icon name="plus" class="size-4" />
                 <span>Thêm danh mục mới</span>
@@ -424,7 +424,7 @@ new class extends Component {
                                         <flux:button 
                                             variant="outline" 
                                             size="sm"
-                                            :href="route('image-categories.edit', $category->id)"
+                                            :href="route('categories.edit', $category->id)"
                                             wire:navigate
                                         >
                                             <flux:icon name="pencil" class="size-4" />
@@ -471,7 +471,7 @@ new class extends Component {
                 </p>
                 
                 <div class="mt-6">
-                    <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
+                    <flux:button variant="primary" :href="route('categories.create')" wire:navigate>
                         <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                             <flux:icon name="plus" class="size-4" />
                             <span>Thêm danh mục mới</span>

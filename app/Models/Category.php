@@ -8,8 +8,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
-class ImageCategory extends Model
+class Category extends Model
 {
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
     /**
      * The attributes that are mass assignable.
      *
@@ -55,7 +60,7 @@ class ImageCategory extends Model
      */
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(ImageCategory::class, 'parent_id');
+        return $this->belongsTo(Category::class, 'parent_id');
     }
 
     /**
@@ -63,7 +68,7 @@ class ImageCategory extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(ImageCategory::class, 'parent_id')->orderBy('order', 'desc');
+        return $this->hasMany(Category::class, 'parent_id')->orderBy('order', 'desc');
     }
 
     /**

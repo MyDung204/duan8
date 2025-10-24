@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\ImageCategory;
+use App\Models\Category;
 
 class ImageCategorySeeder extends Seeder
 {
@@ -13,7 +13,7 @@ class ImageCategorySeeder extends Seeder
     public function run(): void
     {
         // Tạo danh mục cha
-        $parent1 = ImageCategory::create([
+        $parent1 = Category::create([
             'title' => 'Du lịch',
             'short_description' => 'Các danh mục về du lịch và khám phá',
             'content' => 'Nội dung chi tiết về du lịch...',
@@ -23,7 +23,7 @@ class ImageCategorySeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $parent2 = ImageCategory::create([
+        $parent2 = Category::create([
             'title' => 'Ẩm thực',
             'short_description' => 'Các món ăn và thức uống',
             'content' => 'Nội dung chi tiết về ẩm thực...',
@@ -33,7 +33,7 @@ class ImageCategorySeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $parent3 = ImageCategory::create([
+        $parent3 = Category::create([
             'title' => 'Thể thao',
             'short_description' => 'Các hoạt động thể thao',
             'content' => 'Nội dung chi tiết về thể thao...',
