@@ -243,7 +243,6 @@ new class extends Component {
 }; ?>
 
 <div class="space-y-6">
-    <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $this->pageTitle }}</h1>
@@ -257,13 +256,10 @@ new class extends Component {
         </flux:button>
     </div>
 
-    <!-- Form -->
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
         <form wire:submit="save" class="space-y-6">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Left Column -->
                 <div class="space-y-6">
-                    <!-- Title -->
                     <flux:field>
                         <flux:label>Tiêu đề <span class="text-red-500">*</span></flux:label>
                         <flux:input 
@@ -279,7 +275,6 @@ new class extends Component {
                         </div>
                     </flux:field>
 
-                    <!-- Slug -->
                     <flux:field>
                         <flux:label>Slug <span class="text-red-500">*</span></flux:label>
                         <flux:input 
@@ -292,7 +287,6 @@ new class extends Component {
                         <flux:description>URL-friendly version của tiêu đề (tự động tạo)</flux:description>
                     </flux:field>
 
-                    <!-- Short Description -->
                     <flux:field>
                         <flux:label>Mô tả ngắn <span class="text-red-500">*</span></flux:label>
                         <flux:textarea 
@@ -308,7 +302,6 @@ new class extends Component {
                         </div>
                     </flux:field>
 
-                    <!-- Content -->
                     <flux:field>
                         <flux:label>Nội dung chi tiết <span class="text-red-500">*</span></flux:label>
                         <flux:textarea 
@@ -324,7 +317,6 @@ new class extends Component {
                         </div>
                     </flux:field>
 
-                    <!-- Author Name -->
                     <flux:field>
                         <flux:label>Tên tác giả <span class="text-red-500">*</span></flux:label>
                         <flux:input 
@@ -341,9 +333,7 @@ new class extends Component {
                     </flux:field>
                 </div>
 
-                <!-- Right Column -->
                 <div class="space-y-6">
-                    <!-- Banner Image Upload -->
                     <flux:field>
                         <flux:label>Ảnh Banner <span class="text-red-500">*</span></flux:label>
                         
@@ -354,15 +344,18 @@ new class extends Component {
                                     alt="Banner Preview" 
                                     class="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-700"
                                 />
-                                <div class="mt-2 flex gap-2">
+                                {{-- ĐÃ SỬA: Tăng mt-2 thành mt-4 để thêm khoảng cách --}}
+                                <div class="mt-4 flex gap-2"> 
                                     <flux:button 
                                         type="button" 
                                         variant="outline" 
                                         size="sm"
                                         wire:click="removeBannerImage"
                                     >
-                                        <flux:icon name="trash" class="size-4" />
-                                        Xóa banner
+                                        <div class="flex items-center gap-1.5">
+                                            <flux:icon name="trash" class="size-4" />
+                                            <span>Xóa banner</span>
+                                        </div>
                                     </flux:button>
                                 </div>
                             </div>
@@ -379,7 +372,6 @@ new class extends Component {
 
                     
 
-                    <!-- Parent Category -->
                     <flux:field>
                         <flux:label>Danh mục cha</flux:label>
                         <flux:select wire:model.blur="parent_id">
@@ -391,7 +383,6 @@ new class extends Component {
                         <flux:description>Chọn danh mục cha để tạo cấu trúc phân cấp</flux:description>
                     </flux:field>
 
-                    <!-- Active Status -->
                     <flux:field>
                         <flux:label>Trạng thái</flux:label>
                         <flux:checkbox 
@@ -404,7 +395,6 @@ new class extends Component {
                 </div>
             </div>
 
-            <!-- Form Actions -->
             <div class="flex items-center justify-end gap-4 border-t border-gray-200 dark:border-gray-700" style="padding-top: 1.5rem;">
                 <flux:button type="button" variant="outline" wire:click="cancel">
                     Hủy
@@ -420,7 +410,6 @@ new class extends Component {
         </form>
     </div>
 
-    <!-- Flash Messages -->
     @if (session()->has('success'))
         <div class="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
             {{ session('success') }}
@@ -433,7 +422,6 @@ new class extends Component {
         </div>
     @endif
 
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
     document.addEventListener('livewire:init', () => {
