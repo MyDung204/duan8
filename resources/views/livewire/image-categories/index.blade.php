@@ -33,41 +33,33 @@ new class extends Component {
     
     public string $sortField = 'title'; // Trường sắp xếp (chỉ còn 'title')
     public string $sortDirection = 'asc'; // Hướng sắp xếp (asc/desc)
-    public int $perPage = 10; // Số danh mục hiển thị mỗi trang
+    public int $perPage = 5; // Số danh mục hiển thị mỗi trang (giảm để luôn có phân trang)
 
     // Thuộc tính tính toán - lấy danh sách danh mục
     public function getCategoriesProperty()
     {
         $query = ImageCategory::query()
             ->with('parent') // Load 'parent' để dùng cho hiển thị path
-            ->withCount('children') // Load count để dùng cho confirm delete
-            ->when($this->search, fn($q) => $q->search($this->search)) // Tìm kiếm theo từ khóa
-            
-            // Xử lý lọc cha: Chỉ chạy khi $parentFilter KHÔNG PHẢI LÀ 'all'
-            ->when($this->parentFilter !== 'all', function ($q) {
-                if ($this->parentFilter === 'is_parent') {
-                    // Lọc: Tất cả danh mục cha (gốc)
-                    $q->whereNull('parent_id');
-                } else {
-                    // Lọc: MỘT danh mục cha CỤ THỂ (theo ID của chính nó)
-                    if (is_numeric($this->parentFilter)) {
-                        $q->where('id', $this->parentFilter); 
-                    }
-                }
-            })
-            
-            // Xử lý lọc con: Chỉ chạy khi $childFilter KHÔNG PHẢI LÀ 'all'
-            ->when($this->childFilter !== 'all', function ($q) {
-                if ($this->childFilter === 'is_child') {
-                    // Lọc: Tất cả danh mục con
-                    $q->whereNotNull('parent_id');
-                } else {
-                    // Lọc: Một danh mục con cụ thể (theo ID của chính nó)
-                    if (is_numeric($this->childFilter)) {
-                        $q->where('id', $this->childFilter);
-                    }
-                }
-            });
+            ->withCount('children'); // Load count để dùng cho confirm delete
+
+        // Tìm kiếm theo từ khóa
+        if ($this->search) {
+            $query->search($this->search);
+        }
+
+        // Xử lý lọc cha: Chỉ chạy khi $parentFilter KHÔNG PHẢI LÀ 'all'
+        if ($this->parentFilter !== 'all') {
+            if (is_numeric($this->parentFilter)) {
+                $query->where('id', $this->parentFilter);
+            }
+        }
+        
+        // Xử lý lọc con: Chỉ chạy khi $childFilter KHÔNG PHẢI LÀ 'all'
+        if ($this->childFilter !== 'all') {
+            if (is_numeric($this->childFilter)) {
+                $query->where('id', $this->childFilter);
+            }
+        }
 
         // Áp dụng sắp xếp
         match ($this->sortField) {
@@ -167,6 +159,84 @@ new class extends Component {
     }
 }; ?>
 
+@push('styles')
+<style>
+    /* Đảm bảo bảng luôn có chiều rộng đầy đủ */
+    .categories-table-container {
+        width: 100%;
+        min-width: 100%;
+        overflow-x: auto;
+    }
+    
+    .categories-table {
+        width: 100% !important;
+        min-width: 100% !important;
+        table-layout: fixed;
+    }
+    
+    /* Đảm bảo các cột có chiều rộng hợp lý */
+    .categories-table th,
+    .categories-table td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Cột STT - chiều rộng cố định */
+    .categories-table th:nth-child(1),
+    .categories-table td:nth-child(1) {
+        width: 60px;
+        min-width: 60px;
+        max-width: 60px;
+    }
+    
+    /* Cột Banner - chiều rộng cố định */
+    .categories-table th:nth-child(2),
+    .categories-table td:nth-child(2) {
+        width: 80px;
+        min-width: 80px;
+        max-width: 80px;
+    }
+    
+    /* Cột Tiêu đề - chiều rộng linh hoạt */
+    .categories-table th:nth-child(3),
+    .categories-table td:nth-child(3) {
+        width: 25%;
+        min-width: 150px;
+    }
+    
+    /* Cột Danh mục - chiều rộng linh hoạt */
+    .categories-table th:nth-child(4),
+    .categories-table td:nth-child(4) {
+        width: 20%;
+        min-width: 120px;
+    }
+    
+    /* Cột Trạng thái - chiều rộng cố định */
+    .categories-table th:nth-child(5),
+    .categories-table td:nth-child(5) {
+        width: 100px;
+        min-width: 100px;
+        max-width: 100px;
+    }
+    
+    /* Cột Thao tác - chiều rộng cố định */
+    .categories-table th:nth-child(6),
+    .categories-table td:nth-child(6) {
+        width: 120px;
+        min-width: 120px;
+        max-width: 120px;
+    }
+    
+    /* Đảm bảo bảng không bị co lại trên mobile */
+    @media (max-width: 768px) {
+        .categories-table-container {
+            min-width: 600px;
+        }
+    }
+</style>
+@endpush
+
 <div class="space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6 ">
         <div>
@@ -189,48 +259,38 @@ new class extends Component {
             <flux:field>
                 <flux:label>Tìm kiếm</flux:label>
                 
-                <flux:input 
-                    wire:model.live.debounce.300ms="search"
-                    placeholder="Tìm theo tiêu đề, mô tả..."
-                    icon="magnifying-glass"
-                    id="searchInput"
-                    :spinner="false"
-                    class="![&_svg:not(:first-child)]:hidden"
-                />
+                 <flux:input 
+                     wire:model.live.debounce.300ms="search"
+                     placeholder="Tìm theo tiêu đề, mô tả..."
+                     icon="magnifying-glass"
+                     id="searchInput"
+                 />
             </flux:field>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-            <flux:field>
-                <flux:label>Lọc danh mục cha</flux:label>
-                <flux:select wire:model.live="parentFilter">
-                    
-                    {{-- ===== THAY ĐỔI QUAN TRỌNG ===== --}}
-                    {{-- Thêm lại tùy chọn 'all' (Mặc định) --}}
-                    <option value="all">Tất cả (Cha & Con)</option>
-                    
-                    <option value="is_parent">Tất cả danh mục cha (gốc)</option>
-                    
-                    @if($this->rootCategories->count() > 0)
-                        <option value="is_parent" disabled>--- Hoặc lọc theo tên cha ---</option>
-                        @foreach($this->rootCategories as $rootCategory)
-                            <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
-                        @endforeach
-                    @endif
-                    
-                </flux:select>
-            </flux:field>
+             <flux:field>
+                 <flux:label>Lọc danh mục cha</flux:label>
+                 <flux:select wire:model.live="parentFilter">
+                     
+                     <option value="all">Tất cả danh mục cha (gốc)</option>
+                     
+                     @if($this->rootCategories->count() > 0)
+                         <option value="is_parent" disabled>--- Hoặc lọc theo tên cha ---</option>
+                         @foreach($this->rootCategories as $rootCategory)
+                             <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
+                         @endforeach
+                     @endif
+                     
+                 </flux:select>
+             </flux:field>
 
             <flux:field>
                 <flux:label>Lọc danh mục con</flux:label>
                 <flux:select wire:model.live="childFilter">
                     
-                    {{-- ===== THAY ĐỔI QUAN TRỌNG ===== --}}
-                    {{-- Thêm lại tùy chọn 'all' (Mặc định) --}}
-                    <option value="all">Tất cả (Cha & Con)</option>
-
-                    <option value="is_child">Tất cả danh mục con</option>
+                    <option value="all">Tất cả danh mục con</option>
                     
                     @if($this->allChildCategories->count() > 0)
                         <option value="all" disabled>--- Lọc theo tên con ---</option>
@@ -250,14 +310,15 @@ new class extends Component {
                         <span>Reset</span>
                     </div>
                 </flux:button>
+                
             </flux:field>
         </div>
     </div>
 
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         @if($this->categories->count() > 0)
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <div class="overflow-x-auto categories-table-container">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 categories-table">
                     <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">STT</th>
@@ -289,19 +350,19 @@ new class extends Component {
                                     </div>
                                 </td>
 
-                                <td class="px-4 py-6 text-center whitespace-nowrap">
-                                    @if($category->banner_image)
-                                        <img 
-                                            src="{{ $category->banner_image_url }}" 
-                                            alt="{{ $category->title }}"
-                                            class="h-12 w-12 rounded-lg object-contain mx-auto"
-                                        />
-                                    @else
-                                        <div class="w-12 h-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
-                                            <flux:icon name="photo" class="size-6 text-gray-400" />
-                                        </div>
-                                    @endif
-                                </td>
+                                 <td class="px-4 py-6 text-center whitespace-nowrap">
+                                     @if($category->banner_image)
+                                         <img 
+                                             src="{{ $category->banner_image_url }}" 
+                                             alt="{{ $category->title }}"
+                                             class="h-12 w-12 rounded-lg object-contain mx-auto"
+                                         />
+                                     @else
+                                         <div class="h-12 w-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
+                                             <flux:icon name="photo" class="size-6 text-gray-400" />
+                                         </div>
+                                     @endif
+                                 </td>
 
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="font-medium text-gray-900 dark:text-white">
@@ -367,33 +428,34 @@ new class extends Component {
                 </table>
             </div>
 
+            <!-- Phân trang luôn hiển thị -->
             <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
                 {{ $this->categories->links() }}
             </div>
-        @else
-            <div 
-                class="text-center" 
-                style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;"
-            > 
-                
-                <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
-                
-                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có danh mục nào</h3>
-                
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                    Bắt đầu bằng cách tạo danh mục đầu tiên của bạn.
-                </p>
-                
-                <div class="mt-6">
-                    <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                            <flux:icon name="plus" class="size-4" />
-                            <span>Thêm danh mục mới</span>
-                        </div>
-                    </flux:button>
-                </div>
-            </div>
-        @endif
+         @else
+             <div 
+                 class="text-center" 
+                 style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;"
+             > 
+                 
+                 <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
+                 
+                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có danh mục nào</h3>
+                 
+                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                     Bắt đầu bằng cách tạo danh mục đầu tiên của bạn.
+                 </p>
+                 
+                 <div class="mt-6">
+                     <flux:button variant="primary" :href="route('image-categories.create')" wire:navigate>
+                         <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                             <flux:icon name="plus" class="size-4" />
+                             <span>Thêm danh mục mới</span>
+                         </div>
+                     </flux:button>
+                 </div>
+             </div>
+         @endif
     </div>
 
 @push('scripts')

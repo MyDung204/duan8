@@ -24,6 +24,7 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('posts', 'posts.index')->name('posts.index');
     Volt::route('posts/create', 'posts.form')->name('posts.create'); 
     Volt::route('posts/edit/{id}', 'posts.form')->name('posts.edit');
+    Volt::route('posts/show/{id}', 'posts.show')->name('posts.show');
 
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
