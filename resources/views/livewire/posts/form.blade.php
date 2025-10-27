@@ -5,7 +5,7 @@ use App\Models\Category;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
-use Livewire\Attributes\On; // Đảm bảo đã "use" Attribute này
+use Livewire\Attributes\On; // SỬA LỖI: Thêm "On" attribute
 
 new class extends Component
 {
@@ -46,6 +46,7 @@ new class extends Component
             $this->categoryId = $post->category_id;
             $this->isPublished = $post->is_published;
             
+            // Load existing images
             if ($post->banner_image) {
                 $this->bannerPreview = $post->banner_image_url;
             }
@@ -56,21 +57,22 @@ new class extends Component
         }
     }
 
-    // Validation rules (Đã sửa)
+    // Validation rules
     protected function rules(): array
     {
-        $bannerRule = 'nullable|image|max:2048';
-        if (!$this->postId && !$this->bannerPreview) { 
-            $bannerRule = 'required|image|max:2048';
-        } elseif ($this->bannerImage) {
-            $bannerRule = 'required|image|max:2048';
+        // SỬA LỖI VALIDATION: Yêu cầu ảnh banner khi tạo mới
+        $bannerRule = 'nullable|image|max:2048'; // Mặc định là không bắt buộc
+        if (!$this->postId && !$this->bannerPreview) { // Nếu là tạo mới VÀ chưa có ảnh (tức là chưa upload)
+            $bannerRule = 'required|image|max:2048'; // Thì yêu cầu bắt buộc
+        } elseif ($this->bannerImage) { // Nếu có file MỚI được upload (kể cả khi edit)
+            $bannerRule = 'required|image|max:2048'; // Thì cũng validate file đó
         }
 
         return [
             'title' => 'required|string|max:255',
             'shortDescription' => 'required|string|max:500',
-            'content' => 'required|string', // Sẽ hoạt động sau khi Trix sync
-            'bannerImage' => $bannerRule,
+            'content' => 'required|string',
+            'bannerImage' => $bannerRule, // Áp dụng quy tắc đã sửa
             'galleryImages.*' => 'nullable|image|max:2048',
             'galleryImages' => 'nullable|array|min:2|max:5',
             'authorName' => 'required|string|max:255',
@@ -79,15 +81,15 @@ new class extends Component
         ];
     }
 
-    // Validation messages (Đã sửa)
+    // Validation messages
     protected function messages(): array
     {
         return [
             'title.required' => 'Tiêu đề là bắt buộc.',
             'shortDescription.required' => 'Mô tả ngắn là bắt buộc.',
             'shortDescription.max' => 'Mô tả ngắn không được vượt quá 500 ký tự.',
-            'content.required' => 'Nội dung là bắt buộc.', 
-            'bannerImage.required' => 'Ảnh banner là bắt buộc.',
+            'content.required' => 'Nội dung là bắt buộc.',
+            'bannerImage.required' => 'Ảnh banner là bắt buộc.', // Thêm message này
             'bannerImage.image' => 'Ảnh banner phải là file ảnh.',
             'bannerImage.max' => 'Ảnh banner không được vượt quá 2MB.',
             'galleryImages.min' => 'Thư viện ảnh phải có ít nhất 2 ảnh.',
@@ -131,22 +133,30 @@ new class extends Component
     // Remove gallery image
     public function removeGalleryImage($index): void
     {
+        // Chuyển mảng galleryImages sang kiểu collection để dễ thao tác
         $images = collect($this->galleryImages);
         $previews = collect($this->galleryPreviews);
+
+        // Xóa phần tử tại index
         $images->forget($index);
         $previews->forget($index);
+
+        // Đặt lại giá trị
         $this->galleryImages = $images->values()->all();
         $this->galleryPreviews = $previews->values()->all();
     }
 
-    // SỬA LỖI: Dùng "On" attribute của Livewire 3
+    // SỬA LỖI TRIX: Dùng "On" attribute
     #[On('sync-content')]
     public function syncContent($content): void
     {
         $this->content = $content;
     }
 
-    // Save post (Đã sửa)
+    // SỬA LỖI TRIX: Xóa listener kiểu cũ
+    // protected $listeners = ['sync-content' => 'syncContent'];
+
+    // Save post
     public function save()
     {
         $this->validate();
@@ -160,11 +170,13 @@ new class extends Component
             'is_published' => $this->isPublished,
         ];
 
+        // Handle banner image
         if ($this->bannerImage) {
             $bannerPath = $this->bannerImage->store('posts/banners', 'public');
             $data['banner_image'] = basename($bannerPath);
         }
 
+        // Handle gallery images
         if (!empty($this->galleryImages)) {
             $galleryPaths = [];
             foreach ($this->galleryImages as $image) {
@@ -176,15 +188,17 @@ new class extends Component
             $data['gallery_images'] = $galleryPaths;
         }
 
-        if ($this->isPublished && !$this->postId) {
+        // Set published_at if publishing
+        if ($this->isPublished && !$this->postId) { // Chỉ set khi tạo mới
             $data['published_at'] = now();
-        } elseif ($this->isPublished && $this->postId) {
+        } elseif ($this->isPublished && $this->postId) { // Xử lý khi cập nhật
             $postCheck = Post::find($this->postId);
-            if (!$postCheck->is_published) {
+            if (!$postCheck->is_published) { // Nếu trước đó chưa publish thì mới set
                 $data['published_at'] = now();
             }
         }
 
+        // SỬA LỖI THÔNG BÁO: Dùng session() flash cho redirect
         if ($this->postId) {
             $post = Post::findOrFail($this->postId);
             $post->update($data);
@@ -205,7 +219,6 @@ new class extends Component
 }; ?>
 
 <div class="space-y-6">
-    {{-- PHẦN HTML GIỮ NGUYÊN --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -284,8 +297,7 @@ new class extends Component
                             name="content" 
                         >
                     </div>
-                    {{-- Dòng này sẽ hiển thị lỗi "Nội dung là bắt buộc" --}}
-                    <flux:error name="content" /> 
+                    <flux:error name="content" />
                     <flux:description>
                         Sử dụng Rich Text Editor với giao diện giống Microsoft Word: in đậm, nghiêng, gạch chân, căn chỉnh, danh sách, liên kết...
                     </flux:description>
@@ -336,21 +348,27 @@ new class extends Component
                     
                     <div wire:loading wire:target="bannerImage" class="text-sm text-blue-500">Đang tải lên...</div>
 
+                    {{-- === SỬA NÚT XÓA ẢNH BANNER === --}}
                     @if($bannerPreview)
-                        <div class="mt-4">
-                            <img src="{{ $bannerPreview }}" alt="Banner Preview" class="w-full h-32 object-cover rounded-lg">
-                            <flux:button 
+                        {{-- Sửa: Bọc ảnh trong div relative --}}
+                        <div class="mt-4 relative group">
+                            {{-- Sửa: Giảm chiều cao từ h-32 thành h-24 --}}
+                            <img src="{{ $bannerPreview }}" alt="Banner Preview" 
+                                 class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                            
+                            {{-- Sửa: Đặt nút "X" vào TRONG góc trên bên phải --}}
+                            <button 
                                 type="button" 
-                                variant="outline" 
-                                size="sm" 
                                 wire:click="removeBannerImage"
-                                class="mt-2"
+                                class="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold hover:bg-opacity-75 transition-colors"
+                                title="Xóa ảnh banner"
                             >
-                                <flux:icon name="trash" class="size-4" />
-                                Xóa ảnh
-                            </flux:button>
+                                &times;
+                            </button>
                         </div>
                     @endif
+                    {{-- === KẾT THÚC SỬA NÚT XÓA ẢNH BANNER === --}}
+
                 </div>
 
                 <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
@@ -381,17 +399,21 @@ new class extends Component
                             </h4>
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 @foreach($galleryPreviews as $index => $preview)
-                                    <div class
-="relative group" wire:key="gallery-preview-{{ $index }}">
+                                    {{-- === SỬA NÚT XÓA THƯ VIỆN ẢNH === --}}
+                                    <div class="relative group" wire:key="gallery-preview-{{ $index }}">
                                         <img src="{{ $preview }}" alt="Gallery Preview {{ $index + 1 }}" class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                        
+                                        {{-- Sửa: Đổi class để đưa nút "X" vào trong góc trên bên phải --}}
                                         <button 
                                             type="button" 
                                             wire:click="removeGalleryImage({{ $index }})"
-                                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                                            class="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold hover:bg-opacity-75 transition-colors"
+                                            title="Xóa ảnh"
                                         >
-                                            ×
+                                            &times;
                                         </button>
                                     </div>
+                                    {{-- === KẾT THÚC SỬA NÚT XÓA THƯ VIỆN ẢNH === --}}
                                 @endforeach
                             </div>
                         </div>
@@ -413,21 +435,27 @@ new class extends Component
             </div>
         </div>
 
-        <div class="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+        {{-- SỬA KHOẢNG TRẮNG NÚT BẤM: Thêm py-8 --}}
+        <div class="flex justify-end gap-3 py-8 border-t border-gray-200 dark:border-gray-700">
             <flux:button variant="outline" :href="route('posts.index')" wire:navigate>
                 Hủy
             </flux:button>
+            
+            {{-- SỬA NÚT TẠO BÀI ĐĂNG: Icon + Chữ --}}
             <flux:button type="submit" variant="primary">
+                {{-- Spinner (hiển thị khi loading) --}}
                 <div wire:loading wire:target="save" class="animate-spin h-4 w-4 border-t-2 border-r-2 border-white rounded-full"></div>
-                <span wire:loading.remove wire:target="save">
+
+                {{-- Content (ẩn khi loading, icon và chữ nằm cạnh nhau) --}}
+                <span wire:loading.remove wire:target="save" class="inline-flex items-center gap-x-1.5">
                     <flux:icon name="check" class="size-4" />
+                    <span>
+                        {{ $postId ? 'Cập nhật bài đăng' : 'Tạo bài đăng' }}
+                    </span>
                 </span>
-                {{ $postId ? 'Cập nhật bài đăng' : 'Tạo bài đăng' }}
             </flux:button>
         </div>
     </form>
-    {{-- HẾT PHẦN HTML --}}
-
 
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
     <script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
@@ -632,7 +660,7 @@ trix-toolbar .trix-dialog .trix-button:hover {
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    {{-- SỬA LỖI JAVASCRIPT TRIỆT ĐỂ --}}
+    {{-- SỬA LỖI TRIX EDITOR TRIỆT ĐỂ (Javascript) --}}
     <script>
     // Hàm khởi tạo Trix
     function initializeTrix() {
@@ -697,7 +725,6 @@ trix-toolbar .trix-dialog .trix-button:hover {
 
         // Đăng ký listener cho SweetAlert (chỉ cần 1 lần)
         // Listener này sẽ KHÔNG chạy ở trang này vì có redirect
-        // Nó được dùng cho các dispatch KHÔNG redirect (như xóa ở trang index)
         Livewire.on('show-success', (event) => {
             Swal.fire({
                 icon: 'success',

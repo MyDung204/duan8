@@ -21,8 +21,7 @@ new class extends Component
 
     public function mount(): void
     {
-        // SỬA LỖI HIỂN THỊ THÔNG BÁO:
-        // Thêm logic để đọc session flash và dispatch sự kiện 'show-toast'
+        // Logic này để hiển thị toast sau khi TẠO MỚI (từ trang form)
         if (session()->has('show_toast_message')) {
             $message = session('show_toast_message');
             // Dùng 'show-toast' để khớp với layout app.blade.php
@@ -38,10 +37,8 @@ new class extends Component
             // Tìm kiếm theo Tiêu đề và Tên Danh mục
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
-                    // SỬA LỖI: Thêm $this->search
                     $q->where('title', 'like', '%' . $this->search . '%')
                       ->orWhereHas('category', function ($categoryQuery) {
-                          // SỬA LỖI: Thêm $this->search
                           $categoryQuery->where('title', 'like', '%' . $this->search . '%');
                       });
                 });
@@ -89,7 +86,7 @@ new class extends Component
         $post = Post::findOrFail($postId);
         $post->delete();
         
-        // SỬA LỖI: Dùng -> thay vì .
+        // Gửi sự kiện 'show-success' mà Javascript (SweetAlert) đang lắng nghe
         $this->dispatch('show-success', message: 'Bài đăng đã được xóa thành công!');
     }
 
@@ -100,25 +97,25 @@ new class extends Component
         
         if ($post->is_published) {
             $post->unpublish();
-            session()->flash('success', 'Bài đăng đã được hủy xuất bản!');
+            // SỬA LỖI: Dùng $this->dispatch() thay vì session()->flash()
+            // Sự kiện 'show-success' sẽ được bắt bởi SweetAlert ở dưới
+            $this->dispatch('show-success', message: 'Bài đăng đã được hủy xuất bản!');
         } else {
             $post->publish();
-            session()->flash('success', 'Bài đăng đã được xuất bản!');
+            // SỬA LỖI: Dùng $this->dispatch() thay vì session()->flash()
+            $this->dispatch('show-success', message: 'Bài đăng đã được xuất bản!');
         }
     }
 
     // Method: Sắp xếp
     public function sortBy($field): void
     {
-        // SỬA LỖI: Dùng -> thay vì .
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            // SỬA LỖI: Dùng -> thay vì .
             $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
-        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
 
@@ -130,7 +127,6 @@ new class extends Component
         $this->statusFilter = 'all';
         $this->sortField = 'created_at';
         $this->sortDirection = 'desc';
-        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
 
@@ -153,26 +149,24 @@ new class extends Component
                 $filename
             );
         } catch (\Exception $e) {
-            session()->flash('error', 'Có lỗi xảy ra khi xuất Excel: ' . $e->getMessage());
+            // Sửa lỗi: Hiển thị lỗi ra SweetAlert
+            $this->dispatch('show-toast', text: 'Có lỗi xảy ra khi xuất Excel: ' . $e->getMessage(), icon: 'error');
         }
     }
 
     // Reset trang khi thay đổi tìm kiếm
     public function updatedSearch(): void
     {
-        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
     
     public function updatedCategoryFilter(): void
     {
-        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
 
     public function updatedStatusFilter(): void
     {
-        // SỬA LỖI: Dùng -> thay vì .
         $this->resetPage();
     }
 }; ?>
@@ -187,9 +181,12 @@ new class extends Component
         </div>
         
         <div class="flex gap-3">
-            <flux:button variant="outline" wire:click="exportExcel">
-                <flux:icon name="arrow-down-tray" class="size-4" />
-                Xuất Excel
+           <flux:button variant="outline" wire:click="exportExcel">
+                {{-- Thêm span để căn chỉnh icon và chữ --}}
+                <span class="inline-flex items-center gap-x-1.5">
+                    <flux:icon name="arrow-down-tray" class="size-4" />
+                    <span>Xuất Excel</span>
+                </span>
             </flux:button>
             
             <flux:button variant="primary" :href="route('posts.create')" wire:navigate>
@@ -199,6 +196,10 @@ new class extends Component
         </div>
     </div>
 
+    {{-- Phần @if (session()->has('success')) này sẽ chỉ hiển thị
+         nếu có một hành động nào đó KHÔNG DÙNG LIVEWIRE
+         nhưng chúng ta đã đổi togglePublished sang dùng dispatch,
+         nên nó sẽ không được dùng cho chức năng đó nữa. --}}
     @if (session()->has('success'))
         <div class="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
             <div class="flex">
@@ -290,8 +291,14 @@ new class extends Component
                 <flux:field>
                     <flux:label class="invisible">Reset</flux:label>
                     <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
-                        <flux:icon name="arrow-path" class="size-4" />
-                        Reset bộ lọc
+                        {{-- 
+                          Class 'gap-x-2' tạo khoảng cách ngang (8px). 
+                          Bạn có thể đổi thành 'gap-x-1.5' (6px) nếu muốn.
+                        --}}
+                        <span class="inline-flex items-center justify-center gap-x-1.5 w-full"> {{-- <== SỬA Ở ĐÂY --}}
+                            <flux:icon name="arrow-path" class="size-4" />
+                            <span>Reset bộ lọc</span>
+                        </span>
                     </flux:button>
                 </flux:field>
             </div>
@@ -337,7 +344,7 @@ new class extends Component
                     </thead>
                     <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach($this->posts as $index => $post)
-                            <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 w-full">
+                            <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 w-full" wire:key="post-{{ $post->id }}">
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ ($this->posts->currentPage() - 1) * $this->posts->perPage() + $index + 1 }}
@@ -409,6 +416,8 @@ new class extends Component
                                             variant="outline" 
                                             size="sm"
                                             wire:click="togglePublished({{ $post->id }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="togglePublished({{ $post->id }})"
                                         >
                                             <flux:icon name="{{ $post->is_published ? 'eye-slash' : 'eye' }}" class="size-4" />
                                         </flux:button>
@@ -583,7 +592,7 @@ new class extends Component
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
     document.addEventListener('livewire:init', () => {
-        // Listener này dùng cho việc XÓA (vì nó dispatch 'show-success')
+        // Listener này dùng cho việc XÓA và TOGGLE STATUS
         Livewire.on('show-success', (event) => {
             Swal.fire({
                 icon: 'success',
@@ -608,6 +617,7 @@ new class extends Component
             cancelButtonText: 'Hủy'
         }).then((result) => {
             if (result.isConfirmed) {
+                // Dispatch sự kiện 'delete-post' mà PHP listener đang lắng nghe
                 Livewire.dispatch('delete-post', { postId: postId });
             }
         });

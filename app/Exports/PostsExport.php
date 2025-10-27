@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Post;
+use App\Models\Category; // SỬA 1: Thêm dòng này để sử dụng Model Category
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -23,23 +24,38 @@ class PostsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         $this->filters = $filters;
     }
 
+    // SỬA 2: Sửa toàn bộ phương thức collection()
     public function collection(): Collection
     {
         $query = Post::query()->with('category');
 
+        // === SỬA LỖI LOGIC TÌM KIẾM ===
+        // Logic này phải khớp với file index.blade.php
         if (!empty($this->filters['search'])) {
-            $query->where(function ($q) {
-                $q->where('title', 'like', '%' . $this->filters['search'] . '%')
-                  ->orWhere('content', 'like', '%' . $this->filters['search'] . '%')
-                  ->orWhere('author_name', 'like', '%' . $this->filters['search'] . '%');
+            $search = $this->filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                  ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                      $categoryQuery->where('title', 'like', '%' . $search . '%');
+                  });
             });
         }
 
+        // === SỬA LỖI LOGIC LỌC DANH MỤC ===
+        // Logic này phải khớp với file index.blade.php (bao gồm cả danh mục con)
         if (!empty($this->filters['categoryFilter']) && $this->filters['categoryFilter'] !== 'all') {
             $categoryId = (int) $this->filters['categoryFilter'];
-            $query->where('category_id', $categoryId);
+            
+            // Lấy ID của các danh mục con
+            $childCategoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
+            // Gộp ID cha và ID con
+            $allCategoryIds = array_merge([$categoryId], $childCategoryIds);
+            
+            // Lọc theo tất cả ID này
+            $query->whereIn('category_id', $allCategoryIds);
         }
 
+        // Logic lọc trạng thái (Đã đúng)
         if (!empty($this->filters['statusFilter']) && $this->filters['statusFilter'] !== 'all') {
             if ($this->filters['statusFilter'] === 'published') {
                 $query->where('is_published', true);
@@ -48,9 +64,17 @@ class PostsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
             }
         }
 
+        // Logic sắp xếp (Đã đúng)
         $sortField = $this->filters['sortField'] ?? 'created_at';
         $sortDirection = $this->filters['sortDirection'] ?? 'desc';
-        $query->orderBy($sortField, $sortDirection);
+        
+        // Đảm bảo sorting field hợp lệ
+        $allowedSortFields = ['title', 'created_at', 'published_at'];
+        if (in_array($sortField, $allowedSortFields)) {
+             $query->orderBy($sortField, $sortDirection);
+        } else {
+             $query->orderBy('created_at', $sortDirection);
+        }
 
         return $query->get();
     }
@@ -71,8 +95,12 @@ class PostsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
 
     public function map($post): array
     {
+        // SỬA 3: Sửa STT để map theo thứ tự 1, 2, 3... thay vì ID
+        static $index = 0;
+        $index++;
+
         return [
-            $post->id,
+            $index, // Thay vì $post->id
             $post->title,
             $post->category?->title ?? 'Chua phan loai',
             $post->author_name ?? 'Chua co',
@@ -138,4 +166,3 @@ class PostsExport implements FromCollection, WithHeadings, WithMapping, WithStyl
         $sheet->getRowDimension('1')->setRowHeight(30);
     }
 }
-
