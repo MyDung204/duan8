@@ -62,25 +62,11 @@ new class extends Component
                 ];
             }
             return $data;
+
         } elseif ($this->chartTimeframe === 'month') {
-            // Data for current month (days in month)
-            $daysInMonth = now()->daysInMonth;
-            $data = [];
-            for ($i = 1; $i <= $daysInMonth; $i++) {
-                $count = Post::whereDay('created_at', $i)
-                    ->whereMonth('created_at', now()->month)
-                    ->whereYear('created_at', now()->year)
-                    ->count();
-                $data[] = [
-                    'label' => (string)$i,
-                    'value' => $count
-                ];
-            }
-            return $data;
-        } else {
-            // Data for year (12 months)
+            // Data for 12 months of current year
             $posts = Post::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-                ->whereYear('created_at', now()->year)
+                ->whereYear('created_at', now()->year) 
                 ->groupBy('month')
                 ->orderBy('month')
                 ->pluck('count', 'month')
@@ -95,14 +81,60 @@ new class extends Component
                 ];
             }
             return $data;
+
+        } else { // 'year'
+            // Data for 5 recent years
+            $startYear = now()->subYears(4)->year;
+            $endYear = now()->year;
+            
+            $posts = Post::selectRaw('YEAR(created_at) as year, COUNT(*) as count')
+                ->whereBetween('created_at', [
+                    now()->subYears(4)->startOfYear(), 
+                    now()->endOfYear()
+                ])
+                ->groupBy('year')
+                ->orderBy('year')
+                ->pluck('count', 'year')
+                ->toArray();
+
+            $data = [];
+            for ($year = $startYear; $year <= $endYear; $year++) {
+                $data[] = [
+                    'label' => (string)$year,
+                    'value' => $posts[$year] ?? 0
+                ];
+            }
+            return $data;
         }
     }
 
+    // === BẮT ĐẦU SỬA LỖI LOGIC PIE CHART ===
     public function getPostsByCategoryProperty()
     {
-        $result = Post::selectRaw('category_id, COUNT(*) as count')
-            ->whereNotNull('category_id')
-            ->groupBy('category_id')
+        $query = Post::query() // Bắt đầu query
+            ->selectRaw('category_id, COUNT(*) as count')
+            ->whereNotNull('category_id');
+
+        // ÁP DỤNG BỘ LỌC THỜI GIAN (GIỐNG HỆT BAR CHART)
+        if ($this->chartTimeframe === 'week') {
+            // 7 ngày gần nhất
+            $query->whereBetween('created_at', [
+                now()->subDays(6)->startOfDay(), 
+                now()->endOfDay()
+            ]);
+        } elseif ($this->chartTimeframe === 'month') {
+            // 12 tháng của năm nay
+            $query->whereYear('created_at', now()->year);
+        } elseif ($this->chartTimeframe === 'year') {
+            // 5 năm gần nhất
+            $query->whereBetween('created_at', [
+                now()->subYears(4)->startOfYear(), 
+                now()->endOfYear()
+            ]);
+        }
+        // Nếu không có timeframe (mặc định), nó sẽ lấy của 'month' (năm nay)
+
+        $result = $query->groupBy('category_id') // Áp dụng groupBy và get
             ->with('category')
             ->get()
             ->map(function ($item) {
@@ -122,6 +154,7 @@ new class extends Component
 
         return $result;
     }
+    // === KẾT THÚC SỬA LỖI LOGIC PIE CHART ===
 
     public function getRecentPostsProperty()
     {
@@ -149,14 +182,11 @@ new class extends Component
 
     public function updatedChartTimeframe()
     {
-        // This method is called when chartTimeframe property changes
-        // It triggers a re-render of the component
         $this->dispatch('chart-updated');
     }
 }; ?>
 
 <div class="space-y-6">
-    <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-white">Dashboard</h1>
@@ -179,7 +209,6 @@ new class extends Component
         </div>
     </div>
 
-    <!-- Main KPI Cards -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-5">
         <div class="rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
@@ -190,7 +219,6 @@ new class extends Component
                 <flux:icon name="document-text" class="size-8 text-white opacity-50" />
             </div>
         </div>
-
         <div class="rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
@@ -200,7 +228,6 @@ new class extends Component
                 <flux:icon name="check-circle" class="size-8 text-white opacity-50" />
             </div>
         </div>
-
         <div class="rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
@@ -210,7 +237,6 @@ new class extends Component
                 <flux:icon name="clipboard-document" class="size-8 text-white opacity-50" />
             </div>
         </div>
-
         <div class="rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
@@ -220,7 +246,6 @@ new class extends Component
                 <flux:icon name="folder" class="size-8 text-white opacity-50" />
             </div>
         </div>
-
         <div class="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
@@ -232,9 +257,7 @@ new class extends Component
         </div>
     </div>
 
-    <!-- Charts Section -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <!-- Bar Chart -->
         <div class="rounded-lg bg-gray-800 p-6 shadow-lg">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-white">Biểu đồ số bài đăng</h2>
@@ -264,7 +287,6 @@ new class extends Component
             </div>
         </div>
 
-        <!-- Pie Chart -->
         <div class="rounded-lg bg-gray-800 p-6 shadow-lg">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-white">Phân bố theo danh mục</h2>
@@ -276,9 +298,7 @@ new class extends Component
         </div>
     </div>
 
-    <!-- Recent Posts and Quick Actions -->
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <!-- Recent Posts -->
         <div class="lg:col-span-2 rounded-lg bg-gray-800 p-6 shadow-lg">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-white">Bài đăng gần đây</h2>
@@ -321,7 +341,6 @@ new class extends Component
             </div>
         </div>
 
-        <!-- Quick Actions -->
         <div class="rounded-lg bg-gray-800 p-6 shadow-lg">
             <h2 class="mb-4 text-xl font-bold text-white">Thao tác nhanh</h2>
             
@@ -347,7 +366,6 @@ new class extends Component
                 </flux:button>
             </div>
 
-            <!-- Additional Stats -->
             <div class="mt-6 space-y-3 rounded-lg bg-gray-700/50 p-4">
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Tuần này</span>
@@ -372,13 +390,15 @@ new class extends Component
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('livewire:init', () => {
-    // Bar Chart - Dynamic by timeframe
+    // === BẮT ĐẦU SỬA LỖI JAVASCRIPT ===
+
+    // --- BAR CHART ---
     const barCanvas = document.getElementById('postsChart');
     const barCtx = barCanvas.getContext('2d');
-    
-    let barChart;
+    let barChart; // Biến toàn cục cho Bar Chart
     
     const updateBarChart = () => {
+        if (!barCanvas) return;
         const labels = JSON.parse(barCanvas.getAttribute('data-chart-labels'));
         const values = JSON.parse(barCanvas.getAttribute('data-chart-values'));
         
@@ -398,67 +418,58 @@ document.addEventListener('livewire:init', () => {
                     borderWidth: 1
                 }]
             },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: '#9CA3AF',
-                        stepSize: 1
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#9CA3AF' },
+                        grid: { color: '#374151' }
                     },
-                    grid: {
-                        color: '#374151'
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: '#9CA3AF'
-                    },
-                    grid: {
-                        display: false
+                    x: {
+                        ticks: { color: '#9CA3AF' },
+                        grid: { display: false }
                     }
                 }
             }
-        }
         });
     };
-    
-    updateBarChart();
-    
-    // Listen for Livewire updates when timeframe changes
-    Livewire.on('$refresh', () => {
-        setTimeout(updateBarChart, 200);
-    });
-    
-    Livewire.on('chart-updated', () => {
-        setTimeout(updateBarChart, 200);
-    });
 
-    // Pie Chart - Posts by Category  
+    // --- PIE CHART ---
     const pieCanvas = document.getElementById('categoryChart');
-    if (pieCanvas) {
+    let pieChart; // Biến toàn cục cho Pie Chart
+    
+    const updatePieChart = () => {
+        if (!pieCanvas) return;
+        
         const pieCtx = pieCanvas.getContext('2d');
-        const pieChartData = JSON.parse(pieCanvas.dataset.chartData);
+        // Lấy dữ liệu MỚI NHẤT từ attribute
+        const pieChartData = JSON.parse(pieCanvas.getAttribute('data-chart-data')); 
+        
+        // Hủy biểu đồ cũ nếu đã tồn tại
+        if (pieChart) {
+            pieChart.destroy();
+        }
         
         const colors = [
             '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', 
             '#10B981', '#EF4444', '#06B6D4', '#F97316'
         ];
         
-        const pieChart = new Chart(pieCtx, {
+        while (pieChartData.length > colors.length) {
+            colors.push(`rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`);
+        }
+        
+        // Vẽ biểu đồ mới
+        pieChart = new Chart(pieCtx, {
             type: 'doughnut',
             data: {
                 labels: pieChartData.map(item => item.label || 'N/A'),
                 datasets: [{
                     data: pieChartData.map(item => parseInt(item.value) || 0),
-                    backgroundColor: colors,
+                    backgroundColor: colors.slice(0, pieChartData.length),
                     borderColor: '#1F2937',
                     borderWidth: 2
                 }]
@@ -477,7 +488,28 @@ document.addEventListener('livewire:init', () => {
                 }
             }
         });
-    }
+    };
+    
+    // --- KHỞI TẠO BIỂU ĐỒ ---
+    updateBarChart();
+    updatePieChart();
+    
+    // --- LẮNG NGHE SỰ KIỆN CẬP NHẬT TỪ LIVEWIRE ---
+    Livewire.on('$refresh', () => {
+        setTimeout(() => {
+            updateBarChart();
+            updatePieChart(); // Cập nhật cả Pie Chart
+        }, 200);
+    });
+    
+    Livewire.on('chart-updated', () => {
+        setTimeout(() => {
+            updateBarChart();
+            updatePieChart(); // Cập nhật cả Pie Chart
+        }, 200);
+    });
+
+    // === KẾT THÚC SỬA LỖI JAVASCRIPT ===
 });
 </script>
 @endpush
