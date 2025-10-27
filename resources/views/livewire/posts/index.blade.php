@@ -13,7 +13,10 @@ new class extends Component
     use WithPagination, WithFileUploads;
 
     public string $search = '';
-    public string $categoryFilter = 'all';
+    // === THAY ĐỔI: Chia bộ lọc danh mục ===
+    public string $parentCategoryFilter = 'all'; // Bộ lọc danh mục cha
+    public string $childCategoryFilter = 'all';  // Bộ lọc danh mục con
+    // === KẾT THÚC THAY ĐỔI ===
     public string $statusFilter = 'all';
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';
@@ -21,10 +24,8 @@ new class extends Component
 
     public function mount(): void
     {
-        // Logic này để hiển thị toast sau khi TẠO MỚI (từ trang form)
         if (session()->has('show_toast_message')) {
             $message = session('show_toast_message');
-            // Dùng 'show-toast' để khớp với layout app.blade.php
             $this->dispatch('show-toast', text: $message['text'], icon: $message['icon']);
         }
     }
@@ -34,7 +35,6 @@ new class extends Component
     {
         $query = Post::query()
             ->with('category')
-            // Tìm kiếm theo Tiêu đề và Tên Danh mục
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('title', 'like', '%' . $this->search . '%')
@@ -43,16 +43,25 @@ new class extends Component
                       });
                 });
             })
-            
-            // Logic lọc danh mục
-            ->when($this->categoryFilter !== 'all', function ($q) {
-                $categoryId = (int) $this->categoryFilter;
+
+            // === THAY ĐỔI: Cập nhật logic lọc theo danh mục ===
+            // Lọc theo danh mục cha (bao gồm cả con trực tiếp của nó)
+            ->when($this->parentCategoryFilter !== 'all', function ($q) {
+                $categoryId = (int) $this->parentCategoryFilter;
+                // Lấy ID của chính nó và các con trực tiếp
+                // Tùy chọn: Nếu bạn muốn lấy TẤT CẢ con cháu (không chỉ con trực tiếp),
+                // bạn sẽ cần một hàm đệ quy trong Model Category để lấy tất cả ID con cháu.
+                // Logic hiện tại chỉ lấy con trực tiếp.
                 $childCategoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
                 $allCategoryIds = array_merge([$categoryId], $childCategoryIds);
                 $q->whereIn('category_id', $allCategoryIds);
             })
+            // Lọc theo danh mục con cụ thể
+            ->when($this->childCategoryFilter !== 'all', function ($q) {
+                $q->where('category_id', (int) $this->childCategoryFilter);
+            })
+            // === KẾT THÚC THAY ĐỔI ===
 
-            // Lọc trạng thái
             ->when($this->statusFilter !== 'all', function($q) {
                 if ($this->statusFilter === 'published') {
                     $q->published();
@@ -61,7 +70,6 @@ new class extends Component
                 }
             });
 
-        // Áp dụng sắp xếp
         match ($this->sortField) {
             'title' => $query->orderBy('title', $this->sortDirection),
             'created_at' => $query->orderBy('created_at', $this->sortDirection),
@@ -72,42 +80,46 @@ new class extends Component
         return $query->paginate($this->perPage);
     }
 
-    // Lấy danh sách tất cả danh mục
-    public function getCategoriesProperty()
+    // === THÊM: Thuộc tính tính toán cho bộ lọc ===
+    // Lấy danh sách danh mục gốc (cha)
+    public function getRootCategoriesProperty()
     {
-        return Category::active()->with('parent')->orderBy('title')->get();
+        return Category::roots()->active()->orderBy('title')->get();
     }
+
+    // Lấy danh sách TẤT CẢ danh mục con
+    public function getChildCategoriesProperty()
+    {
+        // Lấy tất cả danh mục có parent_id (tức là danh mục con)
+        return Category::whereNotNull('parent_id')
+                            ->with('parent') // Load parent để hiển thị đường dẫn đầy đủ
+                            ->active()
+                            ->orderBy('title')
+                            ->get();
+    }
+    // === KẾT THÚC THÊM ===
 
     protected $listeners = ['delete-post' => 'delete'];
 
-    // Method: Xóa bài đăng
     public function delete($postId): void
     {
         $post = Post::findOrFail($postId);
         $post->delete();
-        
-        // Gửi sự kiện 'show-success' mà Javascript (SweetAlert) đang lắng nghe
         $this->dispatch('show-success', message: 'Bài đăng đã được xóa thành công!');
     }
 
-    // Method: Thay đổi trạng thái xuất bản
     public function togglePublished($id): void
     {
         $post = Post::findOrFail($id);
-        
         if ($post->is_published) {
             $post->unpublish();
-            // SỬA LỖI: Dùng $this->dispatch() thay vì session()->flash()
-            // Sự kiện 'show-success' sẽ được bắt bởi SweetAlert ở dưới
             $this->dispatch('show-success', message: 'Bài đăng đã được hủy xuất bản!');
         } else {
             $post->publish();
-            // SỬA LỖI: Dùng $this->dispatch() thay vì session()->flash()
             $this->dispatch('show-success', message: 'Bài đăng đã được xuất bản!');
         }
     }
 
-    // Method: Sắp xếp
     public function sortBy($field): void
     {
         if ($this->sortField === $field) {
@@ -119,51 +131,64 @@ new class extends Component
         $this->resetPage();
     }
 
-    // Method: Reset tất cả filters
     public function resetFilters(): void
     {
         $this->search = '';
-        $this->categoryFilter = 'all';
+        // === THAY ĐỔI: Reset cả hai bộ lọc danh mục ===
+        $this->parentCategoryFilter = 'all';
+        $this->childCategoryFilter = 'all';
+        // === KẾT THÚC THAY ĐỔI ===
         $this->statusFilter = 'all';
         $this->sortField = 'created_at';
         $this->sortDirection = 'desc';
         $this->resetPage();
     }
 
-    // Method: Xuất Excel
     public function exportExcel()
     {
         try {
+            // === THAY ĐỔI: Truyền cả hai bộ lọc danh mục ===
             $filters = [
                 'search' => $this->search,
-                'categoryFilter' => $this->categoryFilter,
+                'parentCategoryFilter' => $this->parentCategoryFilter,
+                'childCategoryFilter' => $this->childCategoryFilter,
                 'statusFilter' => $this->statusFilter,
                 'sortField' => $this->sortField,
                 'sortDirection' => $this->sortDirection,
             ];
+            // === KẾT THÚC THAY ĐỔI ===
 
             $filename = 'danh_sach_bai_dang_' . now()->format('Y-m-d_His') . '.xlsx';
-            
-            return Excel::download(
-                new PostsExport($filters),
-                $filename
-            );
+            return Excel::download(new PostsExport($filters), $filename);
         } catch (\Exception $e) {
-            // Sửa lỗi: Hiển thị lỗi ra SweetAlert
             $this->dispatch('show-toast', text: 'Có lỗi xảy ra khi xuất Excel: ' . $e->getMessage(), icon: 'error');
         }
     }
 
-    // Reset trang khi thay đổi tìm kiếm
     public function updatedSearch(): void
     {
         $this->resetPage();
     }
-    
-    public function updatedCategoryFilter(): void
+
+    // === THÊM: Các hàm updated cho bộ lọc mới ===
+    // Khi lọc cha thay đổi -> TẮT lọc con
+    public function updatedParentCategoryFilter(string $value): void
     {
+        if ($value !== 'all') {
+            $this->childCategoryFilter = 'all'; // Reset bộ lọc con về 'all' (tắt)
+        }
         $this->resetPage();
     }
+
+    // Khi lọc con thay đổi -> TẮT lọc cha
+    public function updatedChildCategoryFilter(string $value): void
+    {
+        if ($value !== 'all') {
+            $this->parentCategoryFilter = 'all'; // Reset bộ lọc cha về 'all' (tắt)
+        }
+        $this->resetPage();
+    }
+    // === KẾT THÚC THÊM ===
 
     public function updatedStatusFilter(): void
     {
@@ -172,6 +197,7 @@ new class extends Component
 }; ?>
 
 <div class="space-y-6">
+    {{-- Header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý bài đăng</h1>
@@ -179,16 +205,13 @@ new class extends Component
                 Quản lý các bài đăng với đầy đủ tính năng
             </p>
         </div>
-        
         <div class="flex gap-3">
            <flux:button variant="outline" wire:click="exportExcel">
-                {{-- Thêm span để căn chỉnh icon và chữ --}}
                 <span class="inline-flex items-center gap-x-1.5">
                     <flux:icon name="arrow-down-tray" class="size-4" />
                     <span>Xuất Excel</span>
                 </span>
             </flux:button>
-            
             <flux:button variant="primary" :href="route('posts.create')" wire:navigate>
                 <flux:icon name="plus" class="size-4" />
                 Thêm bài đăng mới
@@ -196,12 +219,9 @@ new class extends Component
         </div>
     </div>
 
-    {{-- Phần @if (session()->has('success')) này sẽ chỉ hiển thị
-         nếu có một hành động nào đó KHÔNG DÙNG LIVEWIRE
-         nhưng chúng ta đã đổi togglePublished sang dùng dispatch,
-         nên nó sẽ không được dùng cho chức năng đó nữa. --}}
+    {{-- Thông báo --}}
     @if (session()->has('success'))
-        <div class="rounded-md bg-green-50 p-4 dark:bg-green-900/20">
+        <div class="rounded-md bg-green-50 p-4 border border-green-200 dark:bg-green-900 dark:border-green-700">
             <div class="flex">
                 <div class="flex-shrink-0">
                     <flux:icon name="check-circle" class="size-5 text-green-400" />
@@ -214,9 +234,8 @@ new class extends Component
             </div>
         </div>
     @endif
-
     @if (session()->has('info'))
-        <div class="rounded-md bg-blue-50 p-4 dark:bg-blue-900/20">
+         <div class="rounded-md bg-blue-50 p-4 border border-blue-200 dark:bg-blue-900 dark:border-blue-700">
             <div class="flex">
                 <div class="flex-shrink-0">
                     <flux:icon name="information-circle" class="size-5 text-blue-400" />
@@ -229,12 +248,11 @@ new class extends Component
             </div>
         </div>
     @endif
-
     @if (session()->has('error'))
-        <div class="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
+         <div class="rounded-md bg-red-50 p-4 border border-red-200 dark:bg-red-900 dark:border-red-700">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <flux:icon name="exclamation-circle" class="size-5 text-red-400" />
+                    <flux:icon name="x-circle" class="size-5 text-red-400" />
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-red-800 dark:text-red-200">
@@ -245,9 +263,8 @@ new class extends Component
         </div>
     @endif
 
-    {{-- BỘ LỌC ĐƠN GIẢN VÀ GỌN GÀNG --}}
+    {{-- BỘ LỌC --}}
     <div x-data="{ open: false }" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-        
         <button @click="open = !open" class="flex justify-between items-center w-full">
             <span class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
                 <flux:icon name="magnifying-glass" class="size-5" />
@@ -257,28 +274,44 @@ new class extends Component
         </button>
 
         <div x-show="open" x-collapse class="mt-6 space-y-4">
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                
-                <flux:field class="md:col-span-3">
+            {{-- Tìm kiếm --}}
+            <div class="grid grid-cols-1">
+                 <flux:field>
                     <flux:label>Tìm kiếm</flux:label>
-                    <flux:input 
+                    <flux:input
                         wire:model.live.debounce.300ms="search"
                         placeholder="Tìm theo tiêu đề, danh mục..."
                         icon="magnifying-glass"
                     />
                 </flux:field>
+            </div>
 
+            {{-- === THAY ĐỔI: Chia bộ lọc danh mục === --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {{-- Bộ lọc danh mục cha --}}
                 <flux:field>
-                    <flux:label>Lọc theo danh mục</flux:label>
-                    <flux:select wire:model.live="categoryFilter">
-                        <option value="all">Tất cả danh mục</option>
-                        @foreach($this->categories as $category)
+                    <flux:label>Lọc theo danh mục cha</flux:label>
+                    <flux:select wire:model.live="parentCategoryFilter">
+                        <option value="all">Tất cả danh mục cha</option>
+                        @foreach($this->rootCategories as $category)
+                            <option value="{{ $category->id }}">{{ $category->title }}</option>
+                        @endforeach
+                    </flux:select>
+                </flux:field>
+
+                {{-- Bộ lọc danh mục con --}}
+                 <flux:field>
+                    <flux:label>Lọc theo danh mục con</flux:label>
+                    <flux:select wire:model.live="childCategoryFilter">
+                        <option value="all">Tất cả danh mục con</option>
+                        @foreach($this->childCategories as $category)
+                            {{-- Hiển thị cả đường dẫn để phân biệt các con cùng tên --}}
                             <option value="{{ $category->id }}">{{ $category->full_path }}</option>
                         @endforeach
                     </flux:select>
                 </flux:field>
-    
+
+                {{-- Bộ lọc trạng thái (giữ nguyên) --}}
                 <flux:field>
                     <flux:label>Lọc theo trạng thái</flux:label>
                     <flux:select wire:model.live="statusFilter">
@@ -287,33 +320,35 @@ new class extends Component
                         <option value="draft">Bản nháp</option>
                     </flux:select>
                 </flux:field>
-    
-                <flux:field>
-                    <flux:label class="invisible">Reset</flux:label>
-                    <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
-                        {{-- 
-                          Class 'gap-x-2' tạo khoảng cách ngang (8px). 
-                          Bạn có thể đổi thành 'gap-x-1.5' (6px) nếu muốn.
-                        --}}
-                        <span class="inline-flex items-center justify-center gap-x-1.5 w-full"> {{-- <== SỬA Ở ĐÂY --}}
-                            <flux:icon name="arrow-path" class="size-4" />
-                            <span>Reset bộ lọc</span>
-                        </span>
-                    </flux:button>
-                </flux:field>
+
+                {{-- Nút Reset (thêm vào cột cuối cùng nếu cần) --}}
+                 <div class="md:col-start-3"> {{-- Đặt vào cột thứ 3 trên màn hình md trở lên --}}
+                    <flux:field>
+                        <flux:label class="invisible">Reset</flux:label>
+                        <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
+                            <span class="inline-flex items-center justify-center gap-x-1.5 w-full">
+                                <flux:icon name="arrow-path" class="size-4" />
+                                <span>Reset bộ lọc</span>
+                            </span>
+                        </flux:button>
+                    </flux:field>
+                 </div>
             </div>
+            {{-- === KẾT THÚC THAY ĐỔI === --}}
         </div>
     </div>
     {{-- KẾT THÚC BỘ LỌC --}}
 
+    {{-- Bảng dữ liệu --}}
     <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mx-auto max-w-7xl">
         @if($this->posts->count() > 0)
             <div class="posts-table-container">
                 <table class="posts-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 w-full">
-                    <thead class="bg-gray-50 dark:bg-gray-800">
+                   {{-- Thead --}}
+                   <thead class="bg-gray-50 dark:bg-gray-800">
                         <tr>
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">STT</th>
-                            <th 
+                            <th
                                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                                 wire:click="sortBy('title')"
                             >
@@ -324,10 +359,9 @@ new class extends Component
                                     @endif
                                 </div>
                             </th>
-                            
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Danh mục</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tác giả</th>
-                            <th 
+                            <th
                                 class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                                 wire:click="sortBy('created_at')"
                             >
@@ -342,44 +376,42 @@ new class extends Component
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Thao tác</th>
                         </tr>
                     </thead>
+                    {{-- Tbody --}}
                     <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                         @foreach($this->posts as $index => $post)
                             <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 w-full" wire:key="post-{{ $post->id }}">
+                                {{-- Các cột dữ liệu (td) --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ ($this->posts->currentPage() - 1) * $this->posts->perPage() + $index + 1 }}
                                     </div>
                                 </td>
-
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="font-medium text-gray-900 dark:text-white">
                                         {{ Str::limit($post->title, 40) }}
                                     </div>
                                 </td>
-
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     @if($post->category)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                            {{ Str::limit($post->category->title, 20) }}
+                                            {{-- Hiển thị đường dẫn đầy đủ --}}
+                                            {{ Str::limit($post->category->full_path, 30) }}
                                         </span>
                                     @else
                                         <span class="text-gray-400 dark:text-gray-500">Chưa phân loại</span>
                                     @endif
                                 </td>
-
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900 dark:text-white">
                                         {{ Str::limit($post->author_name ?: 'Chưa có', 15) }}
                                     </div>
                                 </td>
-
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-600 dark:text-gray-300">
                                         <div class="font-medium">{{ $post->created_date }}</div>
                                         <div class="text-xs text-gray-500 dark:text-gray-400">{{ $post->created_time }}</div>
                                     </div>
                                 </td>
-
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     @if($post->is_published)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -391,29 +423,26 @@ new class extends Component
                                         </span>
                                     @endif
                                 </td>
-
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="flex items-center justify-center gap-2">
-                                        <flux:button 
-                                            variant="outline" 
+                                        <flux:button
+                                            variant="outline"
                                             size="sm"
                                             :href="route('posts.show', $post->id)"
                                             wire:navigate
                                         >
                                             <flux:icon name="eye" class="size-4" />
                                         </flux:button>
-                                        
-                                        <flux:button 
-                                            variant="outline" 
+                                        <flux:button
+                                            variant="outline"
                                             size="sm"
                                             :href="route('posts.edit', $post->id)"
                                             wire:navigate
                                         >
                                             <flux:icon name="pencil" class="size-4" />
                                         </flux:button>
-                                        
-                                        <flux:button 
-                                            variant="outline" 
+                                        <flux:button
+                                            variant="outline"
                                             size="sm"
                                             wire:click="togglePublished({{ $post->id }})"
                                             wire:loading.attr="disabled"
@@ -421,9 +450,8 @@ new class extends Component
                                         >
                                             <flux:icon name="{{ $post->is_published ? 'eye-slash' : 'eye' }}" class="size-4" />
                                         </flux:button>
-                                        
-                                        <flux:button 
-                                            variant="outline" 
+                                        <flux:button
+                                            variant="outline"
                                             size="sm"
                                             onclick="confirmDelete({{ $post->id }})"
                                         >
@@ -437,190 +465,92 @@ new class extends Component
                 </table>
             </div>
 
+            {{-- Phân trang --}}
             <div class="px-4 py-4 border-t border-gray-200 dark:border-gray-700">
                 {{ $this->posts->links() }}
             </div>
         @else
+            {{-- Thông báo không có bài đăng --}}
             <div class="text-center py-12">
                 <flux:icon name="document-text" class="mx-auto size-12 text-gray-400" />
-                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có bài đăng nào</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                    Bắt đầu bằng cách tạo bài đăng đầu tiên của bạn.
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Không tìm thấy bài đăng</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    Hiện tại chưa có bài đăng nào.
                 </p>
                 <div class="mt-6">
                     <flux:button variant="primary" :href="route('posts.create')" wire:navigate>
                         <flux:icon name="plus" class="size-4" />
-                        Thêm bài đăng mới
+                        Tạo bài đăng mới
                     </flux:button>
                 </div>
             </div>
         @endif
     </div>
 
-    {{-- CSS CĂN CHỈNH ĐỀU --}}
+    {{-- CSS (Nếu cần tùy chỉnh thêm) --}}
     <style>
-        .posts-table {
-            /* table-layout: fixed; */ /* Bỏ layout fixed để tự căn */
-            width: 100% !important;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin: 0 auto;
-        }
-        
-        .posts-table tbody tr {
-            width: 100% !important;
-            background-color: white !important;
-            height: 60px; /* Cố định chiều cao hàng */
-        }
-        
-        .dark .posts-table tbody tr {
-            background-color: rgb(31 41 55) !important;
-        }
-        
-        .posts-table tbody tr:hover {
-            background-color: rgb(249 250 251) !important;
-        }
-        
-        .dark .posts-table tbody tr:hover {
-            background-color: rgb(55 65 81) !important;
-        }
-        
-        .posts-table-container {
+       .posts-table-container {
+            overflow-x: auto;
             width: 100%;
-            overflow-x: auto; /* Dùng 'auto' để có scroll ngang nếu cần */
-            display: flex;
-            justify-content: center;
         }
-        
-        .posts-table th, .posts-table td {
-            vertical-align: middle;
+        .posts-table {
+            width: 100%;
+            min-width: 800px; /* Đảm bảo bảng có độ rộng tối thiểu */
         }
-        
-        .dark .posts-table th, .dark .posts-table td {
-            /* border-right: 1px solid #374151; */
-        }
-        
-        .posts-table thead th {
-            border-bottom: 2px solid #d1d5db;
-        }
-        
-        .dark .posts-table thead th {
-            border-bottom: 2px solid #4b5563;
-        }
-        
-        .posts-table tbody tr {
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .dark .posts-table tbody tr {
-            border-bottom: 1px solid #374151;
-        }
-        
-        .posts-table th:last-child, .posts-table td:last-child {
-            border-right: none;
-        }
-        
-        .posts-table th, .posts-table td {
-            padding: 12px 10px !important; /* Tăng padding ngang 1 chút */
-        }
-        
-        /* Responsive cho mobile (đã cập nhật) */
-        @media (max-width: 768px) {
-            /* Ẩn tác giả (cột 4) */
-            .posts-table th:nth-child(4), .posts-table td:nth-child(4) { display: none; } 
-        }
-        
-        .posts-table td {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap; /* Giữ 1 hàng */
-        }
-        
-        .posts-table td:nth-child(2) {
-            padding-left: 8px !important;
-            padding-right: 8px !important;
-        }
-        
-        /* Cho phép wrap cho các cột quan trọng (cập nhật index) */
-        .posts-table td:nth-child(2), /* Tiêu đề */
-        .posts-table td:nth-child(3), /* Danh mục */
-        .posts-table td:nth-child(6) { /* Trạng thái */
-            white-space: normal;
-            word-wrap: break-word;
-            line-height: 1.4;
-        }
-        
-        /* Đảm bảo cột thao tác hiển thị đầy đủ các nút (cập nhật index) */
-        .posts-table td:nth-child(7) {
-            min-width: 130px !important; /* Tăng min-width 1 chút */
-            white-space: nowrap; /* Bắt buộc 1 hàng */
-        }
-        
-        .posts-table td:nth-child(7) .flex {
-            flex-wrap: nowrap;
-            gap: 4px;
-        }
-        
-        .posts-table td:nth-child(7) button {
-            min-width: 28px;
-            height: 28px;
-            padding: 4px;
-        }
-
-        /* Căn giữa cột STT và Trạng thái */
-        .posts-table th:nth-child(1), .posts-table td:nth-child(1),
-        .posts-table th:nth-child(6), .posts-table td:nth-child(6) {
-            text-align: center;
-        }
-
-        /* Căn trái cho các cột còn lại (ngoại trừ thao tác) */
-        .posts-table th:nth-child(2), .posts-table td:nth-child(2),
-        .posts-table th:nth-child(3), .posts-table td:nth-child(3),
-        .posts-table th:nth-child(4), .posts-table td:nth-child(4),
-        .posts-table th:nth-child(5), .posts-table td:nth-child(5) {
-            text-align: left;
-        }
-
-        /* Căn giữa cột thao tác */
-        .posts-table th:nth-child(7), .posts-table td:nth-child(7) {
-            text-align: center;
-        }
-
     </style>
-    {{-- ===== KẾT THÚC SỬA CSS ===== --}}
-
+    
+    {{-- Javascript (SweetAlert) --}}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-    document.addEventListener('livewire:init', () => {
-        // Listener này dùng cho việc XÓA và TOGGLE STATUS
-        Livewire.on('show-success', (event) => {
-            Swal.fire({
-                icon: 'success',
-                title: 'Thành công!',
-                text: event.message,
-                timer: 3000,
-                showConfirmButton: false
+        document.addEventListener('livewire:init', () => {
+            // Lắng nghe sự kiện show-success
+            Livewire.on('show-success', (event) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: event.message, // Sử dụng 'message'
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            });
+
+            // Lắng nghe sự kiện show-toast (từ mount)
+            Livewire.on('show-toast', (event) => {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    }
+                });
+                Toast.fire({
+                    icon: event.icon || 'success',
+                    title: event.text
+                });
             });
         });
-    });
 
-    // Confirm delete
-    function confirmDelete(postId) {
-        Swal.fire({
-            title: 'Bạn có chắc chắn?',
-            text: "Bạn sẽ không thể hoàn tác hành động này!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Có, xóa!',
-            cancelButtonText: 'Hủy'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Dispatch sự kiện 'delete-post' mà PHP listener đang lắng nghe
-                Livewire.dispatch('delete-post', { postId: postId });
-            }
-        });
-    }
+        // Hàm xác nhận xóa
+        function confirmDelete(postId) {
+             Swal.fire({
+                title: 'Bạn có chắc chắn?',
+                text: "Bạn sẽ không thể hoàn tác hành động này!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Có, xóa!',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Gọi sự kiện Livewire 'delete-post'
+                    Livewire.dispatch('delete-post', { postId: postId });
+                }
+            });
+        }
     </script>
 </div>
