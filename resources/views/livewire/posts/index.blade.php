@@ -264,7 +264,9 @@ new class extends Component
     @endif
 
     {{-- BỘ LỌC --}}
-    <div x-data="{ open: false }" class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
+    {{-- START: CẬP NHẬT GIAO DIỆN KHỐI BỘ LỌC --}}
+    {{-- Đổi nền từ trắng/sáng sang tối, thêm shadow-xl và border-t-4 border-blue-500 --}}
+    <div x-data="{ open: false }" class="rounded-lg bg-gray-800 dark:bg-gray-900 p-6 shadow-xl border-t-4 border-blue-500">
         <button @click="open = !open" class="flex justify-between items-center w-full">
             <span class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
                 <flux:icon name="magnifying-glass" class="size-5" />
@@ -337,10 +339,12 @@ new class extends Component
             {{-- === KẾT THÚC THAY ĐỔI === --}}
         </div>
     </div>
-    {{-- KẾT THÚC BỘ LỌC --}}
+    {{-- END: CẬP NHẬT GIAO DIỆN KHỐI BỘ LỌC --}}
 
     {{-- Bảng dữ liệu --}}
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 mx-auto max-w-7xl">
+    {{-- START: CẬP NHẬT GIAO DIỆN KHỐI BẢNG --}}
+    {{-- Đổi nền từ trắng/sáng sang tối, thêm shadow-xl và border --}}
+    <div class="rounded-lg bg-gray-800 dark:bg-gray-900 shadow-xl border border-gray-700 dark:border-gray-700 mx-auto max-w-7xl">
         @if($this->posts->count() > 0)
             <div class="posts-table-container">
                 <table class="posts-table min-w-full divide-y divide-gray-200 dark:divide-gray-700 w-full">
@@ -377,9 +381,9 @@ new class extends Component
                         </tr>
                     </thead>
                     {{-- Tbody --}}
-                    <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                    <tbody class="bg-gray-800 dark:bg-gray-900 divide-y divide-gray-700 dark:divide-gray-700">
                         @foreach($this->posts as $index => $post)
-                            <tr class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 w-full" wire:key="post-{{ $post->id }}">
+                            <tr class="bg-gray-800 dark:bg-gray-900 hover:bg-gray-700 dark:hover:bg-gray-700 w-full" wire:key="post-{{ $post->id }}">
                                 {{-- Các cột dữ liệu (td) --}}
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -486,6 +490,7 @@ new class extends Component
             </div>
         @endif
     </div>
+    {{-- END: CẬP NHẬT GIAO DIỆN KHỐI BẢNG --}}
 
     {{-- CSS (Nếu cần tùy chỉnh thêm) --}}
     <style>

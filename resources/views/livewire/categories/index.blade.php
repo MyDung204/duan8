@@ -256,7 +256,9 @@ new class extends Component {
         </flux:button>
     </div>
 
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 space-y-4">
+    {{-- START: CẬP NHẬT GIAO DIỆN KHỐI BỘ LỌC --}}
+    {{-- Đổi nền từ trắng/sáng sang tối, thêm shadow-xl và border-t-4 border-blue-500 --}}
+    <div class="rounded-lg bg-gray-800 dark:bg-gray-900 p-6 space-y-4 shadow-xl border-t-4 border-blue-500">
         
         <div class="grid grid-cols-1">
             <flux:field>
@@ -317,8 +319,11 @@ new class extends Component {
             </flux:field>
         </div>
     </div>
+    {{-- END: CẬP NHẬT GIAO DIỆN KHỐI BỘ LỌC --}}
 
-    <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    {{-- START: CẬP NHẬT GIAO DIỆN KHỐI BẢNG --}}
+    {{-- Đổi nền từ trắng/sáng sang tối, thêm shadow-xl và border --}}
+    <div class="rounded-lg bg-gray-800 dark:bg-gray-900 shadow-xl border border-gray-700 dark:border-gray-700">
         @if($this->categories->count() > 0)
             <div class="overflow-x-auto categories-table-container">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 categories-table">
@@ -345,10 +350,11 @@ new class extends Component {
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-40">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {{-- CẬP NHẬT: Thay đổi màu nền tbody và hover --}}
+                    <tbody class="bg-gray-800 dark:bg-gray-900 divide-y divide-gray-700 dark:divide-gray-700">
                         @foreach($this->categories as $index => $category)
 
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <tr class="hover:bg-gray-700 dark:hover:bg-gray-700">
                                 <td class="px-4 py-4 text-center whitespace-nowrap align-middle">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ ($this->categories->currentPage() - 1) * $this->categories->perPage() + $index + 1 }}
@@ -481,6 +487,7 @@ new class extends Component {
             </div>
         @endif
     </div>
+    {{-- END: CẬP NHẬT GIAO DIỆN KHỐI BẢNG --}}
 
 @push('scripts')
 <script>
