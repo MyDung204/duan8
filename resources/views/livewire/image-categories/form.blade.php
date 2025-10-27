@@ -228,7 +228,7 @@ new class extends Component {
            
 
             // Vẫn chuyển hướng như cũ
-            $this->redirect(route('image-categories.index'), navigate: true);
+            $this->redirect(route('categories.index'), navigate: true);
         } catch (\Exception $e) {
             session()->flash('error', 'Có lỗi xảy ra: ' . $e->getMessage());
         }
@@ -252,7 +252,7 @@ new class extends Component {
     // Hủy và quay lại
     public function cancel(): void
     {
-        $this->redirect(route('image-categories.index'), navigate: true);
+        $this->redirect(route('categories.index'), navigate: true);
     }
 }; ?>
 
