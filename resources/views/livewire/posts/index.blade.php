@@ -21,7 +21,13 @@ new class extends Component
 
     public function mount(): void
     {
-        // (Không có logic mount)
+        // SỬA LỖI HIỂN THỊ THÔNG BÁO:
+        // Thêm logic để đọc session flash và dispatch sự kiện 'show-toast'
+        if (session()->has('show_toast_message')) {
+            $message = session('show_toast_message');
+            // Dùng 'show-toast' để khớp với layout app.blade.php
+            $this->dispatch('show-toast', text: $message['text'], icon: $message['icon']);
+        }
     }
 
     // Thuộc tính tính toán - lấy danh sách bài đăng
@@ -577,6 +583,7 @@ new class extends Component
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
     document.addEventListener('livewire:init', () => {
+        // Listener này dùng cho việc XÓA (vì nó dispatch 'show-success')
         Livewire.on('show-success', (event) => {
             Swal.fire({
                 icon: 'success',

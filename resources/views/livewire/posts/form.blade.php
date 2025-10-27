@@ -5,6 +5,7 @@ use App\Models\Category;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
+use Livewire\Attributes\On; // Đảm bảo đã "use" Attribute này
 
 new class extends Component
 {
@@ -45,7 +46,6 @@ new class extends Component
             $this->categoryId = $post->category_id;
             $this->isPublished = $post->is_published;
             
-            // Load existing images
             if ($post->banner_image) {
                 $this->bannerPreview = $post->banner_image_url;
             }
@@ -56,22 +56,21 @@ new class extends Component
         }
     }
 
-    // Validation rules
+    // Validation rules (Đã sửa)
     protected function rules(): array
     {
-        // Sửa quy tắc validation cho bannerImage khi tạo mới
         $bannerRule = 'nullable|image|max:2048';
-        if (!$this->postId) {
-             // Nếu là bài đăng mới, yêu cầu bannerImage
-             // Bỏ 'required' nếu bạn muốn nó là tùy chọn
-            // $bannerRule = 'required|image|max:2048';
+        if (!$this->postId && !$this->bannerPreview) { 
+            $bannerRule = 'required|image|max:2048';
+        } elseif ($this->bannerImage) {
+            $bannerRule = 'required|image|max:2048';
         }
 
         return [
             'title' => 'required|string|max:255',
             'shortDescription' => 'required|string|max:500',
-            'content' => 'required|string',
-            'bannerImage' => $bannerRule, // Áp dụng quy tắc đã sửa
+            'content' => 'required|string', // Sẽ hoạt động sau khi Trix sync
+            'bannerImage' => $bannerRule,
             'galleryImages.*' => 'nullable|image|max:2048',
             'galleryImages' => 'nullable|array|min:2|max:5',
             'authorName' => 'required|string|max:255',
@@ -80,15 +79,15 @@ new class extends Component
         ];
     }
 
-    // Validation messages
+    // Validation messages (Đã sửa)
     protected function messages(): array
     {
         return [
             'title.required' => 'Tiêu đề là bắt buộc.',
             'shortDescription.required' => 'Mô tả ngắn là bắt buộc.',
             'shortDescription.max' => 'Mô tả ngắn không được vượt quá 500 ký tự.',
-            'content.required' => 'Nội dung là bắt buộc.',
-            'bannerImage.required' => 'Ảnh banner là bắt buộc.', // Thêm message này
+            'content.required' => 'Nội dung là bắt buộc.', 
+            'bannerImage.required' => 'Ảnh banner là bắt buộc.',
             'bannerImage.image' => 'Ảnh banner phải là file ảnh.',
             'bannerImage.max' => 'Ảnh banner không được vượt quá 2MB.',
             'galleryImages.min' => 'Thư viện ảnh phải có ít nhất 2 ảnh.',
@@ -132,29 +131,22 @@ new class extends Component
     // Remove gallery image
     public function removeGalleryImage($index): void
     {
-        // Chuyển mảng galleryImages sang kiểu collection để dễ thao tác
         $images = collect($this->galleryImages);
         $previews = collect($this->galleryPreviews);
-
-        // Xóa phần tử tại index
         $images->forget($index);
         $previews->forget($index);
-
-        // Đặt lại giá trị
         $this->galleryImages = $images->values()->all();
         $this->galleryPreviews = $previews->values()->all();
     }
 
-    // Sync content from Trix Editor
+    // SỬA LỖI: Dùng "On" attribute của Livewire 3
+    #[On('sync-content')]
     public function syncContent($content): void
     {
         $this->content = $content;
     }
 
-    // Listen for sync-content event
-    protected $listeners = ['sync-content' => 'syncContent'];
-
-    // Save post
+    // Save post (Đã sửa)
     public function save()
     {
         $this->validate();
@@ -168,13 +160,11 @@ new class extends Component
             'is_published' => $this->isPublished,
         ];
 
-        // Handle banner image
         if ($this->bannerImage) {
             $bannerPath = $this->bannerImage->store('posts/banners', 'public');
             $data['banner_image'] = basename($bannerPath);
         }
 
-        // Handle gallery images
         if (!empty($this->galleryImages)) {
             $galleryPaths = [];
             foreach ($this->galleryImages as $image) {
@@ -186,24 +176,28 @@ new class extends Component
             $data['gallery_images'] = $galleryPaths;
         }
 
-        // Set published_at if publishing
-        if ($this->isPublished && !$this->postId) { // Chỉ set khi tạo mới
+        if ($this->isPublished && !$this->postId) {
             $data['published_at'] = now();
-        } elseif ($this->isPublished && $this->postId) { // Xử lý khi cập nhật
+        } elseif ($this->isPublished && $this->postId) {
             $postCheck = Post::find($this->postId);
-            if (!$postCheck->is_published) { // Nếu trước đó chưa publish thì mới set
+            if (!$postCheck->is_published) {
                 $data['published_at'] = now();
             }
         }
 
-
         if ($this->postId) {
             $post = Post::findOrFail($this->postId);
             $post->update($data);
-            $this->dispatch('show-success', message: 'Bài đăng đã được cập nhật thành công!');
+            session()->flash('show_toast_message', [
+                'text' => 'Bài đăng đã được cập nhật thành công!',
+                'icon' => 'success'
+            ]);
         } else {
             Post::create($data);
-            $this->dispatch('show-success', message: 'Bài đăng đã được tạo thành công!');
+            session()->flash('show_toast_message', [
+                'text' => 'Bài đăng đã được tạo thành công!',
+                'icon' => 'success'
+            ]);
         }
 
         return redirect()->route('posts.index');
@@ -211,6 +205,7 @@ new class extends Component
 }; ?>
 
 <div class="space-y-6">
+    {{-- PHẦN HTML GIỮ NGUYÊN --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -289,7 +284,8 @@ new class extends Component
                             name="content" 
                         >
                     </div>
-                    <flux:error name="content" />
+                    {{-- Dòng này sẽ hiển thị lỗi "Nội dung là bắt buộc" --}}
+                    <flux:error name="content" /> 
                     <flux:description>
                         Sử dụng Rich Text Editor với giao diện giống Microsoft Word: in đậm, nghiêng, gạch chân, căn chỉnh, danh sách, liên kết...
                     </flux:description>
@@ -430,11 +426,14 @@ new class extends Component
             </flux:button>
         </div>
     </form>
+    {{-- HẾT PHẦN HTML --}}
+
 
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
     <script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
     
     <style>
+    /* ... (Phần CSS giữ nguyên, không cần thay đổi) ... */
 /* Trix Editor Custom Styling - Cải thiện độ tương phản */
 trix-editor {
     min-height: 400px;
@@ -629,67 +628,86 @@ trix-toolbar .trix-dialog .trix-button:hover {
     color: #ffffff !important;
     border-color: #3b82f6 !important;
 }
-</style>
-<script>
-// Trix Editor Integration với Livewire
-document.addEventListener('DOMContentLoaded', function() {
-    const trixEditor = document.querySelector('trix-editor');
-    const hiddenInput = document.getElementById('content-input');
+    </style>
     
-    if (trixEditor && hiddenInput) {
-        // SỬA LỖI 2: Dùng json_encode để load nội dung ban đầu
-        const initialContent = {!! json_encode($this->content) !!} || '';
-        if (initialContent) {
-            trixEditor.editor.loadHTML(initialContent);
-        }
-        
-        // Sync với Livewire khi nội dung thay đổi
-        trixEditor.addEventListener('trix-change', function(event) {
-            const content = event.target.innerHTML;
-            hiddenInput.value = content;
-            Livewire.dispatch('sync-content', { content: content });
-        });
-        
-        // Sync khi paste
-        trixEditor.addEventListener('trix-paste', function(event) {
-            setTimeout(function() {
-                const content = trixEditor.innerHTML;
-                hiddenInput.value = content;
-                Livewire.dispatch('sync-content', { content: content });
-            }, 100);
-        });
-        
-        console.log('Trix Editor đã khởi tạo thành công');
-    }
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    // SỬA LỖI 1: Xóa bỏ event listener 'submit' gây ra race condition
-    /*
-    document.querySelector('form').addEventListener('submit', function(e) {
+    {{-- SỬA LỖI JAVASCRIPT TRIỆT ĐỂ --}}
+    <script>
+    // Hàm khởi tạo Trix
+    function initializeTrix() {
         const trixEditor = document.querySelector('trix-editor');
         const hiddenInput = document.getElementById('content-input');
         
+        // Chỉ chạy nếu Trix Editor tồn tại trên trang này
         if (trixEditor && hiddenInput) {
-            const content = trixEditor.innerHTML;
-            hiddenInput.value = content;
-            Livewire.dispatch('sync-content', { content: content });
-        }
-    });
-    */
-});
-</script>
+            
+            // Ngăn khởi tạo lại nếu đã có
+            if (trixEditor.listenerAttached) {
+                return;
+            }
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-document.addEventListener('livewire:init', () => {
-    Livewire.on('show-success', (event) => {
-        Swal.fire({
-            icon: 'success',
-            title: 'Thành công!',
-            text: event.message,
-            timer: 3000,
-            showConfirmButton: false
+            // Load nội dung ban đầu (khi edit)
+            // Dùng json_encode để lấy giá trị $this->content từ PHP
+            const initialContent = {!! json_encode($this->content) !!} || '';
+            if (initialContent) {
+                // Chỉ load nếu editor rỗng, tránh ghi đè khi validation fail
+                if (!trixEditor.editor.getDocument().toString().trim()) {
+                    trixEditor.editor.loadHTML(initialContent);
+                }
+            }
+            
+            // Sync với Livewire khi nội dung thay đổi
+            trixEditor.addEventListener('trix-change', function(event) {
+                const content = event.target.innerHTML;
+                hiddenInput.value = content;
+                // Dispatch sự kiện để PHP #[On('sync-content')] bắt
+                Livewire.dispatch('sync-content', { content: content }); 
+            });
+            
+            // Sync khi paste
+            trixEditor.addEventListener('trix-paste', function(event) {
+                setTimeout(function() {
+                    const content = trixEditor.innerHTML;
+                    hiddenInput.value = content;
+                    Livewire.dispatch('sync-content', { content: content });
+                }, 100);
+            });
+
+            // Đánh dấu là đã khởi tạo
+            trixEditor.listenerAttached = true;
+            console.log('Trix Editor đã được khởi tạo và gắn listener.');
+        }
+    }
+
+    // --- Chạy khởi tạo Trix ---
+    
+    // 1. Chạy khi trang được điều hướng bằng wire:navigate
+    document.addEventListener('livewire:navigated', () => {
+        console.log('Sự kiện: livewire:navigated');
+        initializeTrix();
+    });
+    
+    // 2. Chạy khi trang được tải lần đầu (F5, tải cứng)
+    // Cần đảm bảo Livewire đã sẵn sàng
+    document.addEventListener('livewire:init', () => {
+         console.log('Sự kiện: livewire:init');
+         // Chạy lần đầu phòng trường hợp tải F5
+         initializeTrix(); 
+
+        // Đăng ký listener cho SweetAlert (chỉ cần 1 lần)
+        // Listener này sẽ KHÔNG chạy ở trang này vì có redirect
+        // Nó được dùng cho các dispatch KHÔNG redirect (như xóa ở trang index)
+        Livewire.on('show-success', (event) => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: event.message,
+                timer: 3000,
+                showConfirmButton: false
+            });
         });
     });
-});
-</script>
+
+    </script>
 </div>
