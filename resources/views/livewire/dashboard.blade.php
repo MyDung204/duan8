@@ -384,7 +384,7 @@ new class extends Component
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Tháng này</span>
-                    <span class="font-semibold text-white">{{ $this->postsThisMonth }}</span>
+                    <span class="font-semibold text-white">{{ $this->postsThisMonth }}</p>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Tỷ lệ xuất bản</span>
@@ -425,7 +425,6 @@ new class extends Component
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Khai báo biến global để lưu trữ instance của biểu đồ
-    // Điều này quan trọng để có thể hủy (destroy) biểu đồ cũ trước khi vẽ cái mới
     let barChart = null;
     let pieChart = null;
 
@@ -434,12 +433,17 @@ new class extends Component
      * Nó cũng sẽ hủy các biểu đồ cũ nếu chúng tồn tại.
      */
     function initializeCharts() {
+        console.log('Running initializeCharts...');
         // --- BAR CHART ---
         const barCanvas = document.getElementById('postsChart');
         if (barCanvas) {
             const barCtx = barCanvas.getContext('2d');
+            
+            // Đọc dữ liệu mới nhất từ thuộc tính data-* trên canvas
             const labels = JSON.parse(barCanvas.getAttribute('data-chart-labels'));
             const values = JSON.parse(barCanvas.getAttribute('data-chart-values'));
+            
+            console.log('Bar Chart Data:', { labels: labels, values: values }); // Log data
 
             // Hủy biểu đồ cũ nếu tồn tại
             if (barChart) {
@@ -456,7 +460,13 @@ new class extends Component
                         data: values,
                         backgroundColor: 'rgba(59, 130, 246, 0.7)',
                         borderColor: '#3B82F6',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        // ===================================
+                        // THÊM HIỆU ỨNG TĂNG CƯỜNG (HOVER EFFECT)
+                        hoverBackgroundColor: 'rgba(59, 130, 246, 1)', // Màu đậm hơn khi hover
+                        hoverBorderColor: 'rgba(59, 130, 246, 1)',
+                        hoverBorderWidth: 2 
+                        // ===================================
                     }]
                 },
                 options: {
@@ -466,7 +476,14 @@ new class extends Component
                         duration: 1000,
                         easing: 'easeInOutQuad'
                     },
-                    plugins: { legend: { display: false } },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: { // Tùy chỉnh Tooltip để hiển thị tốt hơn
+                            backgroundColor: '#1F2937',
+                            titleColor: '#FFFFFF',
+                            bodyColor: '#D1D5DB',
+                        }
+                    },
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -540,33 +557,24 @@ new class extends Component
     // --- BỘ LẮNG NGHE SỰ KIỆN ---
 
     // 1. Chạy khi tải trang lần đầu (F5)
-    // Sử dụng 'DOMContentLoaded' để đảm bảo an toàn
     document.addEventListener('DOMContentLoaded', () => {
-        initializeCharts();
+        // Tăng delay lên 100ms
+        setTimeout(initializeCharts, 100); 
     });
 
-    // 2. Chạy khi Livewire điều hướng đến trang này (QUAN TRỌNG NHẤT)
-    // Sự kiện này được kích hoạt bởi 'wire:navigate'
+    // 2. Chạy khi Livewire điều hướng đến trang này
     document.addEventListener('livewire:navigated', () => {
-        // Thêm một độ trễ nhỏ (50ms) để đảm bảo DOM
-        // (bao gồm các thẻ canvas) đã được Livewire cập nhật hoàn toàn
-        setTimeout(initializeCharts, 50);
+        // Tăng delay lên 100ms
+        setTimeout(initializeCharts, 100);
     });
 
     // 3. Chạy khi bộ lọc thời gian thay đổi (dispatch('chart-updated'))
-    // Chúng ta lắng nghe sự kiện này bên trong 'livewire:init'
-    // để đảm bảo Livewire đã sẵn sàng nhận sự kiện
     document.addEventListener('livewire:init', () => {
         Livewire.on('chart-updated', () => {
-            // Khi bộ lọc thay đổi, component re-render
-            // và các thuộc tính data-* trên canvas được cập nhật.
-            // Chúng ta cần chờ DOM cập nhật xong rồi mới vẽ lại.
-            setTimeout(initializeCharts, 50);
+            // Tăng delay lên 100ms
+            setTimeout(initializeCharts, 100);
         });
     });
 
 </script>
 @endpush
-{{-- ====================================================================== --}}
-{{-- KẾT THÚC PHẦN SCRIPT ĐÃ SỬA --}}
-{{-- ====================================================================== --}}
