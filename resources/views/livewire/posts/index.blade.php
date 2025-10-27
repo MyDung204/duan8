@@ -2,9 +2,11 @@
 
 use App\Models\Post;
 use App\Models\Category;
+use App\Exports\PostsExport;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use Maatwebsite\Excel\Facades\Excel;
 
 new class extends Component
 {
@@ -127,9 +129,26 @@ new class extends Component
     }
 
     // Method: Xuất Excel
-    public function exportExcel(): void
+    public function exportExcel()
     {
-        session()->flash('info', 'Tính năng xuất Excel sẽ được triển khai sớm!');
+        try {
+            $filters = [
+                'search' => $this->search,
+                'categoryFilter' => $this->categoryFilter,
+                'statusFilter' => $this->statusFilter,
+                'sortField' => $this->sortField,
+                'sortDirection' => $this->sortDirection,
+            ];
+
+            $filename = 'danh_sach_bai_dang_' . now()->format('Y-m-d_His') . '.xlsx';
+            
+            return Excel::download(
+                new PostsExport($filters),
+                $filename
+            );
+        } catch (\Exception $e) {
+            session()->flash('error', 'Có lỗi xảy ra khi xuất Excel: ' . $e->getMessage());
+        }
     }
 
     // Reset trang khi thay đổi tìm kiếm
@@ -199,9 +218,24 @@ new class extends Component
                     <p class="text-sm font-medium text-blue-800 dark:text-blue-200">
                         {{ session('info') }}
                     </p>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="rounded-md bg-red-50 p-4 dark:bg-red-900/20">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <flux:icon name="exclamation-circle" class="size-5 text-red-400" />
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800 dark:text-red-200">
+                        {{ session('error') }}
+                    </p>
+                </div>
+            </div>
+        </div>
     @endif
 
     {{-- BỘ LỌC ĐƠN GIẢN VÀ GỌN GÀNG --}}
