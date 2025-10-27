@@ -5,7 +5,7 @@ use App\Models\Category;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
-use Livewire\Attributes\On; // SỬA LỖI: Thêm "On" attribute
+use Livewire\Attributes\On; 
 
 new class extends Component
 {
@@ -117,9 +117,8 @@ new class extends Component
         $this->validateOnly('galleryImages');
         $this->galleryPreviews = [];
         foreach ($this->galleryImages as $image) {
-            if ($image) {
-                $this->galleryPreviews[] = $image->temporaryUrl();
-            }
+            if (empty($image)) continue;
+            $this->galleryPreviews[] = $image->temporaryUrl();
         }
     }
 
@@ -152,9 +151,6 @@ new class extends Component
     {
         $this->content = $content;
     }
-
-    // SỬA LỖI TRIX: Xóa listener kiểu cũ
-    // protected $listeners = ['sync-content' => 'syncContent'];
 
     // Save post
     public function save()
@@ -218,7 +214,9 @@ new class extends Component
     }
 }; ?>
 
-<div class="space-y-6">
+{{-- BẮT ĐẦU LIVEWIRE TEMPLATE VỚI PHẦN TỬ ROOT DUY NHẤT: <form> --}}
+<form wire:submit="save" class="space-y-6">
+    
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -252,196 +250,198 @@ new class extends Component
         </div>
     @endif
 
-    <form wire:submit="save" class="space-y-6">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 space-y-6">
+    {{-- KHỐI NỘI DUNG CHÍNH (XẾP CHỒNG DỌC) --}}
+    <div class="space-y-6">
+        
+        {{-- KHỐI INPUTS LỚN (Tiêu đề, Mô tả, Nội dung) --}}
+        <div class="space-y-6">
+            <flux:field>
+                <flux:label>Tiêu đề bài đăng <span class="text-red-500">*</span></flux:label>
+                <flux:input 
+                    wire:model="title" 
+                    placeholder="Nhập tiêu đề bài đăng..."
+                    required
+                />
+                <flux:error name="title" />
+            </flux:field>
+
+            <flux:field>
+                <flux:label>Mô tả ngắn <span class="text-red-500">*</span></flux:label>
+                <flux:textarea 
+                    wire:model="shortDescription" 
+                    placeholder="Nhập mô tả ngắn về bài đăng..."
+                    rows="3"
+                    required
+                />
+                <flux:error name="shortDescription" />
+                <flux:description>Tóm tắt ngắn gọn về nội dung bài đăng (tối đa 500 ký tự)</flux:description>
+            </flux:field>
+
+            {{-- KHỐI TRIX EDITOR (Nội dung) --}}
+            <flux:field wire:ignore> 
+                <flux:label>Nội dung bài đăng <span class="text-red-500">*</span></flux:label>
+                <div class="mt-1">
+                    <textarea 
+                        wire:model="content" 
+                        id="content-backup"
+                        style="display: none;"
+                    ></textarea>
+                    
+                    <trix-editor 
+                        input="content-input"
+                        class="trix-content"
+                        placeholder="Nhập nội dung bài đăng..."
+                    ></trix-editor>
+                    
+                    <input 
+                        id="content-input" 
+                        type="hidden" 
+                        name="content" 
+                    >
+                </div>
+                <flux:error name="content" />
+                <flux:description>
+                    Sử dụng Rich Text Editor với giao diện giống Microsoft Word: in đậm, nghiêng, gạch chân, căn chỉnh, danh sách, liên kết...
+                </flux:description>
+            </flux:field>
+            {{-- KẾT THÚC KHỐI TRIX EDITOR --}}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <flux:field>
-                    <flux:label>Tiêu đề bài đăng <span class="text-red-500">*</span></flux:label>
+                    <flux:label>Tên tác giả <span class="text-red-500">*</span></flux:label>
                     <flux:input 
-                        wire:model="title" 
-                        placeholder="Nhập tiêu đề bài đăng..."
+                        wire:model="authorName" 
+                        placeholder="Nhập tên tác giả..."
                         required
                     />
-                    <flux:error name="title" />
+                    <flux:error name="authorName" />
                 </flux:field>
 
                 <flux:field>
-                    <flux:label>Mô tả ngắn <span class="text-red-500">*</span></flux:label>
-                    <flux:textarea 
-                        wire:model="shortDescription" 
-                        placeholder="Nhập mô tả ngắn về bài đăng..."
-                        rows="3"
-                        required
-                    />
-                    <flux:error name="shortDescription" />
-                    <flux:description>Tóm tắt ngắn gọn về nội dung bài đăng (tối đa 500 ký tự)</flux:description>
+                    <flux:label>Danh mục <span class="text-red-500">*</span></flux:label>
+                    <flux:select wire:model="categoryId" required>
+                        <option value="">Chọn danh mục...</option>
+                        @foreach($this->categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->title }}</option>
+                        @endforeach
+                    </flux:select>
+                    <flux:error name="categoryId" />
                 </flux:field>
-
-                <flux:field wire:ignore> <flux:label>Nội dung bài đăng <span class="text-red-500">*</span></flux:label>
-                    <div class="mt-1">
-                        <textarea 
-                            wire:model="content" 
-                            id="content-backup"
-                            style="display: none;"
-                        ></textarea>
-                        
-                        <trix-editor 
-                            input="content-input"
-                            class="trix-content"
-                            placeholder="Nhập nội dung bài đăng..."
-                        ></trix-editor>
-                        
-                        <input 
-                            id="content-input" 
-                            type="hidden" 
-                            name="content" 
-                        >
-                    </div>
-                    <flux:error name="content" />
-                    <flux:description>
-                        Sử dụng Rich Text Editor với giao diện giống Microsoft Word: in đậm, nghiêng, gạch chân, căn chỉnh, danh sách, liên kết...
-                    </flux:description>
-                </flux:field>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <flux:field>
-                        <flux:label>Tên tác giả <span class="text-red-500">*</span></flux:label>
-                        <flux:input 
-                            wire:model="authorName" 
-                            placeholder="Nhập tên tác giả..."
-                            required
-                        />
-                        <flux:error name="authorName" />
-                    </flux:field>
-
-                    <flux:field>
-                        <flux:label>Danh mục <span class="text-red-500">*</span></flux:label>
-                        <flux:select wire:model="categoryId" required>
-                            <option value="">Chọn danh mục...</option>
-                            @foreach($this->categories as $category)
-                                <option value="{{ $category->id }}">{{ $category->title }}</option>
-                            @endforeach
-                        </flux:select>
-                        <flux:error name="categoryId" />
-                    </flux:field>
-                </div>
-            </div>
-
-            <div class="space-y-6">
-                <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Ảnh Banner</h3>
-                    
-                    <flux:field>
-                        <flux:label>Upload ảnh banner 
-                            @if(!$postId)
-                                <span class="text-red-500">*</span>
-                            @endif
-                        </flux:label>
-                        <flux:input 
-                            type="file" 
-                            wire:model="bannerImage" 
-                            accept="image/*"
-                        />
-                        <flux:error name="bannerImage" />
-                        <flux:description>Kích thước tối đa: 2MB</flux:description>
-                    </flux:field>
-                    
-                    <div wire:loading wire:target="bannerImage" class="text-sm text-blue-500">Đang tải lên...</div>
-
-                    {{-- === SỬA NÚT XÓA ẢNH BANNER === --}}
-                    @if($bannerPreview)
-                        {{-- Sửa: Bọc ảnh trong div relative --}}
-                        <div class="mt-4 relative group">
-                            {{-- Sửa: Giảm chiều cao từ h-32 thành h-24 --}}
-                            <img src="{{ $bannerPreview }}" alt="Banner Preview" 
-                                 class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
-                            
-                            {{-- Sửa: Đặt nút "X" vào TRONG góc trên bên phải --}}
-                            <button 
-                                type="button" 
-                                wire:click="removeBannerImage"
-                                class="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold hover:bg-opacity-75 transition-colors"
-                                title="Xóa ảnh banner"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                    @endif
-                    {{-- === KẾT THÚC SỬA NÚT XÓA ẢNH BANNER === --}}
-
-                </div>
-
-                <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Thư viện ảnh</h3>
-                    </div>
-                    
-                    <flux:field>
-                        <flux:label>Upload ảnh thư viện</flux:label>
-                        <input 
-                            type="file" 
-                            wire:model="galleryImages" 
-                            accept="image/*"
-                            multiple
-                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-600 dark:file:text-gray-200 dark:hover:file:bg-gray-500"
-                        />
-                        <flux:error name="galleryImages" />
-                        <flux:error name="galleryImages.*" />
-                        <flux:description>Chọn 2-5 ảnh cùng một lần, mỗi ảnh tối đa 2MB</flux:description>
-                    </flux:field>
-                    
-                    <div wire:loading wire:target="galleryImages" class="text-sm text-blue-500">Đang tải lên...</div>
-
-                    @if(count($galleryPreviews) > 0)
-                        <div class="mt-4">
-                            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Ảnh đã chọn ({{ count($galleryPreviews) }}/5):
-                            </h4>
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                @foreach($galleryPreviews as $index => $preview)
-                                    {{-- === SỬA NÚT XÓA THƯ VIỆN ẢNH === --}}
-                                    <div class="relative group" wire:key="gallery-preview-{{ $index }}">
-                                        <img src="{{ $preview }}" alt="Gallery Preview {{ $index + 1 }}" class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
-                                        
-                                        {{-- Sửa: Đổi class để đưa nút "X" vào trong góc trên bên phải --}}
-                                        <button 
-                                            type="button" 
-                                            wire:click="removeGalleryImage({{ $index }})"
-                                            class="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold hover:bg-opacity-75 transition-colors"
-                                            title="Xóa ảnh"
-                                        >
-                                            &times;
-                                        </button>
-                                    </div>
-                                    {{-- === KẾT THÚC SỬA NÚT XÓA THƯ VIỆN ẢNH === --}}
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                </div>
-
-                <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Cài đặt</h3>
-                    
-                    <flux:field>
-                        <flux:checkbox wire:model="isPublished">
-                            Xuất bản ngay
-                        </flux:checkbox>
-                        <flux:description>
-                            Nếu không chọn, bài đăng sẽ được lưu dưới dạng bản nháp
-                        </flux:description>
-                    </flux:field>
-                </div>
             </div>
         </div>
+        {{-- KẾT THÚC KHỐI INPUTS LỚN --}}
 
-        {{-- SỬA KHOẢNG TRẮNG NÚT BẤM: Thêm py-8 --}}
+        {{-- KHỐI PHỤ (BANNER, THƯ VIỆN, CÀI ĐẶT) - ĐÃ DỜI XUỐNG DƯỚI VÀ CHIẾM TOÀN BỘ CHIỀU NGANG --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            
+            {{-- KHỐI ẢNH BANNER --}}
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Ảnh Banner</h3>
+                
+                <flux:field>
+                    <flux:label>Upload ảnh banner 
+                        @if(!$postId)
+                            <span class="text-red-500">*</span>
+                        @endif
+                    </flux:label>
+                    <flux:input 
+                        type="file" 
+                        wire:model="bannerImage" 
+                        accept="image/*"
+                    />
+                    <flux:error name="bannerImage" />
+                    <flux:description>Kích thước tối đa: 2MB</flux:description>
+                </flux:field>
+                
+                <div wire:loading wire:target="bannerImage" class="text-sm text-blue-500">Đang tải lên...</div>
+
+                @if($bannerPreview)
+                    <div class="mt-4 relative group">
+                        <img src="{{ $bannerPreview }}" alt="Banner Preview" 
+                             class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                        
+                        <button 
+                            type="button" 
+                            wire:click="removeBannerImage"
+                            class="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold hover:bg-opacity-75 transition-colors"
+                            title="Xóa ảnh banner"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                @endif
+            </div>
+
+            {{-- KHỐI THƯ VIỆN ẢNH --}}
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Thư viện ảnh</h3>
+                </div>
+                
+                <flux:field>
+                    <flux:label>Upload ảnh thư viện</flux:label>
+                    <input 
+                        type="file" 
+                        wire:model="galleryImages" 
+                        accept="image/*"
+                        multiple
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-gray-600 dark:file:text-gray-200 dark:hover:file:bg-gray-500"
+                    />
+                    <flux:error name="galleryImages" />
+                    <flux:error name="galleryImages.*" />
+                    <flux:description>Chọn 2-5 ảnh cùng một lần, mỗi ảnh tối đa 2MB</flux:description>
+                </flux:field>
+                
+                <div wire:loading wire:target="galleryImages" class="text-sm text-blue-500">Đang tải lên...</div>
+
+                @if(count($galleryPreviews) > 0)
+                    <div class="mt-4">
+                        <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Ảnh đã chọn ({{ count($galleryPreviews) }}/5):
+                        </h4>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            @foreach($galleryPreviews as $index => $preview)
+                                <div class="relative group" wire:key="gallery-preview-{{ $index }}">
+                                    <img src="{{ $preview }}" alt="Gallery Preview {{ $index + 1 }}" class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                    
+                                    <button 
+                                        type="button" 
+                                        wire:click="removeGalleryImage({{ $index }})"
+                                        class="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold hover:bg-opacity-75 transition-colors"
+                                        title="Xóa ảnh"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            {{-- KHỐI CÀI ĐẶT --}}
+            <div class="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Cài đặt</h3>
+                
+                <flux:field>
+                    <flux:checkbox wire:model="isPublished">
+                        Xuất bản ngay
+                    </flux:checkbox>
+                    <flux:description>
+                        Nếu không chọn, bài đăng sẽ được lưu dưới dạng bản nháp
+                    </flux:description>
+                </flux:field>
+            </div>
+            
+        </div>
+        {{-- KẾT THÚC KHỐI PHỤ --}}
+        
+        {{-- THANH NÚT BẤM --}}
         <div class="flex justify-end gap-3 py-8 border-t border-gray-200 dark:border-gray-700">
             <flux:button variant="outline" :href="route('posts.index')" wire:navigate>
                 Hủy
             </flux:button>
             
-            {{-- SỬA NÚT TẠO BÀI ĐĂNG: Icon + Chữ --}}
             <flux:button type="submit" variant="primary">
                 {{-- Spinner (hiển thị khi loading) --}}
                 <div wire:loading wire:target="save" class="animate-spin h-4 w-4 border-t-2 border-r-2 border-white rounded-full"></div>
@@ -455,207 +455,238 @@ new class extends Component
                 </span>
             </flux:button>
         </div>
-    </form>
+    </div>
+    {{-- KẾT THÚC KHỐI NỘI DUNG CHÍNH (KHỐI LỚN NHẤT) --}}
 
+    {{-- SCRIPTS VÀ STYLES ĐƯỢC CHÈN VÀO TRONG FORM --}}
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
     <script type="text/javascript" src="https://unpkg.com/trix@2.0.0/dist/trix.umd.min.js"></script>
     
     <style>
-    /* ... (Phần CSS giữ nguyên, không cần thay đổi) ... */
-/* Trix Editor Custom Styling - Cải thiện độ tương phản */
-trix-editor {
-    min-height: 400px;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    font-family: 'Times New Roman', Times, serif;
-    font-size: 14pt;
-    line-height: 1.6;
-    background-color: #ffffff;
-    color: #1f2937;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+    /* Trix Editor Custom Styling - Cải thiện độ tương phản */
+    
+    /* BỔ SUNG QUAN TRỌNG: ÉP CHIỀU NGANG VÀ XỬ LÝ OVERFLOW */
+    trix-toolbar,
+    trix-editor {
+        /* Đảm bảo chiều rộng 100% để căn chỉnh với các input khác */
+        width: 100%; 
+        box-sizing: border-box; 
+    }
+        
+    trix-editor {
+        min-height: 400px;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 14pt;
+        line-height: 1.6;
+        background-color: #ffffff;
+        color: #1f2937;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        /* KHẮC PHỤC LỖI TRÀN CHIỀU NGANG TRONG EDITOR */
+        overflow-x: auto; 
+    }
 
-trix-editor:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-    outline: none;
-}
+    trix-editor:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        outline: none;
+    }
 
-.dark trix-editor {
-    background-color: #ffffff;
-    border-color: #d1d5db;
-    color: #1f2937;
-}
+    .dark trix-editor {
+        background-color: #ffffff;
+        border-color: #d1d5db;
+        color: #1f2937;
+    }
 
-/* Trix Toolbar Styling - Sáng và nổi bật */
-trix-toolbar {
-    border: 2px solid #e5e7eb;
-    border-bottom: none;
-    border-radius: 0.5rem 0.5rem 0 0;
-    background-color: #ffffff;
-    padding: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+    /* Trix Toolbar Styling - Sáng và nổi bật */
+    trix-toolbar {
+        border: 2px solid #e5e7eb;
+        border-bottom: none;
+        border-radius: 0.5rem 0.5rem 0 0;
+        background-color: #ffffff;
+        padding: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        /* KHẮC PHỤC LỖI TRÀN CHIỀU NGANG TRÊN TOOLBAR */
+        overflow-x: auto;
+    }
 
-.dark trix-toolbar {
-    background-color: #ffffff;
-    border-color: #d1d5db;
-}
+    .dark trix-toolbar {
+        background-color: #ffffff;
+        border-color: #d1d5db;
+    }
 
-/* Trix Button Styling */
-trix-toolbar .trix-button-group {
-    border-right: 1px solid #d1d5db;
-}
+    /* Trix Button Styling */
+    trix-toolbar .trix-button-group {
+        border-right: 1px solid #d1d5db;
+    }
 
-.dark trix-toolbar .trix-button-group {
-    border-color: #4b5563;
-}
+    .dark trix-toolbar .trix-button-group {
+        border-color: #4b5563;
+    }
 
-trix-toolbar .trix-button {
-    border: none;
-    background: white;
-    color: #374151;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
-    margin: 0.125rem;
-    transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
+    trix-toolbar .trix-button {
+        border: none;
+        background: white;
+        color: #374151;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        margin: 0.125rem;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
 
-trix-toolbar .trix-button:hover {
-    background-color: #f8fafc;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
-}
+    trix-toolbar .trix-button:hover {
+        background-color: #f8fafc;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+    }
 
-trix-toolbar .trix-button.trix-active {
-    background-color: #3b82f6;
-    color: white;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
-}
+    trix-toolbar .trix-button.trix-active {
+        background-color: #3b82f6;
+        color: white;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    }
 
-.dark trix-toolbar .trix-button {
-    background: #374151;
-    color: #f9fafb;
-    border: 1px solid #4b5563;
-}
+    .dark trix-toolbar .trix-button {
+        background: #374151;
+        color: #f9fafb;
+        border: 1px solid #4b5563;
+    }
 
-.dark trix-toolbar .trix-button:hover {
-    background-color: #4b5563;
-    border-color: #6b7280;
-}
+    .dark trix-toolbar .trix-button:hover {
+        background-color: #4b5563;
+        border-color: #6b7280;
+    }
 
-.dark trix-toolbar .trix-button.trix-active {
-    background-color: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
-}
+    .dark trix-toolbar .trix-button.trix-active {
+        background-color: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+    }
 
-/* Content Styling */
-trix-editor h1 {
-    font-size: 24pt;
-    font-weight: bold;
-    margin: 0 0 0.5em 0;
-}
+    /* Content Styling */
+    trix-editor h1 {
+        font-size: 24pt;
+        font-weight: bold;
+        margin: 0 0 0.5em 0;
+    }
 
-trix-editor h2 {
-    font-size: 18pt;
-    font-weight: bold;
-    margin: 0 0 0.5em 0;
-}
+    trix-editor h2 {
+        font-size: 18pt;
+        font-weight: bold;
+        margin: 0 0 0.5em 0;
+    }
 
-trix-editor h3 {
-    font-size: 14pt;
-    font-weight: bold;
-    margin: 0 0 0.5em 0;
-}
+    trix-editor h3 {
+        font-size: 14pt;
+        font-weight: bold;
+        margin: 0 0 0.5em 0;
+    }
 
-trix-editor p {
-    margin: 0 0 1em 0;
-}
+    trix-editor p {
+        margin: 0 0 1em 0;
+    }
 
-trix-editor ul,
-trix-editor ol {
-    margin: 0 0 1em 0;
-    padding-left: 1.5em;
-}
+    trix-editor ul,
+    trix-editor ol {
+        margin: 0 0 1em 0;
+        padding-left: 1.5em;
+    }
 
-trix-editor blockquote {
-    border-left: 4px solid #3b82f6;
-    margin: 1em 0;
-    padding-left: 1em;
-    font-style: italic;
-    color: #6b7280;
-}
+    trix-editor blockquote {
+        border-left: 4px solid #3b82f6;
+        margin: 1em 0;
+        padding-left: 1em;
+        font-style: italic;
+        color: #6b7280;
+    }
 
-trix-editor a {
-    color: #3b82f6;
-    text-decoration: underline;
-}
+    trix-editor a {
+        color: #3b82f6;
+        text-decoration: underline;
+    }
 
-trix-editor img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 0.25rem;
-}
+    trix-editor img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.25rem;
+    }
 
-/* Cải thiện độ tương phản cho các nút */
-trix-toolbar .trix-button {
-    border: 2px solid #e5e7eb !important;
-    background: #ffffff !important;
-    color: #1f2937 !important;
-    padding: 0.75rem !important;
-    border-radius: 0.375rem !important;
-    margin: 0.25rem !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
-}
+    /* BỔ SUNG: KHẮC PHỤC TRÀN CHO NỘI DUNG */
+    trix-editor figure.attachment img, 
+    trix-editor table {
+        /* Đảm bảo hình ảnh/bảng không bao giờ vượt quá chiều rộng của editor */
+        max-width: 100% !important; 
+        height: auto !important;
+    }
 
-trix-toolbar .trix-button:hover {
-    background-color: #f3f4f6 !important;
-    border-color: #3b82f6 !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-    transform: translateY(-2px) !important;
-    color: #3b82f6 !important;
-}
+    trix-editor table {
+        /* Cho phép cuộn ngang cho bảng (nếu nó quá rộng) */
+        display: block; 
+        overflow-x: auto;
+        width: 100%;
+    }
+    /* KẾT THÚC BỔ SUNG CSS */
 
-trix-toolbar .trix-button.trix-active {
-    background-color: #3b82f6 !important;
-    color: #ffffff !important;
-    border-color: #3b82f6 !important;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
-    transform: translateY(-1px) !important;
-}
 
-/* Cải thiện placeholder text */
-trix-editor:empty:before {
-    color: #9ca3af !important;
-    font-style: italic !important;
-    font-size: 14pt !important;
-}
+    /* Cải thiện độ tương phản cho các nút */
+    trix-toolbar .trix-button {
+        border: 2px solid #e5e7eb !important;
+        background: #ffffff !important;
+        color: #1f2937 !important;
+        padding: 0.75rem !important;
+        border-radius: 0.375rem !important;
+        margin: 0.25rem !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+    }
 
-/* Cải thiện dropdown */
-trix-toolbar .trix-dialog {
-    background-color: #ffffff !important;
-    border: 2px solid #e5e7eb !important;
-    border-radius: 0.5rem !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
-}
+    trix-toolbar .trix-button:hover {
+        background-color: #f3f4f6 !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-2px) !important;
+        color: #3b82f6 !important;
+    }
 
-trix-toolbar .trix-dialog .trix-button {
-    background-color: #f9fafb !important;
-    color: #374151 !important;
-    border: 1px solid #d1d5db !important;
-}
+    trix-toolbar .trix-button.trix-active {
+        background-color: #3b82f6 !important;
+        color: #ffffff !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+        transform: translateY(-1px) !important;
+    }
 
-trix-toolbar .trix-dialog .trix-button:hover {
-    background-color: #3b82f6 !important;
-    color: #ffffff !important;
-    border-color: #3b82f6 !important;
-}
+    /* Cải thiện placeholder text */
+    trix-editor:empty:before {
+        color: #9ca3af !important;
+        font-style: italic !important;
+        font-size: 14pt !important;
+    }
+
+    /* Cải thiện dropdown */
+    trix-toolbar .trix-dialog {
+        background-color: #ffffff !important;
+        border: 2px solid #e5e7eb !important;
+        border-radius: 0.5rem !important;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    trix-toolbar .trix-dialog .trix-button {
+        background-color: #f9fafb !important;
+        color: #374151 !important;
+        border: 1px solid #d1d5db !important;
+    }
+
+    trix-toolbar .trix-dialog .trix-button:hover {
+        background-color: #3b82f6 !important;
+        color: #ffffff !important;
+        border-color: #3b82f6 !important;
+    }
     </style>
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -725,11 +756,11 @@ trix-toolbar .trix-dialog .trix-button:hover {
 
         // Đăng ký listener cho SweetAlert (chỉ cần 1 lần)
         // Listener này sẽ KHÔNG chạy ở trang này vì có redirect
-        Livewire.on('show-success', (event) => {
+        Livewire.on('show-toast-message', (event) => {
             Swal.fire({
-                icon: 'success',
-                title: 'Thành công!',
-                text: event.message,
+                icon: event.icon,
+                title: event.icon === 'success' ? 'Thành công!' : 'Thông báo',
+                text: event.text,
                 timer: 3000,
                 showConfirmButton: false
             });
@@ -737,4 +768,4 @@ trix-toolbar .trix-dialog .trix-button:hover {
     });
 
     </script>
-</div>
+</form>
