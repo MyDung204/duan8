@@ -418,140 +418,155 @@ new class extends Component
 </div>
 {{-- KẾT THÚC THẺ DIV GỐC DUY NHẤT --}}
 
-{{-- Phần JavaScript ĐÃ THÊM HIỆU ỨNG --}}
+{{-- ====================================================================== --}}
+{{-- BẮT ĐẦU PHẦN SCRIPT ĐÃ SỬA --}}
+{{-- ====================================================================== --}}
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('livewire:init', () => {
+    // Khai báo biến global để lưu trữ instance của biểu đồ
+    // Điều này quan trọng để có thể hủy (destroy) biểu đồ cũ trước khi vẽ cái mới
+    let barChart = null;
+    let pieChart = null;
 
-    // --- BAR CHART ---
-    const barCanvas = document.getElementById('postsChart');
-    if (!barCanvas) return; // Thoát nếu không tìm thấy canvas
+    /**
+     * Hàm này sẽ tìm các canvas và vẽ biểu đồ.
+     * Nó cũng sẽ hủy các biểu đồ cũ nếu chúng tồn tại.
+     */
+    function initializeCharts() {
+        // --- BAR CHART ---
+        const barCanvas = document.getElementById('postsChart');
+        if (barCanvas) {
+            const barCtx = barCanvas.getContext('2d');
+            const labels = JSON.parse(barCanvas.getAttribute('data-chart-labels'));
+            const values = JSON.parse(barCanvas.getAttribute('data-chart-values'));
 
-    const barCtx = barCanvas.getContext('2d');
-    let barChart;
-
-    const updateBarChart = () => {
-        const labels = JSON.parse(barCanvas.getAttribute('data-chart-labels'));
-        const values = JSON.parse(barCanvas.getAttribute('data-chart-values'));
-
-        if (barChart) {
-            barChart.destroy();
-        }
-
-        barChart = new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Số bài đăng',
-                    data: values,
-                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                    borderColor: '#3B82F6',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                // === THÊM HIỆU ỨNG CHO BAR CHART ===
-                animation: {
-                    duration: 1000, // Thời gian hiệu ứng (ms)
-                    easing: 'easeInOutQuad' // Kiểu hiệu ứng
-                },
-                // === KẾT THÚC ===
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { color: '#9CA3AF' },
-                        grid: { color: '#374151' }
-                    },
-                    x: {
-                        ticks: { color: '#9CA3AF' },
-                        grid: { display: false }
-                    }
-                }
+            // Hủy biểu đồ cũ nếu tồn tại
+            if (barChart) {
+                barChart.destroy();
             }
-        });
-    };
 
-    // --- PIE CHART ---
-    const pieCanvas = document.getElementById('categoryChart');
-    if (!pieCanvas) return; // Thoát nếu không tìm thấy canvas
-
-    let pieChart;
-
-    const updatePieChart = () => {
-        const pieCtx = pieCanvas.getContext('2d');
-        const pieChartData = JSON.parse(pieCanvas.getAttribute('data-chart-data'));
-
-        if (pieChart) {
-            pieChart.destroy();
-        }
-
-        const colors = [
-            '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B',
-            '#10B981', '#EF4444', '#06B6D4', '#F97316'
-        ];
-
-        while (pieChartData.length > colors.length) {
-            colors.push(`rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`);
-        }
-
-        pieChart = new Chart(pieCtx, {
-            type: 'doughnut',
-            data: {
-                labels: pieChartData.map(item => item.label || 'N/A'),
-                datasets: [{
-                    data: pieChartData.map(item => parseInt(item.value) || 0),
-                    backgroundColor: colors.slice(0, pieChartData.length),
-                    borderColor: '#1F2937', // Nền tối để tương phản
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                // === THÊM HIỆU ỨNG CHO PIE CHART ===
-                animateRotate: true, // Hiệu ứng xoay
-                animateScale: true,  // Hiệu ứng phóng to
-                animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuad'
+            // Tạo biểu đồ mới và lưu instance vào biến global
+            barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Số bài đăng',
+                        data: values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: '#3B82F6',
+                        borderWidth: 1
+                    }]
                 },
-                // === KẾT THÚC ===
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#9CA3AF', // Chữ xám cho chú thích
-                            padding: 15
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuad'
+                    },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: '#9CA3AF' },
+                            grid: { color: '#374151' }
+                        },
+                        x: {
+                            ticks: { color: '#9CA3AF' },
+                        grid: { display: false }
                         }
                     }
                 }
+            });
+        }
+
+        // --- PIE CHART ---
+        const pieCanvas = document.getElementById('categoryChart');
+        if (pieCanvas) {
+            const pieCtx = pieCanvas.getContext('2d');
+            const pieChartData = JSON.parse(pieCanvas.getAttribute('data-chart-data'));
+
+            // Hủy biểu đồ cũ nếu tồn tại
+            if (pieChart) {
+                pieChart.destroy();
             }
+
+            // Dữ liệu màu (giữ nguyên từ code gốc của bạn)
+            const colors = [
+                '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B',
+                '#10B981', '#EF4444', '#06B6D4', '#F97316'
+            ];
+            while (pieChartData.length > colors.length) {
+                colors.push(`rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`);
+            }
+
+            // Tạo biểu đồ mới và lưu instance vào biến global
+            pieChart = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: pieChartData.map(item => item.label || 'N/A'),
+                    datasets: [{
+                        data: pieChartData.map(item => parseInt(item.value) || 0),
+                        backgroundColor: colors.slice(0, pieChartData.length),
+                        borderColor: '#1F2937',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animateRotate: true,
+                    animateScale: true,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuad'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#9CA3AF',
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // --- BỘ LẮNG NGHE SỰ KIỆN ---
+
+    // 1. Chạy khi tải trang lần đầu (F5)
+    // Sử dụng 'DOMContentLoaded' để đảm bảo an toàn
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeCharts();
+    });
+
+    // 2. Chạy khi Livewire điều hướng đến trang này (QUAN TRỌNG NHẤT)
+    // Sự kiện này được kích hoạt bởi 'wire:navigate'
+    document.addEventListener('livewire:navigated', () => {
+        // Thêm một độ trễ nhỏ (50ms) để đảm bảo DOM
+        // (bao gồm các thẻ canvas) đã được Livewire cập nhật hoàn toàn
+        setTimeout(initializeCharts, 50);
+    });
+
+    // 3. Chạy khi bộ lọc thời gian thay đổi (dispatch('chart-updated'))
+    // Chúng ta lắng nghe sự kiện này bên trong 'livewire:init'
+    // để đảm bảo Livewire đã sẵn sàng nhận sự kiện
+    document.addEventListener('livewire:init', () => {
+        Livewire.on('chart-updated', () => {
+            // Khi bộ lọc thay đổi, component re-render
+            // và các thuộc tính data-* trên canvas được cập nhật.
+            // Chúng ta cần chờ DOM cập nhật xong rồi mới vẽ lại.
+            setTimeout(initializeCharts, 50);
         });
-    };
-
-    // --- KHỞI TẠO BIỂU ĐỒ ---
-    updateBarChart();
-    updatePieChart();
-
-    // --- LẮNG NGHE SỰ KIỆN CẬP NHẬT TỪ LIVEWIRE ---
-    Livewire.on('$refresh', () => {
-        setTimeout(() => {
-            updateBarChart();
-            updatePieChart();
-        }, 200);
     });
 
-    Livewire.on('chart-updated', () => {
-        setTimeout(() => {
-            updateBarChart();
-            updatePieChart();
-        }, 200);
-    });
-});
 </script>
 @endpush
+{{-- ====================================================================== --}}
+{{-- KẾT THÚC PHẦN SCRIPT ĐÃ SỬA --}}
+{{-- ====================================================================== --}}
