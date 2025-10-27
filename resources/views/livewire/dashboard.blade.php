@@ -23,10 +23,7 @@ new class extends Component
         return Post::where('is_published', false)->count();
     }
 
-    public function getTotalCategoriesProperty()
-    {
-        return Category::count();
-    }
+    // === Thuộc tính totalCategories đã được xóa ===
 
     public function getPostsThisWeekProperty()
     {
@@ -108,10 +105,9 @@ new class extends Component
         }
     }
 
-    // === BẮT ĐẦU SỬA LỖI LOGIC PIE CHART ===
     public function getPostsByCategoryProperty()
     {
-        $query = Post::query() // Bắt đầu query
+        $query = Post::query()
             ->selectRaw('category_id, COUNT(*) as count')
             ->whereNotNull('category_id');
 
@@ -132,7 +128,6 @@ new class extends Component
                 now()->endOfYear()
             ]);
         }
-        // Nếu không có timeframe (mặc định), nó sẽ lấy của 'month' (năm nay)
 
         $result = $query->groupBy('category_id') // Áp dụng groupBy và get
             ->with('category')
@@ -154,7 +149,6 @@ new class extends Component
 
         return $result;
     }
-    // === KẾT THÚC SỬA LỖI LOGIC PIE CHART ===
 
     public function getRecentPostsProperty()
     {
@@ -209,16 +203,38 @@ new class extends Component
         </div>
     </div>
 
-    <div class="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-5">
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
+        
         <div class="rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Tổng bài đăng</h3>
+                    <h3 class="text-sm font-medium text-white opacity-90">Tổng số bài đăng</h3>
                     <p class="mt-2 text-3xl font-bold text-white">{{ $this->totalPosts }}</p>
                 </div>
                 <flux:icon name="document-text" class="size-8 text-white opacity-50" />
             </div>
         </div>
+
+        <div class="rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tuần</h3>
+                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->postsThisWeek }}</p>
+                </div>
+                <flux:icon name="calendar" class="size-8 text-white opacity-50" />
+            </div>
+        </div>
+
+        <div class="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tháng</h3>
+                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->postsThisMonth }}</p>
+                </div>
+                <flux:icon name="calendar-days" class="size-8 text-white opacity-50" />
+            </div>
+        </div>
+
         <div class="rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
@@ -228,6 +244,7 @@ new class extends Component
                 <flux:icon name="check-circle" class="size-8 text-white opacity-50" />
             </div>
         </div>
+
         <div class="rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
@@ -237,25 +254,19 @@ new class extends Component
                 <flux:icon name="clipboard-document" class="size-8 text-white opacity-50" />
             </div>
         </div>
-        <div class="rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 p-6 shadow-lg">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Danh mục</h3>
-                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->totalCategories }}</p>
-                </div>
-                <flux:icon name="folder" class="size-8 text-white opacity-50" />
-            </div>
-        </div>
-        <div class="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-6 shadow-lg">
+
+        <div class="rounded-lg bg-gradient-to-r from-red-500 to-orange-500 p-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Hôm nay</h3>
                     <p class="mt-2 text-3xl font-bold text-white">{{ $this->postsToday }}</p>
                 </div>
-                <flux:icon name="calendar-days" class="size-8 text-white opacity-50" />
+                <flux:icon name="sun" class="size-8 text-white opacity-50" />
             </div>
         </div>
-    </div>
+
+        </div>
+
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="rounded-lg bg-gray-800 p-6 shadow-lg">
@@ -390,12 +401,11 @@ new class extends Component
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('livewire:init', () => {
-    // === BẮT ĐẦU SỬA LỖI JAVASCRIPT ===
 
     // --- BAR CHART ---
     const barCanvas = document.getElementById('postsChart');
     const barCtx = barCanvas.getContext('2d');
-    let barChart; // Biến toàn cục cho Bar Chart
+    let barChart; 
     
     const updateBarChart = () => {
         if (!barCanvas) return;
@@ -421,6 +431,11 @@ document.addEventListener('livewire:init', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                // Thêm hiệu ứng
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuad',
+                },
                 plugins: { legend: { display: false } },
                 scales: {
                     y: {
@@ -439,16 +454,14 @@ document.addEventListener('livewire:init', () => {
 
     // --- PIE CHART ---
     const pieCanvas = document.getElementById('categoryChart');
-    let pieChart; // Biến toàn cục cho Pie Chart
+    let pieChart; 
     
     const updatePieChart = () => {
         if (!pieCanvas) return;
         
         const pieCtx = pieCanvas.getContext('2d');
-        // Lấy dữ liệu MỚI NHẤT từ attribute
         const pieChartData = JSON.parse(pieCanvas.getAttribute('data-chart-data')); 
         
-        // Hủy biểu đồ cũ nếu đã tồn tại
         if (pieChart) {
             pieChart.destroy();
         }
@@ -462,7 +475,6 @@ document.addEventListener('livewire:init', () => {
             colors.push(`rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`);
         }
         
-        // Vẽ biểu đồ mới
         pieChart = new Chart(pieCtx, {
             type: 'doughnut',
             data: {
@@ -477,6 +489,13 @@ document.addEventListener('livewire:init', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                // Thêm hiệu ứng
+                animateRotate: true,
+                animateScale: true,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuad',
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
@@ -498,18 +517,16 @@ document.addEventListener('livewire:init', () => {
     Livewire.on('$refresh', () => {
         setTimeout(() => {
             updateBarChart();
-            updatePieChart(); // Cập nhật cả Pie Chart
+            updatePieChart();
         }, 200);
     });
     
     Livewire.on('chart-updated', () => {
         setTimeout(() => {
             updateBarChart();
-            updatePieChart(); // Cập nhật cả Pie Chart
+            updatePieChart();
         }, 200);
     });
-
-    // === KẾT THÚC SỬA LỖI JAVASCRIPT ===
 });
 </script>
 @endpush
