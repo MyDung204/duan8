@@ -23,8 +23,6 @@ new class extends Component
         return Post::where('is_published', false)->count();
     }
 
-    // === Thuộc tính totalCategories đã được xóa ===
-
     public function getPostsThisWeekProperty()
     {
         return Post::whereBetween('created_at', [
@@ -180,7 +178,8 @@ new class extends Component
     }
 }; ?>
 
-<div class="space-y-6">
+{{-- BẮT ĐẦU THẺ DIV GỐC DUY NHẤT --}}
+<div class="space-y-6"> 
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-bold text-white">Dashboard</h1>
@@ -205,7 +204,7 @@ new class extends Component
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4">
         
-        <div class="rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-6 shadow-lg">
+        <div class="kpi-card rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-6 shadow-lg" data-color="pink">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Tổng số bài đăng</h3>
@@ -215,7 +214,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 p-6 shadow-lg">
+        <div class="kpi-card rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 p-6 shadow-lg" data-color="cyan">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tuần</h3>
@@ -225,7 +224,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-6 shadow-lg">
+        <div class="kpi-card rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-6 shadow-lg" data-color="purple">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tháng</h3>
@@ -235,7 +234,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 p-6 shadow-lg">
+        <div class="kpi-card rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 p-6 shadow-lg" data-color="emerald">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Đã xuất bản</h3>
@@ -245,7 +244,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 p-6 shadow-lg">
+        <div class="kpi-card rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 p-6 shadow-lg" data-color="orange">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Bản nháp</h3>
@@ -255,7 +254,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="rounded-lg bg-gradient-to-r from-red-500 to-orange-500 p-6 shadow-lg">
+        <div class="kpi-card rounded-lg bg-gradient-to-r from-red-500 to-orange-500 p-6 shadow-lg" data-color="red">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Hôm nay</h3>
@@ -264,12 +263,11 @@ new class extends Component
                 <flux:icon name="sun" class="size-8 text-white opacity-50" />
             </div>
         </div>
-
-        </div>
+    </div>
 
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div class="rounded-lg bg-gray-800 p-6 shadow-lg">
+        <div id="postsChartPanel" class="rounded-lg bg-gray-800 p-6 shadow-lg">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-white">Biểu đồ số bài đăng</h2>
                 <div class="flex items-center gap-3">
@@ -298,7 +296,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="rounded-lg bg-gray-800 p-6 shadow-lg">
+        <div id="categoryChartPanel" class="rounded-lg bg-gray-800 p-6 shadow-lg">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-white">Phân bố theo danh mục</h2>
             </div>
@@ -310,7 +308,7 @@ new class extends Component
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div class="lg:col-span-2 rounded-lg bg-gray-800 p-6 shadow-lg">
+        <div id="recentPostsPanel" class="lg:col-span-2 rounded-lg bg-gray-800 p-6 shadow-lg">
             <div class="mb-4 flex items-center justify-between">
                 <h2 class="text-xl font-bold text-white">Bài đăng gần đây</h2>
                 <flux:button variant="outline" size="sm" :href="route('posts.index')" wire:navigate>
@@ -352,7 +350,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="rounded-lg bg-gray-800 p-6 shadow-lg">
+        <div id="quickActionsPanel" class="rounded-lg bg-gray-800 p-6 shadow-lg">
             <h2 class="mb-4 text-xl font-bold text-white">Thao tác nhanh</h2>
             
             <div class="space-y-3">
@@ -395,8 +393,43 @@ new class extends Component
             </div>
         </div>
     </div>
-</div>
 
+    {{-- === ĐÂY LÀ PHẦN SỬA LỖI === --}}
+    {{-- Đặt thẻ <style> vào BÊN TRONG thẻ div gốc --}}
+    <style>
+        /* Hiệu ứng chuyển động chung cho thẻ KPI */
+        .kpi-card {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Hiệu ứng phóng to và đổ bóng đen chung khi hover */
+        .kpi-card:hover {
+            transform: scale(1.03);
+            /* bóng đen chung */
+            box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.25); 
+        }
+
+        /* Thêm bóng MÀU SẮC riêng cho từng thẻ khi hover (dựa trên data-color) */
+        .kpi-card[data-color="pink"]:hover   { box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2), 0 0 30px rgba(236, 72, 153, 0.4); } /* Pink-500 */
+        .kpi-card[data-color="cyan"]:hover   { box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2), 0 0 30px rgba(6, 182, 212, 0.4); }   /* Cyan-500 */
+        .kpi-card[data-color="purple"]:hover { box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2), 0 0 30px rgba(129, 140, 248, 0.4); } /* Indigo-500 */
+        .kpi-card[data-color="emerald"]:hover{ box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2), 0 0 30px rgba(34, 197, 94, 0.4); }  /* Green-500 */
+        .kpi-card[data-color="orange"]:hover { box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2), 0 0 30px rgba(245, 158, 11, 0.4); } /* Yellow-500 */
+        .kpi-card[data-color="red"]:hover    { box-shadow: 0 25px 40px -12px rgba(0,0,0,0.2), 0 0 30px rgba(239, 68, 68, 0.4); }    /* Red-500 */
+
+        /* Thêm viền màu cho các khối panel (dựa theo ID đã thêm) */
+        #postsChartPanel   { border-top: 4px solid #3B82F6; } /* Blue-500 */
+        #categoryChartPanel { border-top: 4px solid #8B5CF6; } /* Purple-500 */
+        #recentPostsPanel  { border-top: 4px solid #22C55E; } /* Green-500 */
+        #quickActionsPanel { border-top: 4px solid #F59E0B; } /* Yellow-500 */
+    </style>
+    {{-- === KẾT THÚC PHẦN SỬA LỖI === --}}
+
+</div> 
+{{-- KẾT THÚC THẺ DIV GỐC DUY NHẤT --}}
+
+
+{{-- Phần @push('scripts') nằm ngoài thẻ div gốc là ĐÚNG --}}
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -408,7 +441,9 @@ document.addEventListener('livewire:init', () => {
     let barChart; 
     
     const updateBarChart = () => {
-        if (!barCanvas) return;
+        // === SỬA LỖI: Thêm kiểm tra null cho barCanvas ===
+        if (!barCanvas) return; 
+        
         const labels = JSON.parse(barCanvas.getAttribute('data-chart-labels'));
         const values = JSON.parse(barCanvas.getAttribute('data-chart-values'));
         
@@ -431,7 +466,6 @@ document.addEventListener('livewire:init', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                // Thêm hiệu ứng
                 animation: {
                     duration: 1000,
                     easing: 'easeInOutQuad',
@@ -440,7 +474,7 @@ document.addEventListener('livewire:init', () => {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { color: '#9CA3AF' },
+                        ticks: { color: '#9CA3AF' }, // Sửa lỗi stepSize: 1
                         grid: { color: '#374151' }
                     },
                     x: {
@@ -457,7 +491,8 @@ document.addEventListener('livewire:init', () => {
     let pieChart; 
     
     const updatePieChart = () => {
-        if (!pieCanvas) return;
+        // === SỬA LỖI: Thêm kiểm tra null cho pieCanvas ===
+        if (!pieCanvas) return; 
         
         const pieCtx = pieCanvas.getContext('2d');
         const pieChartData = JSON.parse(pieCanvas.getAttribute('data-chart-data')); 
@@ -489,7 +524,6 @@ document.addEventListener('livewire:init', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                // Thêm hiệu ứng
                 animateRotate: true,
                 animateScale: true,
                 animation: {
@@ -514,17 +548,18 @@ document.addEventListener('livewire:init', () => {
     updatePieChart();
     
     // --- LẮNG NGHE SỰ KIỆN CẬP NHẬT TỪ LIVEWIRE ---
+    // (Bao gồm cả cập nhật Pie Chart)
     Livewire.on('$refresh', () => {
         setTimeout(() => {
             updateBarChart();
-            updatePieChart();
+            updatePieChart(); // Cập nhật cả Pie Chart
         }, 200);
     });
     
     Livewire.on('chart-updated', () => {
         setTimeout(() => {
             updateBarChart();
-            updatePieChart();
+            updatePieChart(); // Cập nhật cả Pie Chart
         }, 200);
     });
 });
