@@ -204,9 +204,9 @@ new class extends Component
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 
-        {{-- Lớp gradient chung MỚI: bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 --}}
+        {{-- Lớp gradient chung: bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 --}}
 
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 p-6 shadow-lg shadow-white/10">
+        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Tổng số bài đăng</h3>
@@ -216,7 +216,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 p-6 shadow-lg shadow-white/10">
+        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tuần</h3>
@@ -226,7 +226,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 p-6 shadow-lg shadow-white/10">
+        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tháng</h3>
@@ -236,7 +236,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 p-6 shadow-lg shadow-white/10">
+        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Đã xuất bản</h3>
@@ -246,7 +246,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 p-6 shadow-lg shadow-white/10">
+        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Bản nháp</h3>
@@ -256,7 +256,7 @@ new class extends Component
             </div>
         </div>
 
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-800 p-6 shadow-lg shadow-white/10">
+        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-white opacity-90">Hôm nay</h3>
@@ -418,7 +418,7 @@ new class extends Component
 </div>
 {{-- KẾT THÚC THẺ DIV GỐC DUY NHẤT --}}
 
-{{-- Phần JavaScript giữ nguyên --}}
+{{-- Phần JavaScript ĐÃ THÊM HIỆU ỨNG --}}
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -454,10 +454,12 @@ document.addEventListener('livewire:init', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                // === THÊM HIỆU ỨNG CHO BAR CHART ===
                 animation: {
-                    duration: 1000,
-                    easing: 'easeInOutQuad',
+                    duration: 1000, // Thời gian hiệu ứng (ms)
+                    easing: 'easeInOutQuad' // Kiểu hiệu ứng
                 },
+                // === KẾT THÚC ===
                 plugins: { legend: { display: false } },
                 scales: {
                     y: {
@@ -511,12 +513,14 @@ document.addEventListener('livewire:init', () => {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                animateRotate: true,
-                animateScale: true,
+                // === THÊM HIỆU ỨNG CHO PIE CHART ===
+                animateRotate: true, // Hiệu ứng xoay
+                animateScale: true,  // Hiệu ứng phóng to
                 animation: {
                     duration: 1000,
-                    easing: 'easeInOutQuad',
+                    easing: 'easeInOutQuad'
                 },
+                // === KẾT THÚC ===
                 plugins: {
                     legend: {
                         position: 'bottom',
