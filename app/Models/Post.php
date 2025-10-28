@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Str;
 
 class Post extends Model
 {
@@ -14,6 +15,7 @@ class Post extends Model
      */
     protected $fillable = [
         'title',
+        'slug',
         'short_description',
         'content', 
         'banner_image',
@@ -32,6 +34,43 @@ class Post extends Model
         'is_published' => 'boolean',
         'published_at' => 'datetime',
     ];
+
+    /**
+     * Boot method để auto-generate slug từ title
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($post) {
+            if (empty($post->slug) && !empty($post->title)) {
+                $post->slug = static::generateUniqueSlug($post->title);
+            }
+        });
+
+        static::updating(function ($post) {
+            if ($post->isDirty('title') && empty($post->slug)) {
+                $post->slug = static::generateUniqueSlug($post->title, $post->id);
+            }
+        });
+    }
+
+    /**
+     * Tạo slug duy nhất từ title
+     */
+    protected static function generateUniqueSlug(string $title, ?int $excludeId = null): string
+    {
+        $slug = Str::slug($title);
+        $originalSlug = $slug;
+        $counter = 1;
+
+        while (static::where('slug', $slug)->where('id', '!=', $excludeId)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
 
     /**
      * Relationship: Post thuộc về một Category
@@ -75,6 +114,14 @@ class Post extends Model
     public function scopeSortByCreated(Builder $query, string $direction = 'desc'): Builder
     {
         return $query->orderBy('created_at', $direction);
+    }
+
+    /**
+     * Scope: Tìm kiếm theo slug
+     */
+    public function scopeBySlug(Builder $query, string $slug): Builder
+    {
+        return $query->where('slug', $slug);
     }
 
     /**
