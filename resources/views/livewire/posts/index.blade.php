@@ -74,13 +74,18 @@ new class extends Component
             $categories = Category::query()
                 ->select('id', 'title', 'parent_id')
                 ->where('is_active', true)
-                ->with('parent:id,title') // Eager load parent for path generation
+                ->with(['parent' => function($query) { $query->select('id', 'title', 'parent_id');
+                    // Eager load parent's parent to avoid lazy loading
+                    // Eager load parent's parent to avoid lazy loading
+                    $query->with('parent:id,title');
+                }])
                 ->orderBy('title')
                 ->get();
 
             // Build full_path directly on the collection to avoid N+1 issues
             return $categories->map(function ($category) {
-                $category->full_path = $category->parent ? $category->parent->title . ' → ' . $category->title : $category->title;
+                // Use the category's accessor which handles the full path
+                $category->full_path = $category->full_path;
                 return $category;
             });
         });

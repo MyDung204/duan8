@@ -3,10 +3,42 @@
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
+use App\Models\Post;
+use App\Models\Category;
 
 Route::get('/', function () {
-    return view('welcome');
+    $latestPosts = Post::published()->latest()->take(6)->get();
+    $topCategories = Category::active()->roots()->take(8)->get();
+    return view('frontend.home', compact('latestPosts', 'topCategories'));
 })->name('home');
+
+// Public: Posts
+Route::get('/bai-viet', function () {
+    $query = Post::published()->latest();
+    if (request('q')) {
+        $query->search(request('q'));
+    }
+    if (request('category')) {
+        $query->byCategory((int) request('category'));
+    }
+    $posts = $query->paginate(9)->withQueryString();
+    $categories = Category::active()->orderBy('title')->get();
+    return view('frontend.posts.index', compact('posts', 'categories'));
+})->name('posts.public');
+
+// Public: Categories
+Route::get('/danh-muc', function () {
+    $categories = Category::active()->roots()->with(['children' => function($q){
+        $q->active()->orderBy('title');
+    }])->orderBy('title')->get();
+    return view('frontend.categories.index', compact('categories'));
+})->name('categories.public');
+
+// Public: About
+Route::view('/ve-chung-toi', 'frontend.about')->name('about');
+
+// Public: Contact
+Route::view('/lien-he', 'frontend.contact')->name('contact');
 
 Volt::route('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
