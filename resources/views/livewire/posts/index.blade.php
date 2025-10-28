@@ -420,7 +420,7 @@ new class extends Component
                                             :href="route('posts.show', $post->id)"
                                             wire:navigate
                                         >
-                                            <flux:icon name="eye" class="size-4" />
+                                            <flux:icon name="document-text" class="size-4" />
                                         </flux:button>
                                         <flux:button
                                             variant="outline"
