@@ -237,6 +237,13 @@ new class extends Component {
             min-width: 600px;
         }
     }
+
+    /* Thêm hiệu ứng con trỏ cho các nút */
+    button,
+    a[role="button"],
+    .cursor-pointer {
+        cursor: pointer;
+    }
 </style>
 @endpush
 

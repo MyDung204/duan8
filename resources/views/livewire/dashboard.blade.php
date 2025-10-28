@@ -2,158 +2,180 @@
 
 use App\Models\Post;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Livewire\Volt\Component;
 
 new class extends Component
 {
     public string $chartTimeframe = 'month';
 
-    public function getTotalPostsProperty()
+    public ?object $stats = null;
+
+    public function mount(): void
     {
-        return Post::count();
+        $this->loadStats();
     }
 
-    public function getPublishedPostsProperty()
+    public function loadStats(): void
     {
-        return Post::where('is_published', true)->count();
+        $this->stats = Cache::remember('dashboard::stats', now()->addMinutes(5), function () {
+            return DB::table('posts')
+                ->select(
+                    DB::raw('COUNT(*) as total'),
+                    DB::raw('SUM(IF(is_published, 1, 0)) as published'),
+                    DB::raw('SUM(IF(NOT is_published, 1, 0)) as draft'),
+                    DB::raw('SUM(CASE WHEN created_at BETWEEN ? AND ? THEN 1 ELSE 0 END) as this_week'),
+                    DB::raw('SUM(CASE WHEN YEAR(created_at) = ? AND MONTH(created_at) = ? THEN 1 ELSE 0 END) as this_month'),
+                    DB::raw('SUM(CASE WHEN DATE(created_at) = ? THEN 1 ELSE 0 END) as today')
+                )
+                ->setBindings([
+                    now()->startOfWeek(),
+                    now()->endOfWeek(),
+                    now()->year,
+                    now()->month,
+                    today(),
+                ])
+                ->first();
+        });
     }
 
-    public function getDraftPostsProperty()
+    public function getTotalPostsProperty(): int
     {
-        return Post::where('is_published', false)->count();
+        return $this->stats->total ?? 0;
     }
 
-    public function getPostsThisWeekProperty()
+    public function getPublishedPostsProperty(): int
     {
-        return Post::whereBetween('created_at', [
-            now()->startOfWeek(),
-            now()->endOfWeek()
-        ])->count();
+        return $this->stats->published ?? 0;
     }
 
-    public function getPostsThisMonthProperty()
+    public function getDraftPostsProperty(): int
     {
-        return Post::whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->count();
+        return $this->stats->draft ?? 0;
     }
 
-    public function getPostsTodayProperty()
+    public function getPostsThisWeekProperty(): int
     {
-        return Post::whereDate('created_at', today())->count();
+        return $this->stats->this_week ?? 0;
+    }
+
+    public function getPostsThisMonthProperty(): int
+    {
+        return $this->stats->this_month ?? 0;
+    }
+
+    public function getPostsTodayProperty(): int
+    {
+        return $this->stats->today ?? 0;
     }
 
     public function getChartDataProperty()
     {
-        if ($this->chartTimeframe === 'week') {
-            // Data for current week (7 days)
-            $data = [];
-            for ($i = 6; $i >= 0; $i--) {
-                $date = now()->subDays($i);
-                $count = Post::whereDate('created_at', $date->format('Y-m-d'))->count();
-                $data[] = [
-                    'label' => $date->format('d/m'),
-                    'value' => $count
-                ];
+        return Cache::remember('dashboard::chartData::' . $this->chartTimeframe, now()->addMinutes(5), function () {
+            if ($this->chartTimeframe === 'week') {
+                $posts = Post::query()
+                    ->select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
+                    ->where('created_at', '>=', now()->subDays(6)->startOfDay())
+                    ->groupBy('date')
+                    ->pluck('count', 'date');
+
+                $data = [];
+                for ($i = 6; $i >= 0; $i--) {
+                    $date = now()->subDays($i);
+                    $formattedDate = $date->format('Y-m-d');
+                    $data[] = [
+                        'label' => $date->format('d/m'),
+                        'value' => $posts->get($formattedDate) ?? 0,
+                    ];
+                }
+                return $data;
+
+            } elseif ($this->chartTimeframe === 'month') {
+                $posts = Post::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+                    ->whereYear('created_at', now()->year)
+                    ->groupBy('month')
+                    ->orderBy('month')
+                    ->pluck('count', 'month')
+                    ->toArray();
+
+                $months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+                $data = [];
+                for ($i = 1; $i <= 12; $i++) {
+                    $data[] = [
+                        'label' => $months[$i - 1],
+                        'value' => $posts[$i] ?? 0
+                    ];
+                }
+                return $data;
+
+            } else { // 'year'
+                $startYear = now()->subYears(4)->year;
+                $endYear = now()->year;
+
+                $posts = Post::selectRaw('YEAR(created_at) as year, COUNT(*) as count')
+                    ->whereBetween('created_at', [
+                        now()->subYears(4)->startOfYear(),
+                        now()->endOfYear()
+                    ])
+                    ->groupBy('year')
+                    ->orderBy('year')
+                    ->pluck('count', 'year')
+                    ->toArray();
+
+                $data = [];
+                for ($year = $startYear; $year <= $endYear; $year++) {
+                    $data[] = [
+                        'label' => (string)$year,
+                        'value' => $posts[$year] ?? 0
+                    ];
+                }
+                return $data;
             }
-            return $data;
-
-        } elseif ($this->chartTimeframe === 'month') {
-            // Data for 12 months of current year
-            $posts = Post::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-                ->whereYear('created_at', now()->year)
-                ->groupBy('month')
-                ->orderBy('month')
-                ->pluck('count', 'month')
-                ->toArray();
-
-            $months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-            $data = [];
-            for ($i = 1; $i <= 12; $i++) {
-                $data[] = [
-                    'label' => $months[$i - 1],
-                    'value' => $posts[$i] ?? 0
-                ];
-            }
-            return $data;
-
-        } else { // 'year'
-            // Data for 5 recent years
-            $startYear = now()->subYears(4)->year;
-            $endYear = now()->year;
-
-            $posts = Post::selectRaw('YEAR(created_at) as year, COUNT(*) as count')
-                ->whereBetween('created_at', [
-                    now()->subYears(4)->startOfYear(),
-                    now()->endOfYear()
-                ])
-                ->groupBy('year')
-                ->orderBy('year')
-                ->pluck('count', 'year')
-                ->toArray();
-
-            $data = [];
-            for ($year = $startYear; $year <= $endYear; $year++) {
-                $data[] = [
-                    'label' => (string)$year,
-                    'value' => $posts[$year] ?? 0
-                ];
-            }
-            return $data;
-        }
+        });
     }
 
     public function getPostsByCategoryProperty()
     {
-        $query = Post::query()
-            ->selectRaw('category_id, COUNT(*) as count')
-            ->whereNotNull('category_id');
+        return Cache::remember('dashboard::postsByCategory::' . $this->chartTimeframe, now()->addMinutes(5), function () {
+            $query = Post::query()
+                ->select('category_id', DB::raw('COUNT(*) as count'))
+                ->whereNotNull('category_id');
 
-        // ÁP DỤNG BỘ LỌC THỜI GIAN (GIỐNG HỆT BAR CHART)
-        if ($this->chartTimeframe === 'week') {
-            // 7 ngày gần nhất
-            $query->whereBetween('created_at', [
-                now()->subDays(6)->startOfDay(),
-                now()->endOfDay()
-            ]);
-        } elseif ($this->chartTimeframe === 'month') {
-            // 12 tháng của năm nay
-            $query->whereYear('created_at', now()->year);
-        } elseif ($this->chartTimeframe === 'year') {
-            // 5 năm gần nhất
-            $query->whereBetween('created_at', [
-                now()->subYears(4)->startOfYear(),
-                now()->endOfYear()
-            ]);
-        }
+            if ($this->chartTimeframe === 'week') {
+                $query->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()]);
+            } elseif ($this->chartTimeframe === 'month') {
+                $query->whereYear('created_at', now()->year);
+            } elseif ($this->chartTimeframe === 'year') {
+                $query->whereBetween('created_at', [now()->subYears(4)->startOfYear(), now()->endOfYear()]);
+            }
 
-        $result = $query->groupBy('category_id') // Áp dụng groupBy và get
-            ->with('category')
-            ->get()
-            ->map(function ($item) {
+            $results = $query->groupBy('category_id')->get();
+
+            if ($results->isEmpty()) {
+                return [['label' => 'Chưa có dữ liệu', 'value' => 0]];
+            }
+
+            $categoryIds = $results->pluck('category_id');
+            $categories = Category::whereIn('id', $categoryIds)->pluck('title', 'id');
+
+            return $results->map(function ($item) use ($categories) {
                 return [
-                    'label' => $item->category->title ?? 'Chưa phân loại',
-                    'value' => (int)$item->count
+                    'label' => $categories->get($item->category_id) ?? 'Chưa phân loại',
+                    'value' => (int)$item->count,
                 ];
-            })
-            ->toArray();
-
-        // Nếu không có dữ liệu, trả về mảng rỗng
-        if (empty($result)) {
-            return [
-                ['label' => 'Chưa có dữ liệu', 'value' => 0]
-            ];
-        }
-
-        return $result;
+            })->toArray();
+        });
     }
 
     public function getRecentPostsProperty()
     {
-        return Post::with('category')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        return Cache::remember('dashboard::recentPosts', now()->addMinutes(5), function () {
+            return Post::with('category')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get();
+        });
     }
 
     public function getChartLabelsProperty()

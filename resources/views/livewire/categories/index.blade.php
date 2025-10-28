@@ -73,18 +73,25 @@ new class extends Component {
     // Thuộc tính tính toán - Lấy danh mục gốc (cha)
     public function getRootCategoriesProperty()
     {
-        return Category::roots()->active()->orderBy('title')->get();
+        return $this->allCategoriesForFilter->whereNull('parent_id');
     }
 
     // Thuộc tính tính toán - Lấy TẤT CẢ danh mục con
     public function getAllChildCategoriesProperty()
     {
-        // Lấy tất cả danh mục CON (parent_id != null) đang active
-        return Category::whereNotNull('parent_id')
-                            ->with('parent') // Load parent để phòng trường hợp cần dùng
-                            ->active()
-                            ->orderBy('title')
-                            ->get();
+        return $this->allCategoriesForFilter->whereNotNull('parent_id');
+    }
+
+    public function getAllCategoriesForFilterProperty()
+    {
+        return Cache::remember('categories::for_filter', now()->addMinutes(10), function () {
+            return Category::query()
+                ->select('id', 'title', 'parent_id')
+                ->where('is_active', true)
+                ->with('parent:id,title')
+                ->orderBy('title')
+                ->get();
+        });
     }
 
     // Phương thức sắp xếp

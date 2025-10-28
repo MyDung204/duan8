@@ -3,6 +3,7 @@
 use App\Models\Post;
 use App\Models\Category;
 use App\Exports\PostsExport;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
@@ -13,10 +14,8 @@ new class extends Component
     use WithPagination, WithFileUploads;
 
     public string $search = '';
-    // === THAY ĐỔI: Chia bộ lọc danh mục ===
-    public string $parentCategoryFilter = 'all'; // Bộ lọc danh mục cha
-    public string $childCategoryFilter = 'all';  // Bộ lọc danh mục con
-    // === KẾT THÚC THAY ĐỔI ===
+    public string $parentCategoryFilter = 'all';
+    public string $childCategoryFilter = 'all';
     public string $statusFilter = 'all';
     public string $sortField = 'created_at';
     public string $sortDirection = 'desc';
@@ -30,7 +29,6 @@ new class extends Component
         }
     }
 
-    // Thuộc tính tính toán - lấy danh sách bài đăng
     public function getPostsProperty()
     {
         $query = Post::query()
@@ -43,25 +41,15 @@ new class extends Component
                       });
                 });
             })
-
-            // === THAY ĐỔI: Cập nhật logic lọc theo danh mục ===
-            // Lọc theo danh mục cha (bao gồm cả con trực tiếp của nó)
             ->when($this->parentCategoryFilter !== 'all', function ($q) {
                 $categoryId = (int) $this->parentCategoryFilter;
-                // Lấy ID của chính nó và các con trực tiếp
-                // Tùy chọn: Nếu bạn muốn lấy TẤT CẢ con cháu (không chỉ con trực tiếp),
-                // bạn sẽ cần một hàm đệ quy trong Model Category để lấy tất cả ID con cháu.
-                // Logic hiện tại chỉ lấy con trực tiếp.
                 $childCategoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
                 $allCategoryIds = array_merge([$categoryId], $childCategoryIds);
                 $q->whereIn('category_id', $allCategoryIds);
             })
-            // Lọc theo danh mục con cụ thể
             ->when($this->childCategoryFilter !== 'all', function ($q) {
                 $q->where('category_id', (int) $this->childCategoryFilter);
             })
-            // === KẾT THÚC THAY ĐỔI ===
-
             ->when($this->statusFilter !== 'all', function($q) {
                 if ($this->statusFilter === 'published') {
                     $q->published();
@@ -80,24 +68,33 @@ new class extends Component
         return $query->paginate($this->perPage);
     }
 
-    // === THÊM: Thuộc tính tính toán cho bộ lọc ===
-    // Lấy danh sách danh mục gốc (cha)
-    public function getRootCategoriesProperty()
+    public function getAllCategoriesForFilterProperty()
     {
-        return Category::roots()->active()->orderBy('title')->get();
+        return Cache::remember('categories::for_post_filter', now()->addMinutes(10), function () {
+            $categories = Category::query()
+                ->select('id', 'title', 'parent_id')
+                ->where('is_active', true)
+                ->with('parent:id,title') // Eager load parent for path generation
+                ->orderBy('title')
+                ->get();
+
+            // Build full_path directly on the collection to avoid N+1 issues
+            return $categories->map(function ($category) {
+                $category->full_path = $category->parent ? $category->parent->title . ' → ' . $category->title : $category->title;
+                return $category;
+            });
+        });
     }
 
-    // Lấy danh sách TẤT CẢ danh mục con
+    public function getRootCategoriesProperty()
+    {
+        return $this->allCategoriesForFilter->whereNull('parent_id');
+    }
+
     public function getChildCategoriesProperty()
     {
-        // Lấy tất cả danh mục có parent_id (tức là danh mục con)
-        return Category::whereNotNull('parent_id')
-                            ->with('parent') // Load parent để hiển thị đường dẫn đầy đủ
-                            ->active()
-                            ->orderBy('title')
-                            ->get();
+        return $this->allCategoriesForFilter->whereNotNull('parent_id');
     }
-    // === KẾT THÚC THÊM ===
 
     protected $listeners = ['delete-post' => 'delete'];
 
@@ -134,10 +131,8 @@ new class extends Component
     public function resetFilters(): void
     {
         $this->search = '';
-        // === THAY ĐỔI: Reset cả hai bộ lọc danh mục ===
         $this->parentCategoryFilter = 'all';
         $this->childCategoryFilter = 'all';
-        // === KẾT THÚC THAY ĐỔI ===
         $this->statusFilter = 'all';
         $this->sortField = 'created_at';
         $this->sortDirection = 'desc';
@@ -147,7 +142,6 @@ new class extends Component
     public function exportExcel()
     {
         try {
-            // === THAY ĐỔI: Truyền cả hai bộ lọc danh mục ===
             $filters = [
                 'search' => $this->search,
                 'parentCategoryFilter' => $this->parentCategoryFilter,
@@ -156,7 +150,6 @@ new class extends Component
                 'sortField' => $this->sortField,
                 'sortDirection' => $this->sortDirection,
             ];
-            // === KẾT THÚC THAY ĐỔI ===
 
             $filename = 'danh_sach_bai_dang_' . now()->format('Y-m-d_His') . '.xlsx';
             return Excel::download(new PostsExport($filters), $filename);
@@ -170,25 +163,21 @@ new class extends Component
         $this->resetPage();
     }
 
-    // === THÊM: Các hàm updated cho bộ lọc mới ===
-    // Khi lọc cha thay đổi -> TẮT lọc con
     public function updatedParentCategoryFilter(string $value): void
     {
         if ($value !== 'all') {
-            $this->childCategoryFilter = 'all'; // Reset bộ lọc con về 'all' (tắt)
+            $this->childCategoryFilter = 'all';
         }
         $this->resetPage();
     }
 
-    // Khi lọc con thay đổi -> TẮT lọc cha
     public function updatedChildCategoryFilter(string $value): void
     {
         if ($value !== 'all') {
-            $this->parentCategoryFilter = 'all'; // Reset bộ lọc cha về 'all' (tắt)
+            $this->parentCategoryFilter = 'all';
         }
         $this->resetPage();
     }
-    // === KẾT THÚC THÊM ===
 
     public function updatedStatusFilter(): void
     {
@@ -496,6 +485,13 @@ new class extends Component
         .posts-table {
             width: 100%;
             min-width: 800px; /* Đảm bảo bảng có độ rộng tối thiểu */
+        }
+
+        /* Thêm hiệu ứng con trỏ cho các nút */
+        button,
+        a[role="button"],
+        .cursor-pointer {
+            cursor: pointer;
         }
     </style>
     
