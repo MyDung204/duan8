@@ -49,7 +49,14 @@ Volt::route('dashboard', 'dashboard')
     ->name('dashboard');
 
 Route::get('/api/categories/{category}/posts', function (Category $category) {
-    return response()->json($category->posts()->published()->latest()->take(3)->get());
+    try {
+        $posts = $category->posts()->published()->latest()->take(3)->get();
+        return response()->json($posts);
+    } catch (\Exception $e) {
+        // Log the error for server-side debugging
+        \Log::error("Error fetching posts for category {$category->id}: " . $e->getMessage());
+        return response()->json(['error' => 'Failed to fetch posts', 'details' => $e->getMessage()], 500);
+    }
 })->name('api.categories.posts');
 
 Route::middleware(['auth'])->group(function () {

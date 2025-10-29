@@ -134,7 +134,7 @@ class Post extends Model
             return null;
         }
         
-        return asset('storage/posts/banners/' . $this->banner_image);
+        return url('storage/posts/banners/' . $this->banner_image);
     }
 
     /**
@@ -146,9 +146,7 @@ class Post extends Model
             return [];
         }
         
-        return array_map(function ($image) {
-            return asset('storage/posts/gallery/' . $image);
-        }, $this->gallery_images);
+                return array_map(function ($image) { return url('storage/posts/gallery/' . $image); }, $this->gallery_images);
     }
 
     /**

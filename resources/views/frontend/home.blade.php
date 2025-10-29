@@ -74,14 +74,14 @@
         </div>
 
         <div x-show="activeTab" x-transition:enter="transition-opacity duration-500" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
-            <div x-if="loading" class="grid place-items-center h-32">
+            <div x-show="loading" class="grid place-items-center h-32">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             </div>
-            <div x-if="!loading && posts.length > 0" class="grid md:grid-cols-3 gap-8">
+            <div x-show="!loading && posts.length > 0" class="grid md:grid-cols-3 gap-8">
                 <template x-for="post in posts" :key="post.id">
                     <a :href="`{{ url('/bai-viet') }}/${post.slug}`" class="group block bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300">
                         <div class="aspect-w-4 aspect-h-3 overflow-hidden">
-                            <img :src="post.banner_image_url || 'https://via.placeholder.com/800x600'" :alt="post.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <img :src="post.banner_image_url ? post.banner_image_url : 'https://via.placeholder.com/800x600'" :alt="post.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                         </div>
                         <div class="p-5">
                             <h3 class="text-lg font-semibold text-neutral-900 dark:text-white group-hover:text-primary-600 transition-colors duration-200" x-text="post.title"></h3>
@@ -90,7 +90,7 @@
                     </a>
                 </template>
             </div>
-            <div x-if="!loading && posts.length === 0" class="grid place-items-center h-32">
+            <div x-show="!loading && posts.length === 0" class="grid place-items-center h-32">
                 <p class="text-neutral-500 dark:text-neutral-400">Không có bài viết nào trong danh mục này.</p>
             </div>
         </div>
