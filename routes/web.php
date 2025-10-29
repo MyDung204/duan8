@@ -12,6 +12,10 @@ Route::get('/', function () {
     return view('frontend.home', compact('latestPosts', 'topCategories'));
 })->name('home');
 
+Route::get('/bai-viet/{post:slug}', function (Post $post) {
+    return view('frontend.posts.show', compact('post'));
+})->name('posts.show.public');
+
 // Public: Posts
 Route::get('/bai-viet', function () {
     $query = Post::published()->latest();
@@ -43,6 +47,10 @@ Route::view('/lien-he', 'frontend.contact')->name('contact');
 Volt::route('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('/api/categories/{category}/posts', function (Category $category) {
+    return response()->json($category->posts()->published()->latest()->take(3)->get());
+})->name('api.categories.posts');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');

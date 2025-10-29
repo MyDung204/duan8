@@ -24,6 +24,7 @@ class Post extends Model
         'category_id',
         'is_published',
         'published_at',
+        'views_count',
     ];
 
     /**
