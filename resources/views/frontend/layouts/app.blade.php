@@ -12,7 +12,8 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" media="print" onload="this.media='all'" />
 
         <link rel="preload" href="{{ Vite::asset('resources/css/app.css') }}" as="style" />
-        @vite(['resources/css/app.css', 'resources/js/app.js'], 'defer')
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     </head>
     <body class="min-h-dvh bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         @include('frontend.partials.header')
