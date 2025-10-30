@@ -2,11 +2,7 @@
 
 @section('title', 'Trang chủ')
 
-@php
-    /* * ĐÃ XÓA BLOCK @php cũ (định nghĩa $heroPost, $recentPosts)
-     * vì logic mới sẽ được xử lý trực tiếp bên dưới.
-     */
-@endphp
+ 
 
 @section('content')
 

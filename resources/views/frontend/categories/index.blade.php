@@ -67,6 +67,37 @@
     </div>
 </section>
 
+<!-- Why Browse By Categories Section -->
+<section class="mb-16 py-12 bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200/80 dark:border-neutral-800 scroll-reveal">
+    <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl font-bold mb-2">Vì sao duyệt theo danh mục?</h2>
+        <p class="text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">Nhanh chóng tìm đúng nội dung bạn quan tâm với cấu trúc chủ đề rõ ràng.</p>
+    </div>
+    <div class="grid md:grid-cols-3 gap-6">
+        <div class="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-700 hover:shadow-lg transition-all">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-teal-600 text-white mb-4">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Tìm kiếm nhanh</h3>
+            <p class="text-neutral-600 dark:text-neutral-400">Lọc nội dung theo chủ đề thay vì cuộn tìm thủ công.</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-700 hover:shadow-lg transition-all">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-cyan-600 text-white mb-4">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2-1.343-2-3-2zm0 7c-4.418 0-8 1.79-8 4v1h16v-1c0-2.21-3.582-4-8-4z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Trải nghiệm rõ ràng</h3>
+            <p class="text-neutral-600 dark:text-neutral-400">Cấu trúc theo cha-con giúp định hướng và khám phá nội dung dễ dàng.</p>
+        </div>
+        <div class="p-6 rounded-2xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-700 hover:shadow-lg transition-all">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-sky-600 text-white mb-4">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h10a4 4 0 004-4V9a4 4 0 00-4-4H7a4 4 0 00-4 4v6z"/></svg>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Hiệu năng tốt</h3>
+            <p class="text-neutral-600 dark:text-neutral-400">Danh mục và số liệu đã được tối ưu truy vấn và cache cho tốc độ tải nhanh.</p>
+        </div>
+    </div>
+</section>
+
 <!-- Call to Action / Explore Posts Section -->
 <section class="mt-16 py-16 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-3xl overflow-hidden relative">
     <div class="absolute inset-0 bg-black/20"></div>
