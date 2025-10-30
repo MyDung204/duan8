@@ -41,7 +41,9 @@
                              x-transition:leave-start="opacity-100 transform translate-y-0"
                              x-transition:leave-end="opacity-0 transform -translate-y-2"
                              class="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
+                            @if(Auth::user()->role === 'admin')
                             <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700">Bảng điều khiển</a>
+                            @endif
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700">Đăng xuất</button>
@@ -79,7 +81,9 @@
                 <a href="{{ route('login') }}" class="px-3 py-2 rounded-md font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800">Đăng nhập</a>
                 <a href="{{ route('register') }}" class="px-3 py-2 rounded-md font-medium text-white bg-primary-600 hover:bg-primary-700">Đăng ký</a>
             @else
+                @if(Auth::user()->role === 'admin')
                 <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-md font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800">Bảng điều khiển</a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full text-left px-3 py-2 rounded-md font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800">Đăng xuất</button>

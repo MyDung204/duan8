@@ -151,7 +151,7 @@ Route::view('/ve-chung-toi', 'frontend.about')->name('about');
 Route::view('/lien-he', 'frontend.contact')->name('contact');
 
 Volt::route('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'role:admin'])
     ->name('dashboard');
 
 Route::get('/api/categories/{category}/posts', function (Category $category) {
@@ -187,7 +187,7 @@ Route::get('/api/categories/{category}/posts', function (Category $category) {
     }
 })->name('api.categories.posts');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
     Volt::route('categories', 'categories.index')->name('categories.index');
