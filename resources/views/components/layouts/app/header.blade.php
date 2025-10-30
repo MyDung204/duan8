@@ -9,7 +9,7 @@
             <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
             <a href="{{ route('dashboard') }}" class="ms-2 me-5 flex items-center space-x-2 rtl:space-x-reverse lg:ms-0" wire:navigate>
-                <x-app-logo />
+                <img src="{{ asset('image/logo.png') }}" alt="{{ config('app.name', 'Dự án') }}" class="h-8 w-auto">
             </a>
 
             <flux:navbar class="-mb-px max-lg:hidden">
@@ -94,7 +94,7 @@
             <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
             <a href="{{ route('dashboard') }}" class="ms-1 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
-                <x-app-logo />
+                <img src="{{ asset('image/logo.png') }}" alt="{{ config('app.name', 'Dự án') }}" class="h-8 w-auto">
             </a>
 
             <flux:navlist variant="outline">

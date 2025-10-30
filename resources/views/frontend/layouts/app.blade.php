@@ -12,6 +12,7 @@
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" media="print" onload="this.media='all'" />
 
         <link rel="preload" href="{{ Vite::asset('resources/css/app.css') }}" as="style" />
+        <link rel="icon" href="{{ asset('image/favicon.png') }}" type="image/png">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     </head>

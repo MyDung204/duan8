@@ -2,8 +2,7 @@
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
             <a href="{{ route('home') }}" class="inline-flex items-center gap-2 font-bold text-lg tracking-tight">
-                <x-app-logo-icon class="size-6 text-primary-600" />
-                <span>{{ config('app.name', 'Dự án') }}</span>
+                <img src="{{ asset('image/logo.png') }}" alt="{{ config('app.name', 'Dự án') }}" class="h-16 w-auto">
             </a>
             <nav class="hidden md:flex items-center gap-1">
                 @php
