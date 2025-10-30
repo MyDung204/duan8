@@ -3,70 +3,137 @@
 @section('title', 'Trang chủ')
 
 @php
-    $heroPost = $latestPosts->first();
-    $recentPosts = $latestPosts->skip(1);
+    /* * ĐÃ XÓA BLOCK @php cũ (định nghĩa $heroPost, $recentPosts)
+     * vì logic mới sẽ được xử lý trực tiếp bên dưới.
+     */
 @endphp
 
 @section('content')
 
-<!-- Hero Slideshow -->
-@if($latestPosts->count() > 0)
-<section class="mb-20 md:mb-28 scroll-reveal" x-data="heroSlider({{ $latestPosts->take(3)->map(fn($p) => [
-    'title' => $p->title,
-    'slug' => $p->slug,
-    'short_description' => $p->short_description,
-    'banner_image_url' => $p->banner_image_url,
-    'created_date' => $p->created_date,
-    'author_name' => $p->author_name,
-    'category' => $p->category ? ['id' => $p->category->id, 'title' => $p->category->title] : null,
-])->toJson() }})" x-init="init()">
-    <div class="relative rounded-3xl overflow-hidden shadow-2xl">
-        <div class="relative hero-aspect">
-            <!-- Slides (fade/scale) -->
-            <template x-for="(item, idx) in items" :key="idx">
-                <a :href="`{{ url('/bai-viet') }}/${item.slug}`" class="absolute inset-0 block" x-show="current === idx"
-                   x-transition:enter="transition ease-out duration-700"
-                   x-transition:enter-start="opacity-0 scale-105"
-                   x-transition:enter-end="opacity-100 scale-100"
-                   x-transition:leave="transition ease-in duration-700"
-                   x-transition:leave-start="opacity-100 scale-100"
-                   x-transition:leave-end="opacity-0 scale-95">
-                    <img :src="item.banner_image_url || 'https://via.placeholder.com/1600x900'" :alt="item.title" class="w-full h-full object-cover" />
-                </a>
-            </template>
-
-            <!-- Controls -->
-            <button @click="prev()" class="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-            </button>
-            <button @click="next()" class="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white flex items-center justify-center">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </button>
-
-            <!-- Indicators -->
-            <div class="absolute bottom-5 left-0 right-0 flex items-center justify-center gap-2 z-10">
-                <template x-for="(item, idx) in items" :key="idx">
-                    <button @click="go(idx)" class="w-2.5 h-2.5 rounded-full" :class="current === idx ? 'bg-white' : 'bg-white/50'"></button>
-                </template>
-                </div>
-        </div>
-    </div>
-</section>
-@else
+{{-- ================ BẮT ĐẦU PHẦN HERO MỚI ================ --}}
 <section class="mb-20 md:mb-28 scroll-reveal">
-    <div class="relative rounded-3xl overflow-hidden bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-900 flex items-center justify-center h-96">
-        <div class="text-center">
-            <svg class="w-16 h-16 mx-auto text-neutral-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <p class="text-xl text-neutral-500 dark:text-neutral-400">Không có bài viết nào để hiển thị.</p>
-        </div>
-    </div>
-</section>
-@endif
+    {{-- =============== PHẦN 1: HERO (TRENDING) =============== --}}
+    {{-- ĐÃ SỬA: Dùng $latestPosts thay vì $trendingPosts để khớp với Route --}}
+    @if(isset($latestPosts) && $latestPosts->count() >= 3)
+        @php
+            // Lấy 1 bài chính và 2 bài phụ từ $latestPosts
+            $mainHeroPost = $latestPosts->first();
+            $sideHeroPosts = $latestPosts->slice(1, 2);
+        @endphp
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
+            
+            {{-- Bài viết chính (Bên trái) --}}
+            <div class="lg:col-span-2 group relative block bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden">
+                {{-- ĐÃ SỬA: Dùng route 'posts.show.public' --}}
+                <a href="{{ route('posts.show.public', $mainHeroPost->slug) }}">
+                    <div class="h-[450px] w-full">
+                        @if($mainHeroPost->banner_image_url)
+                            {{-- ĐÃ SỬA: Dùng accessor 'banner_image_url' từ Model Post --}}
+                            <img src="{{ $mainHeroPost->banner_image_url }}" alt="{{ $mainHeroPost->title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy">
+                        @else
+                            {{-- Placeholder nếu không có ảnh --}}
+                            <div class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-xl">
+                                <svg class="w-16 h-16 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/80 to-transparent">
+                        <div class="text-xs font-semibold text-white/90 uppercase tracking-wider mb-2">
+                            @if($mainHeroPost->category)
+                                {{-- ĐÃ SỬA: Model Category dùng 'title' --}}
+                                <span class="bg-indigo-600 py-1 px-2.5 rounded">{{ $mainHeroPost->category->title }}</span>
+                            @endif
+                            {{-- ĐÃ SỬA: Dùng accessor 'created_date' từ Model Post --}}
+                            <span class="ml-2">{{ $mainHeroPost->created_date }}</span>
+                        </div>
+                        <h3 class="text-2xl lg:text-3xl font-bold text-white transition-colors duration-200 mb-2 leading-tight">
+                            {{-- ĐÃ SỬA: Dùng helper chuẩn của Laravel --}}
+                            {{ \Illuminate\Support\Str::limit($mainHeroPost->title, 60, '...') }}
+                        </h3>
+                        <div class="flex items-center text-sm text-gray-200">
+                            {{-- ĐÃ SỬA: Dùng trường 'author_name' từ Model Post --}}
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($mainHeroPost->author_name ?? 'U') }}&color=EBF4FF&background=7F9CF5&size=40" alt="{{ $mainHeroPost->author_name ?? 'User' }}" class="w-6 h-6 rounded-full mr-2 border-2 border-white/50" loading="lazy">
+                            <span>{{ $mainHeroPost->author_name ?? 'N/A' }}</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
 
-<!-- Recent Posts -->
-@if($recentPosts->count() > 0)
+            {{-- 2 Bài viết phụ (Bên phải) --}}
+            <div class="lg:col-span-1 space-y-6">
+                @foreach($sideHeroPosts as $post)
+                <div class="group relative block bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden h-[213px]">
+                    {{-- ĐÃ SỬA: Dùng route 'posts.show.public' --}}
+                    <a href="{{ route('posts.show.public', $post->slug) }}">
+                        @if($post->banner_image_url)
+                             {{-- ĐÃ SỬA: Dùng accessor 'banner_image_url' từ Model Post --}}
+                            <img src="{{ $post->banner_image_url }}" alt="{{ $post->title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy">
+                        @else
+                             {{-- Placeholder nếu không có ảnh --}}
+                            <div class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-xl">
+                                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>
+                        @endif
+                        <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/80 to-transparent">
+                            <div class="text-xs font-semibold text-white/90 uppercase tracking-wider mb-1">
+                                @if($post->category)
+                                    {{-- ĐÃ SỬA: Model Category dùng 'title' --}}
+                                    <span class="bg-indigo-600 py-0.5 px-2 rounded">{{ $post->category->title }}</span>
+                                @endif
+                            </div>
+                            <h3 class="text-base font-bold text-white transition-colors duration-200 leading-tight line-clamp-2">
+                                {{ $post->title }}
+                            </h3>
+                        </div>
+                    </a>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    {{-- Đây là khối 'else' nếu không đủ 3 bài viết --}}
+    @elseif($latestPosts->count() > 0)
+        {{-- Xử lý nếu có ít hơn 3 bài (ví dụ: chỉ hiển thị bài chính) --}}
+        @php $mainHeroPost = $latestPosts->first(); @endphp
+        <div class="lg:col-span-2 group relative block bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden">
+            <a href="{{ route('posts.show.public', $mainHeroPost->slug) }}">
+                <div class="h-[450px] w-full">
+                    <img src="{{ $mainHeroPost->banner_image_url ?? 'https://via.placeholder.com/1600x900' }}" alt="{{ $mainHeroPost->title }}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" loading="lazy">
+                </div>
+                <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-black/80 to-transparent">
+                    <div class="text-xs font-semibold text-white/90 uppercase tracking-wider mb-2">
+                        @if($mainHeroPost->category)
+                            <span class="bg-indigo-600 py-1 px-2.5 rounded">{{ $mainHeroPost->category->title }}</span>
+                        @endif
+                        <span class="ml-2">{{ $mainHeroPost->created_date }}</span>
+                    </div>
+                    <h3 class="text-2xl lg:text-3xl font-bold text-white transition-colors duration-200 mb-2 leading-tight">
+                        {{ \Illuminate\Support\Str::limit($mainHeroPost->title, 60, '...') }}
+                    </h3>
+                    <div class="flex items-center text-sm text-gray-200">
+                        <img src="https://ui-avatars.com/api/?name={{ urlencode($mainHeroPost->author_name ?? 'U') }}&color=EBF4FF&background=7F9CF5&size=40" alt="{{ $mainHeroPost->author_name ?? 'User' }}" class="w-6 h-6 rounded-full mr-2 border-2 border-white/50" loading="lazy">
+                        <span>{{ $mainHeroPost->author_name ?? 'N/A' }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    @else
+        {{-- Giữ lại phần thông báo nếu không có bài viết nào --}}
+        <div class="relative rounded-3xl overflow-hidden bg-gradient-to-br from-neutral-100 to-neutral-200 dark:from-neutral-800 dark:to-neutral-900 flex items-center justify-center h-96">
+            <div class="text-center">
+                <svg class="w-16 h-16 mx-auto text-neutral-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <p class="text-xl text-neutral-500 dark:text-neutral-400">Không có bài viết nào để hiển thị.</p>
+            </div>
+        </div>
+    @endif
+    {{-- =============== KẾT THÚC PHẦN 1: HERO (TRENDING) =============== --}}
+</section>
+{{-- ================ KẾT THÚC PHẦN HERO MỚI ================ --}}
+
+
+{{-- ĐÃ SỬA: Chỉ hiển thị section này nếu có nhiều hơn 3 bài (vì 3 bài đầu đã ở Hero) --}}
+@if($latestPosts->count() > 3)
 <section class="mb-20 md:mb-28 scroll-reveal">
     <div class="flex items-center justify-between mb-10">
         <div>
@@ -81,9 +148,11 @@
         </a>
     </div>
     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        @foreach($recentPosts as $index => $post)
+        {{-- ĐÃ SỬA: Bắt đầu từ bài thứ 4 (skip 3 bài đầu tiên đã dùng cho Hero) --}}
+        @foreach($latestPosts->skip(3) as $index => $post)
             <a href="{{ route('posts.show.public', $post->slug) }}" class="group block bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
                 <div class="aspect-[4/3] overflow-hidden relative">
+                    {{-- Giữ nguyên logic ảnh --}}
                     <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     @if($post->category)
@@ -96,6 +165,7 @@
                         <p class="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-3">{{ $post->short_description }}</p>
                     @endif
                     <div class="flex items-center gap-3 text-xs text-neutral-500">
+                         {{-- Giữ nguyên logic author/date --}}
                         <span>{{ $post->author_name ?? 'Admin' }}</span>
                         <span>&bull;</span>
                         <span>{{ $post->created_date }}</span>
@@ -115,7 +185,6 @@
 </section>
 @endif
 
-<!-- Posts by Category -->
 @if($topCategories->count() > 0)
 <section class="scroll-reveal">
     <div x-data="categoryTabs({{ $topCategories->map(fn($c) => $c->id)->toJson() }})" x-init="init()">
@@ -193,37 +262,9 @@
 @push('scripts')
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('heroSlider', (items) => ({
-        items: items || [],
-        current: 0,
-        timer: null,
-        intervalMs: 5000,
-        init() {
-            if (this.items.length > 1) {
-                this.start();
-            }
-        },
-        start() {
-            this.stop();
-            this.timer = setInterval(() => this.next(), this.intervalMs);
-        },
-        stop() {
-            if (this.timer) {
-                clearInterval(this.timer);
-                this.timer = null;
-            }
-        },
-        next() {
-            this.current = (this.current + 1) % this.items.length;
-        },
-        prev() {
-            this.current = (this.current - 1 + this.items.length) % this.items.length;
-        },
-        go(index) {
-            this.current = index;
-            this.start();
-        }
-    }));
+    // ĐÃ XÓA: Alpine.data('heroSlider', ...) vì không còn dùng slideshow
+    
+    // Giữ nguyên Alpine.data('categoryTabs', ...)
     Alpine.data('categoryTabs', (categoryIds) => ({
         activeTab: null,
         loading: false,
@@ -242,6 +283,7 @@ document.addEventListener('alpine:init', () => {
             this.loading = true;
             this.posts = [];
             try {
+                // ĐÃ SỬA LỖI: Quay lại dùng {{ url('/') }} để tránh lỗi UrlGenerationException
                 const response = await fetch(`{{ url('/') }}/api/categories/${categoryId}/posts`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -258,6 +300,7 @@ document.addEventListener('alpine:init', () => {
     }));
 });
 
+// Giữ nguyên IntersectionObserver
 document.addEventListener('DOMContentLoaded', () => {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -274,14 +317,9 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <style>
-    /* Fallback aspect ratio if Tailwind aspect utilities are not available */
-    /* 21:9 ratio for lower height (42.85% padding) */
-    .hero-aspect { position: relative; padding-top: 42.85%; }
-    @media (min-width: 768px) {
-        .hero-aspect { padding-top: 38%; } /* Even lower on desktop */
-    }
-    .hero-aspect > a { position: absolute; inset: 0; }
-    .hero-aspect img { width: 100%; height: 100%; object-fit: cover; }
+    /* ĐÃ XÓA: CSS cho .hero-aspect vì không còn dùng slideshow */
+    
+    /* Giữ nguyên các style còn lại */
     .scroll-reveal {
         opacity: 0;
         transform: translateY(30px);
