@@ -65,7 +65,13 @@ class Post extends Model
         $originalSlug = $slug;
         $counter = 1;
 
-        while (static::where('slug', $slug)->where('id', '!=', $excludeId)->exists()) {
+        while ((function () use ($slug, $excludeId) {
+            $query = static::where('slug', $slug);
+            if ($excludeId !== null) {
+                $query->where('id', '!=', $excludeId);
+            }
+            return $query->exists();
+        })()) {
             $slug = $originalSlug . '-' . $counter;
             $counter++;
         }
@@ -134,7 +140,7 @@ class Post extends Model
             return null;
         }
         
-        return url('storage/posts/banners/' . $this->banner_image);
+        return asset('storage/posts/banners/' . $this->banner_image);
     }
 
     /**
@@ -142,11 +148,16 @@ class Post extends Model
      */
     public function getGalleryImageUrlsAttribute(): array
     {
-        if (!$this->gallery_images) {
+        if (empty($this->gallery_images) || !is_array($this->gallery_images)) {
             return [];
         }
-        
-                return array_map(function ($image) { return url('storage/posts/gallery/' . $image); }, $this->gallery_images);
+
+        return array_values(array_map(
+            static function ($image) {
+                return asset('storage/posts/gallery/' . ltrim((string) $image, '/'));
+            },
+            $this->gallery_images
+        ));
     }
 
     /**

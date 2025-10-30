@@ -3,12 +3,16 @@
 @section('title', 'Danh mục')
 
 @section('banner')
-<section class="relative py-16 md:py-24 bg-gradient-to-r from-teal-500 via-cyan-500 to-sky-500">
-    <div class="absolute inset-0 bg-black opacity-50"></div>
+<section class="relative py-16 md:py-24 bg-gradient-to-br from-teal-600 via-cyan-600 to-sky-600 overflow-hidden">
+    <div class="absolute inset-0 bg-black/20"></div>
+    <div class="absolute inset-0">
+        <div class="absolute top-0 right-0 w-96 h-96 bg-teal-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div class="absolute bottom-0 left-0 w-96 h-96 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+    </div>
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div class="text-center">
-            <h1 class="text-3xl md:text-5xl font-bold text-white tracking-tight">Khám phá theo chủ đề</h1>
-            <p class="mt-4 text-lg text-white/80 max-w-2xl mx-auto">Tìm kiếm nội dung theo các danh mục được phân loại rõ ràng.</p>
+            <h1 class="text-4xl md:text-6xl font-bold text-white tracking-tight mb-4">Khám phá theo chủ đề</h1>
+            <p class="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">Tìm kiếm nội dung theo các danh mục được phân loại rõ ràng</p>
         </div>
     </div>
 </section>
@@ -16,63 +20,64 @@
 
 @section('content')
 
-<!-- Featured Categories Section -->
-<section class="mb-12">
-    <h2 class="text-2xl font-bold mb-6">Danh mục nổi bật</h2>
-    <div class="grid md:grid-cols-3 gap-8">
-        @foreach($categories->take(3) as $category)
-            <a href="{{ route('posts.public', ['category' => $category->id]) }}" class="group relative block aspect-[4/3] rounded-2xl overflow-hidden text-white">
-                <div class="absolute inset-0">
-                    <img src="{{ $category->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $category->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                </div>
-                <div class="absolute inset-0 bg-black/60 group-hover:bg-black/70 transition-colors duration-300"></div>
-                <div class="relative h-full flex flex-col justify-end p-6">
-                    <h3 class="text-xl font-bold">{{ $category->title }}</h3>
-                    <p class="mt-1 text-sm text-white/80">{{ $category->posts->count() }} bài viết</p>
-                </div>
-            </a>
-        @endforeach
-    </div>
-</section>
-
 <!-- All Categories Section -->
-<section class="mb-12">
-    <h2 class="text-2xl font-bold mb-6">Tất cả danh mục</h2>
-    <div class="mb-6">
-        <input type="text" id="categorySearch" placeholder="Tìm kiếm danh mục..." class="w-full px-4 py-2.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-teal-500" onkeyup="filterCategories()" />
+<section class="mb-16 scroll-reveal">
+    <div class="flex items-center justify-between mb-10">
+        <div>
+            <h2 class="text-3xl md:text-4xl font-bold mb-2">Tất cả danh mục</h2>
+            <p class="text-neutral-600 dark:text-neutral-400">Khám phá toàn bộ các chủ đề có sẵn</p>
+        </div>
+        <div class="hidden md:block text-sm text-neutral-500">
+            Tổng cộng <span class="font-semibold text-neutral-900 dark:text-white">{{ $categories->count() }}</span> danh mục
+        </div>
     </div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" id="categoryList">
-        @forelse($categories->skip(3) as $category)
-            <a href="{{ route('posts.public', ['category' => $category->id]) }}" class="group relative block aspect-[4/3] rounded-2xl overflow-hidden text-white category-item">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="categoryList">
+        @forelse($categories as $category)
+            <a href="{{ route('categories.show.public', $category->slug ?? $category->id) }}" class="group relative block aspect-[4/3] rounded-xl overflow-hidden text-white shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
                 <div class="absolute inset-0">
-                    <img src="{{ $category->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $category->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                    <img src="{{ $category->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $category->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                 </div>
-                <div class="absolute inset-0 bg-black/60 group-hover:bg-black/70 transition-colors duration-300"></div>
-                <div class="relative h-full flex flex-col justify-end p-6">
-                    <h3 class="text-xl font-bold">{{ $category->title }}</h3>
-                    <p class="mt-1 text-sm text-white/80">{{ $category->posts->count() }} bài viết</p>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20 group-hover:from-black/80 group-hover:via-black/50 transition-colors duration-300"></div>
+                <div class="relative h-full flex flex-col justify-between p-5">
+                    <div>
+                        <span class="inline-block px-2.5 py-1 text-xs font-semibold bg-white/20 backdrop-blur-sm rounded-full mb-2">
+                            {{ $category->posts()->published()->count() }} bài viết
+                        </span>
+                        <h3 class="text-xl font-bold mb-1 line-clamp-2">{{ $category->title }}</h3>
+                    </div>
+                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center gap-2 text-sm font-medium">
+                        Khám phá
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
                 </div>
             </a>
         @empty
-            <div class="col-span-full text-center py-16">
-                <svg class="mx-auto h-12 w-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M5 11v2m14-2v2" />
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-neutral-900 dark:text-white">Chưa có danh mục</h3>
-                <p class="mt-1 text-sm text-neutral-500">Hiện tại chưa có danh mục nào được tạo.</p>
+            <div class="col-span-full text-center py-20 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/80 dark:border-neutral-800">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 mb-4">
+                    <svg class="w-8 h-8 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-semibold text-neutral-900 dark:text-white mb-2">Chưa có danh mục</h3>
+                <p class="text-sm text-neutral-500 mb-6">Hiện tại chưa có danh mục nào được tạo.</p>
             </div>
         @endforelse
     </div>
 </section>
 
 <!-- Call to Action / Explore Posts Section -->
-<section class="mt-12 py-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-        <h2 class="text-3xl font-bold">Khám phá các bài viết</h2>
-        <p class="mt-2 max-w-2xl mx-auto">Tìm kiếm các bài viết theo chủ đề bạn quan tâm và mở rộng kiến thức của mình.</p>
-        <a href="{{ route('posts.public') }}" class="mt-6 inline-flex items-center px-6 py-3 rounded-lg bg-white text-purple-600 font-semibold hover:bg-neutral-200 transition">
+<section class="mt-16 py-16 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 rounded-3xl overflow-hidden relative">
+    <div class="absolute inset-0 bg-black/20"></div>
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative text-center text-white">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Khám phá các bài viết</h2>
+        <p class="text-lg text-white/90 max-w-2xl mx-auto mb-8">Tìm kiếm các bài viết theo chủ đề bạn quan tâm và mở rộng kiến thức của mình.</p>
+        <a href="{{ route('posts.public') }}" class="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-purple-600 font-semibold hover:bg-neutral-100 transition shadow-lg hover:shadow-xl hover:scale-105 transform duration-300">
             Xem tất cả bài viết
-            <svg class="ml-2 -mr-1 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+            </svg>
         </a>
     </div>
 </section>
@@ -80,23 +85,55 @@
 @endsection
 
 @push('scripts')
-<script>
-function filterCategories() {
-    const input = document.getElementById('categorySearch');
-    const filter = input.value.toLowerCase();
-    const categoryList = document.getElementById('categoryList');
-    const items = categoryList.getElementsByClassName('category-item');
 
-    for (let i = 0; i < items.length; i++) {
-        const title = items[i].querySelector('h3');
-        if (title) {
-            if (title.textContent.toLowerCase().indexOf(filter) > -1) {
-                items[i].style.display = "";
-            } else {
-                items[i].style.display = "none";
-            }
+<style>
+    @keyframes blob {
+        0%, 100% {
+            transform: translate(0px, 0px) scale(1);
+        }
+        33% {
+            transform: translate(30px, -50px) scale(1.1);
+        }
+        66% {
+            transform: translate(-20px, 20px) scale(0.9);
         }
     }
-}
+    .animate-blob {
+        animation: blob 7s infinite;
+    }
+    .animation-delay-2000 {
+        animation-delay: 2s;
+    }
+    .scroll-reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .scroll-reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.scroll-reveal').forEach(section => {
+        observer.observe(section);
+    });
+});
 </script>
 @endpush
