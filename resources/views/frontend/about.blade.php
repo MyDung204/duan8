@@ -78,43 +78,44 @@
 </section>
 
 <!-- Our Team Section -->
-<section class="py-16 scroll-reveal">
-    <div class="mb-12">
-        <h2 class="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">Gặp gỡ đội ngũ</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {{-- Thẻ thành viên: Nguyễn Văn Bảo Long --}}
-            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Long+Nguyen&size=128&background=7F9CF5&color=EBF4FF" alt="Nguyễn Văn Bảo Long" loading="lazy">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Lê Mỹ Dung</h4>
-                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Founder & Developer</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Sinh viên Công nghệ Thông tin, người đã xây dựng nền tảng này.
-                </p>
-            </div>
-            {{-- Thẻ thành viên: Placeholder 1 --}}
-            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Minh+Anh&size=128&background=6EE7B7&color=065F46" alt="Trần Thị Minh Anh" loading="lazy">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Nguyễn Văn Bảo Long</h4>
-                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Trưởng ban Biên tập</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Đảm bảo chất lượng nội dung và định hướng phát triển chủ đề.
-                </p>
-            </div>
-            {{-- Thẻ thành viên: Placeholder 2 --}}
-            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
-                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Van+Hung&size=128&background=FDBA74&color=7C2D12" alt="Lê Văn Hùng" loading="lazy">
-                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Nguyễn Thị Quỳnh Hương</h4>
-                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Chuyên gia Tài chính</p>
-                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    Cung cấp các bài viết chuyên sâu về thị trường ngân hàng và đầu tư.
-                </p>
-            </div>
+<section class="mt-16 py-16 bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-800 rounded-3xl scroll-reveal">
+    <div class="text-center mb-12">
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">Đội ngũ của chúng tôi</h2>
+        <p class="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">Những con người tâm huyết đứng sau thành công của dự án</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {{-- Card 1 --}}
+        <div class="text-center p-8 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <img class="w-32 h-32 rounded-full mx-auto mb-6 object-cover border-4 border-neutral-200 dark:border-neutral-700 shadow-lg" src="https://ui-avatars.com/api/?name=Long+Nguyen&size=128&background=7F9CF5&color=EBF4FF" alt="Nguyễn Văn Bảo Long" loading="lazy">
+            <h3 class="text-2xl font-bold mb-1">Lê Mỹ Dung</h3>
+            <p class="text-primary-600 dark:text-primary-400 font-medium mb-3">Founder & Developer</p>
+            <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Sinh viên Công nghệ Thông tin, người đã xây dựng nền tảng này.
+            </p>
+        </div>
+        {{-- Card 2 --}}
+        <div class="text-center p-8 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <img class="w-32 h-32 rounded-full mx-auto mb-6 object-cover border-4 border-neutral-200 dark:border-neutral-700 shadow-lg" src="https://ui-avatars.com/api/?name=Minh+Anh&size=128&background=6EE7B7&color=065F46" alt="Trần Thị Minh Anh" loading="lazy">
+            <h3 class="text-2xl font-bold mb-1">Nguyễn Văn Bảo Long</h3>
+            <p class="text-primary-600 dark:text-primary-400 font-medium mb-3">Trưởng ban Biên tập</p>
+            <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Đảm bảo chất lượng nội dung và định hướng phát triển chủ đề.
+            </p>
+        </div>
+        {{-- Card 3 --}}
+        <div class="text-center p-8 bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <img class="w-32 h-32 rounded-full mx-auto mb-6 object-cover border-4 border-neutral-200 dark:border-neutral-700 shadow-lg" src="https://ui-avatars.com/api/?name=Van+Hung&size=128&background=FDBA74&color=7C2D12" alt="Lê Văn Hùng" loading="lazy">
+            <h3 class="text-2xl font-bold mb-1">Nguyễn Thị Quỳnh Hương</h3>
+            <p class="text-primary-600 dark:text-primary-400 font-medium mb-3">Chuyên gia Tài chính</p>
+            <p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                Cung cấp các bài viết chuyên sâu về thị trường ngân hàng và đầu tư.
+            </p>
         </div>
     </div>
 </section>
 
 <!-- Milestones/Impact Section -->
-<section class="py-16 bg-gradient-to-br from-rose-50 via-red-50 to-orange-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 rounded-3xl scroll-reveal">
+<section class="mt-16 py-16 bg-gradient-to-br from-rose-50 via-red-50 to-orange-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 rounded-3xl scroll-reveal">
     <div class="text-center mb-12">
         <h2 class="text-3xl md:text-4xl font-bold mb-4">Những cột mốc đáng nhớ</h2>
         <p class="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">Hành trình phát triển và những thành tựu chúng tôi đã đạt được</p>
