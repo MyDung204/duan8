@@ -19,7 +19,8 @@ new class extends Component
 
     public function loadStats(): void
     {
-        $this->stats = Cache::remember('dashboard::stats', now()->addMinutes(5), function () {
+        $now = now();
+        $this->stats = Cache::remember('dashboard::stats', $now->copy()->addMinutes(5), function () use ($now) {
             return DB::table('posts')
                 ->select(
                     DB::raw('COUNT(*) as total'),
@@ -30,11 +31,11 @@ new class extends Component
                     DB::raw('SUM(CASE WHEN DATE(created_at) = ? THEN 1 ELSE 0 END) as today')
                 )
                 ->setBindings([
-                    now()->startOfWeek(),
-                    now()->endOfWeek(),
-                    now()->year,
-                    now()->month,
-                    today(),
+                    $now->copy()->startOfWeek(),
+                    $now->copy()->endOfWeek(),
+                    $now->year,
+                    $now->month,
+                    $now->toDateString(),
                 ])
                 ->first();
         });
@@ -72,17 +73,18 @@ new class extends Component
 
     public function getChartDataProperty()
     {
-        return Cache::remember('dashboard::chartData::' . $this->chartTimeframe, now()->addMinutes(5), function () {
+        $now = now();
+        return Cache::remember('dashboard::chartData::' . $this->chartTimeframe, $now->copy()->addMinutes(5), function () use ($now) {
             if ($this->chartTimeframe === 'week') {
                 $posts = Post::query()
                     ->select(DB::raw('DATE(created_at) as date'), DB::raw('COUNT(*) as count'))
-                    ->where('created_at', '>=', now()->subDays(6)->startOfDay())
+                    ->where('created_at', '>=', $now->copy()->subDays(6)->startOfDay())
                     ->groupBy('date')
                     ->pluck('count', 'date');
 
                 $data = [];
                 for ($i = 6; $i >= 0; $i--) {
-                    $date = now()->subDays($i);
+                    $date = $now->copy()->subDays($i);
                     $formattedDate = $date->format('Y-m-d');
                     $data[] = [
                         'label' => $date->format('d/m'),
@@ -93,7 +95,7 @@ new class extends Component
 
             } elseif ($this->chartTimeframe === 'month') {
                 $posts = Post::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-                    ->whereYear('created_at', now()->year)
+                    ->whereYear('created_at', $now->year)
                     ->groupBy('month')
                     ->orderBy('month')
                     ->pluck('count', 'month')
@@ -110,13 +112,13 @@ new class extends Component
                 return $data;
 
             } else { // 'year'
-                $startYear = now()->subYears(4)->year;
-                $endYear = now()->year;
+                $startYear = $now->copy()->subYears(4)->year;
+                $endYear = $now->year;
 
                 $posts = Post::selectRaw('YEAR(created_at) as year, COUNT(*) as count')
                     ->whereBetween('created_at', [
-                        now()->subYears(4)->startOfYear(),
-                        now()->endOfYear()
+                        $now->copy()->subYears(4)->startOfYear(),
+                        $now->copy()->endOfYear()
                     ])
                     ->groupBy('year')
                     ->orderBy('year')
@@ -137,32 +139,31 @@ new class extends Component
 
     public function getPostsByCategoryProperty()
     {
-        return Cache::remember('dashboard::postsByCategory::' . $this->chartTimeframe, now()->addMinutes(5), function () {
+        $now = now();
+        return Cache::remember('dashboard::postsByCategory::' . $this->chartTimeframe, $now->copy()->addMinutes(5), function () use ($now) {
             $query = Post::query()
-                ->select('category_id', DB::raw('COUNT(*) as count'))
-                ->whereNotNull('category_id');
+                ->leftJoin('categories', 'categories.id', '=', 'posts.category_id')
+                ->select(DB::raw('COALESCE(categories.title, "Chưa phân loại") as label'), DB::raw('COUNT(*) as count'))
+                ->whereNotNull('posts.category_id');
 
             if ($this->chartTimeframe === 'week') {
-                $query->whereBetween('created_at', [now()->subDays(6)->startOfDay(), now()->endOfDay()]);
+                $query->whereBetween('posts.created_at', [$now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay()]);
             } elseif ($this->chartTimeframe === 'month') {
-                $query->whereYear('created_at', now()->year);
+                $query->whereYear('posts.created_at', $now->year);
             } elseif ($this->chartTimeframe === 'year') {
-                $query->whereBetween('created_at', [now()->subYears(4)->startOfYear(), now()->endOfYear()]);
+                $query->whereBetween('posts.created_at', [$now->copy()->subYears(4)->startOfYear(), $now->copy()->endOfYear()]);
             }
 
-            $results = $query->groupBy('category_id')->get();
+            $results = $query->groupBy('posts.category_id', 'categories.title')->get();
 
             if ($results->isEmpty()) {
                 return [['label' => 'Chưa có dữ liệu', 'value' => 0]];
             }
 
-            $categoryIds = $results->pluck('category_id');
-            $categories = Category::whereIn('id', $categoryIds)->pluck('title', 'id');
-
-            return $results->map(function ($item) use ($categories) {
+            return $results->map(function ($item) {
                 return [
-                    'label' => $categories->get($item->category_id) ?? 'Chưa phân loại',
-                    'value' => (int)$item->count,
+                    'label' => (string) $item->label,
+                    'value' => (int) $item->count,
                 ];
             })->toArray();
         });
@@ -171,8 +172,10 @@ new class extends Component
     public function getRecentPostsProperty()
     {
         return Cache::remember('dashboard::recentPosts', now()->addMinutes(5), function () {
-            return Post::with('category')
-                ->orderBy('created_at', 'desc')
+            return Post::query()
+                ->select(['id','title','category_id','is_published','created_at'])
+                ->with(['category:id,title'])
+                ->latest('created_at')
                 ->limit(5)
                 ->get();
         });
@@ -444,7 +447,6 @@ new class extends Component
 {{-- BẮT ĐẦU PHẦN SCRIPT ĐÃ SỬA --}}
 {{-- ====================================================================== --}}
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Khai báo biến global để lưu trữ instance của biểu đồ
     let barChart = null;
@@ -455,7 +457,7 @@ new class extends Component
      * Nó cũng sẽ hủy các biểu đồ cũ nếu chúng tồn tại.
      */
     function initializeCharts() {
-        console.log('Running initializeCharts...');
+
         // --- BAR CHART ---
         const barCanvas = document.getElementById('postsChart');
         if (barCanvas) {
@@ -465,7 +467,7 @@ new class extends Component
             const labels = JSON.parse(barCanvas.getAttribute('data-chart-labels'));
             const values = JSON.parse(barCanvas.getAttribute('data-chart-values'));
             
-            console.log('Bar Chart Data:', { labels: labels, values: values }); // Log data
+
 
             // Hủy biểu đồ cũ nếu tồn tại
             if (barChart) {
@@ -578,23 +580,42 @@ new class extends Component
 
     // --- BỘ LẮNG NGHE SỰ KIỆN ---
 
-    // 1. Chạy khi tải trang lần đầu (F5)
+    // 1. Khởi chạy khi idle + panel hiển thị để giảm main-thread work
+    function onIdle(cb){
+        if (window.requestIdleCallback) { requestIdleCallback(cb, { timeout: 1500 }); }
+        else { setTimeout(cb, 500); }
+    }
+
+    function observeAndInit() {
+        const panels = [
+            document.getElementById('postsChartPanel'),
+            document.getElementById('categoryChartPanel')
+        ].filter(Boolean);
+        if (panels.length === 0) return (window.Chart ? initializeCharts() : document.addEventListener('chartjs:ready', initializeCharts));
+
+        const io = new IntersectionObserver((entries, obs) => {
+            if (entries.some(e => e.isIntersecting)) {
+                obs.disconnect();
+                if (window.Chart) { initializeCharts(); }
+                else { document.addEventListener('chartjs:ready', initializeCharts, { once: true }); }
+            }
+        }, { root: null, threshold: 0.1 });
+        panels.forEach(p => io.observe(p));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        // Tăng delay lên 100ms
-        setTimeout(initializeCharts, 100); 
+        onIdle(observeAndInit);
     });
 
     // 2. Chạy khi Livewire điều hướng đến trang này
     document.addEventListener('livewire:navigated', () => {
-        // Tăng delay lên 100ms
-        setTimeout(initializeCharts, 100);
+        onIdle(observeAndInit);
     });
 
     // 3. Chạy khi bộ lọc thời gian thay đổi (dispatch('chart-updated'))
     document.addEventListener('livewire:init', () => {
         Livewire.on('chart-updated', () => {
-            // Tăng delay lên 100ms
-            setTimeout(initializeCharts, 100);
+            onIdle(observeAndInit);
         });
     });
 

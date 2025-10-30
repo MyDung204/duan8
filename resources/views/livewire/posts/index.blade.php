@@ -32,7 +32,8 @@ new class extends Component
     public function getPostsProperty()
     {
         $query = Post::query()
-            ->with('category')
+            ->select(['id','title','short_description','author_name','category_id','is_published','created_at','views_count','banner_image'])
+            ->with(['category:id,title,parent_id','category.parent:id,title,parent_id'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('title', 'like', '%' . $this->search . '%')
@@ -43,7 +44,11 @@ new class extends Component
             })
             ->when($this->parentCategoryFilter !== 'all', function ($q) {
                 $categoryId = (int) $this->parentCategoryFilter;
-                $childCategoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
+                $childCategoryIds = Cache::remember(
+                    'posts::child_ids_parent_' . $categoryId,
+                    now()->addMinutes(10),
+                    fn () => Category::where('parent_id', $categoryId)->pluck('id')->toArray()
+                );
                 $allCategoryIds = array_merge([$categoryId], $childCategoryIds);
                 $q->whereIn('category_id', $allCategoryIds);
             })
@@ -82,12 +87,7 @@ new class extends Component
                 ->orderBy('title')
                 ->get();
 
-            // Build full_path directly on the collection to avoid N+1 issues
-            return $categories->map(function ($category) {
-                // Use the category's accessor which handles the full path
-                $category->full_path = $category->full_path;
-                return $category;
-            });
+            return $categories;
         });
     }
 
@@ -388,8 +388,7 @@ new class extends Component
                                 <td class="px-4 py-4 whitespace-nowrap">
                                     @if($post->category)
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                            {{-- Hiển thị đường dẫn đầy đủ --}}
-                                            {{ Str::limit($post->category->full_path, 30) }}
+                                            {{ Str::limit($post->category->title, 30) }}
                                         </span>
                                     @else
                                         <span class="text-gray-400 dark:text-gray-500">Chưa phân loại</span>
@@ -447,7 +446,8 @@ new class extends Component
                                         <flux:button
                                             variant="outline"
                                             size="sm"
-                                            onclick="confirmDelete({{ $post->id }})"
+                                            class="btn-delete-post"
+                                            data-post-id="{{ $post->id }}"
                                         >
                                             <flux:icon name="trash" class="size-4 text-red-600" />
                                         </flux:button>
@@ -501,7 +501,7 @@ new class extends Component
     </style>
     
     {{-- Javascript (SweetAlert) --}}
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
     <script>
         document.addEventListener('livewire:init', () => {
             // Lắng nghe sự kiện show-success
@@ -535,11 +535,15 @@ new class extends Component
             });
         });
 
-        // Hàm xác nhận xóa
-        function confirmDelete(postId) {
-             Swal.fire({
+        // Ủy quyền sự kiện click cho nút xóa để tránh inline JS
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-delete-post');
+            if (!btn) return;
+            const postId = parseInt(btn.getAttribute('data-post-id'));
+            if (!postId) return;
+            Swal.fire({
                 title: 'Bạn có chắc chắn?',
-                text: "Bạn sẽ không thể hoàn tác hành động này!",
+                text: 'Bạn sẽ không thể hoàn tác hành động này!',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
@@ -548,10 +552,9 @@ new class extends Component
                 cancelButtonText: 'Hủy'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Gọi sự kiện Livewire 'delete-post'
-                    Livewire.dispatch('delete-post', { postId: postId });
+                    Livewire.dispatch('delete-post', { postId });
                 }
             });
-        }
+        });
     </script>
 </div>

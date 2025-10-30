@@ -7,9 +7,7 @@
 
         <title>@yield('title', config('app.name', 'Website'))</title>
 
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link rel="preload" href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" as="style" />
-        <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" media="print" onload="this.media='all'" />
+        {{-- Fonts are self-hosted via resources/css/fonts.css and Vite build --}}
 
         <link rel="preload" href="{{ Vite::asset('resources/css/app.css') }}" as="style" />
         <link rel="icon" href="{{ asset('image/favicon.png') }}" type="image/png">

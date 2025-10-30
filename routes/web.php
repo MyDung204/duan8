@@ -2,30 +2,43 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 use App\Models\Post;
 use App\Models\Category;
 
 Route::get('/', function () {
-    $latestPosts = Post::published()
-        ->with('category')
-        ->latest()
-        ->take(6)
-        ->get();
-    $topCategories = Category::active()
-        ->roots()
-        ->withCount(['posts' => function ($query) {
-            $query->published();
-        }])
-        ->orderBy('title')
-        ->get();
+    $latestPosts = Cache::remember('home_latest_posts', 300, function () {
+        return Post::published()
+            ->with('category')
+            ->latest()
+            ->take(6)
+            ->get();
+    });
+    $topCategories = Cache::remember('home_top_categories', 300, function () {
+        return Category::active()
+            ->roots()
+            ->withCount(['posts' => function ($query) {
+                $query->published();
+            }])
+            ->orderBy('title')
+            ->get();
+    });
     return view('frontend.home', compact('latestPosts', 'topCategories'));
 })->name('home');
 
 Route::get('/bai-viet/{post:slug}', function (Post $post) {
-    // Increment view count
-    $post->increment('views_count');
+    // Increment view count with simple throttling per session (5 minutes)
+    $sessionKey = 'viewed_post_' . $post->id;
+    $lastViewedAt = session($sessionKey);
+    $nowTs = now()->getTimestamp();
+    $throttleSeconds = 300; // 5 minutes
+
+    if (!$lastViewedAt || ($nowTs - (int) $lastViewedAt) > $throttleSeconds) {
+        $post->increment('views_count');
+        session([$sessionKey => $nowTs]);
+    }
     $post->refresh();
     
     // Get related posts
@@ -56,7 +69,7 @@ Route::get('/bai-viet/{post:slug}', function (Post $post) {
 
 // Public: Posts
 Route::get('/bai-viet', function () {
-    $query = Post::published()->latest();
+    $query = Post::published()->with('category')->latest();
     if (request('q')) {
         $query->search(request('q'));
     }
@@ -70,25 +83,29 @@ Route::get('/bai-viet', function () {
 
 // Public: Categories
 Route::get('/danh-muc', function () {
-    $categories = Category::active()->roots()->with(['children' => function($q){
-        $q->active()->orderBy('title');
-    }])->orderBy('title')->get();
+    $categories = Cache::remember('categories_index_tree', 300, function () {
+        return Category::active()
+            ->roots()
+            ->with(['children' => function($q){
+                $q->active()->orderBy('title');
+            }])
+            ->orderBy('title')
+            ->get();
+    });
     return view('frontend.categories.index', compact('categories'));
 })->name('categories.public');
 
-// Public: Category Detail
-Route::get('/danh-muc/{category}', function ($identifier) {
-    // Try to find category by slug first, then by id
-    $category = Category::where(function($query) use ($identifier) {
-        $query->where('slug', $identifier);
-        if (is_numeric($identifier)) {
-            $query->orWhere('id', $identifier);
+// Public: Category Detail (slug binding)
+Route::get('/danh-muc/{category:slug}', function (Category $category) {
+    $category->load([
+        'parent',
+        'children' => function($q) {
+            $q->active()->orderBy('title')
+                ->withCount(['posts as published_posts_count' => function($q){
+                    $q->published();
+                }]);
         }
-    })->firstOrFail();
-    
-    $category->load(['parent', 'children' => function($q) {
-        $q->active()->orderBy('title');
-    }]);
+    ]);
     
     // Get all posts in this category (including subcategories)
     $categoryIds = [$category->id];
@@ -106,12 +123,15 @@ Route::get('/danh-muc/{category}', function ($identifier) {
     $totalViews = Post::published()->whereIn('category_id', $categoryIds)->sum('views_count');
     
     // Get featured/latest posts (first 3) - including subcategories
-    $featuredPosts = Post::published()
-        ->whereIn('category_id', $categoryIds)
-        ->with('category')
-        ->latest()
-        ->take(3)
-        ->get();
+    $cacheKey = 'category_featured_'.$category->id;
+    $featuredPosts = Cache::remember($cacheKey, 300, function () use ($categoryIds) {
+        return Post::published()
+            ->whereIn('category_id', $categoryIds)
+            ->with('category')
+            ->latest()
+            ->take(3)
+            ->get();
+    });
     
     $posts = $postsQuery->with('category')
         ->latest()
@@ -122,16 +142,28 @@ Route::get('/danh-muc/{category}', function ($identifier) {
     $relatedCategories = Category::active()
         ->where('id', '!=', $category->id)
         ->where('parent_id', $category->parent_id)
+        ->withCount(['posts as published_posts_count' => function($q){
+            $q->published();
+        }])
         ->take(6)
         ->get();
     
-    // Get breadcrumbs
-    $breadcrumbs = [];
-    $current = $category;
-    while ($current) {
-        array_unshift($breadcrumbs, $current);
-        $current = $current->parent;
-    }
+    // Get breadcrumbs (cached)
+    $breadcrumbs = Cache::remember('category_breadcrumbs_'.$category->id, 300, function () use ($category) {
+        $arr = [];
+        $current = $category->loadMissing('parent');
+        while ($current) {
+            array_unshift($arr, [
+                'id' => $current->id,
+                'slug' => $current->slug,
+                'title' => $current->title,
+            ]);
+            $current = $current->parent;
+        }
+        return $arr;
+    });
+    // Cast breadcrumbs array to objects to match existing view usage
+    $breadcrumbs = array_map(function ($b) { return (object) $b; }, $breadcrumbs);
     
     return view('frontend.categories.show', compact(
         'category', 

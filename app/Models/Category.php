@@ -49,11 +49,47 @@ class Category extends Model
     {
         parent::boot();
 
-        static::creating(function ($model) {
-            // Tự động set order dựa trên thời gian tạo
-            $model->order = static::max('order') + 1;
-        });
+		static::creating(function ($model) {
+			// Tự động set order tăng dần, an toàn khi order null
+			$maxOrder = (int) (static::max('order') ?? 0);
+			$model->order = $maxOrder + 1;
+
+			// Tự động tạo slug nếu thiếu
+			if (empty($model->slug) && !empty($model->title)) {
+				$model->slug = static::generateUniqueSlug($model->title);
+			}
+		});
+
+		static::updating(function ($model) {
+			// Nếu đổi title và slug đang trống, tạo slug mới
+			if ($model->isDirty('title') && empty($model->slug)) {
+				$model->slug = static::generateUniqueSlug($model->title, $model->id);
+			}
+		});
     }
+
+	/**
+	 * Tạo slug duy nhất từ title
+	 */
+	protected static function generateUniqueSlug(string $title, ?int $excludeId = null): string
+	{
+		$slug = Str::slug($title);
+		$originalSlug = $slug;
+		$counter = 1;
+
+		while ((function () use ($slug, $excludeId) {
+			$query = static::where('slug', $slug);
+			if ($excludeId !== null) {
+				$query->where('id', '!=', $excludeId);
+			}
+			return $query->exists();
+		})()) {
+			$slug = $originalSlug . '-' . $counter;
+			$counter++;
+		}
+
+		return $slug;
+	}
 
     /**
      * Relationship: Danh mục cha

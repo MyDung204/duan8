@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
@@ -39,8 +40,12 @@ new class extends Component {
     public function getCategoriesProperty()
     {
         $query = Category::query()
-            ->with('parent') // Load 'parent' để dùng cho hiển thị path
-            ->withCount(['children', 'posts']); // Load count để dùng cho confirm delete và hiển thị số bài viết
+            ->select(['id','title','parent_id','banner_image','is_active','created_at'])
+            ->with(['parent:id,title']) // Load 'parent' để dùng cho hiển thị path
+            ->withCount([
+                'children', 
+                'posts as published_posts_count' => function($q){ $q->published(); }
+            ]);
 
         // Tìm kiếm theo từ khóa
         if ($this->search) {
@@ -399,7 +404,7 @@ new class extends Component {
                                                 :href="route('posts.index', ['category' => $category->id])"
                                                 wire:navigate
                                             >
-                                                {{ $category->posts_count ?? 0 }} bài viết
+                                                {{ $category->published_posts_count ?? 0 }} bài viết
                                             </flux:button>
                                         </div>
                                     @else
@@ -414,7 +419,7 @@ new class extends Component {
                                                 :href="route('posts.index', ['category' => $category->id])"
                                                 wire:navigate
                                             >
-                                                {{ $category->posts_count ?? 0 }} bài viết
+                                                {{ $category->published_posts_count ?? 0 }} bài viết
                                             </flux:button>
                                         </div>
                                     @endif
@@ -492,6 +497,7 @@ new class extends Component {
     </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 <script>
     // Cập nhật hàm để chấp nhận tham số childrenCount
     function confirmDelete(id, title, childrenCount) {

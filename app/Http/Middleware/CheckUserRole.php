@@ -14,11 +14,15 @@ class CheckUserRole
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+	public function handle(Request $request, Closure $next, string $role): Response
     {
-        if (!Auth::check() || Auth::user()->role !== $role) {
-            abort(403, 'Unauthorized action.');
-        }
+		// Cho phép truyền nhiều vai trò: role:admin,editor,manager
+		$allowedRoles = array_filter(array_map('trim', explode(',', $role)));
+		$currentRole = Auth::check() ? (string) Auth::user()->role : '';
+
+		if (!Auth::check() || (count($allowedRoles) > 0 && !in_array($currentRole, $allowedRoles, true))) {
+			abort(403, 'Unauthorized action.');
+		}
 
         return $next($request);
     }

@@ -5,8 +5,7 @@
 
 <link rel="icon" href="{{ asset('image/favicon.png') }}" type="image/png">
 
-<link rel="preconnect" href="https://fonts.bunny.net">
-<link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+{{-- Fonts are self-hosted via resources/css/fonts.css and Vite build --}}
 
-@vite(['resources/css/app.css', 'resources/js/app.js'])
+{{-- Layouts sẽ tự quyết định @vite entries (public vs admin) --}}
 @fluxAppearance

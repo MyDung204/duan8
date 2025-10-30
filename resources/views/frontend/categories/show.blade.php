@@ -126,7 +126,7 @@
                     @if($childCategory->short_description)
                         <p class="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">{{ $childCategory->short_description }}</p>
                     @endif
-                    <p class="text-xs text-neutral-500">{{ $childCategory->posts()->published()->count() }} bài viết</p>
+                    <p class="text-xs text-neutral-500">{{ $childCategory->published_posts_count ?? 0 }} bài viết</p>
                 </div>
             </a>
         @endforeach
@@ -260,7 +260,7 @@
                     @if($relatedCategory->short_description)
                         <p class="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-2">{{ $relatedCategory->short_description }}</p>
                     @endif
-                    <p class="text-xs text-neutral-500">{{ $relatedCategory->posts()->published()->count() }} bài viết</p>
+                    <p class="text-xs text-neutral-500">{{ $relatedCategory->published_posts_count ?? 0 }} bài viết</p>
                 </div>
             </a>
         @endforeach

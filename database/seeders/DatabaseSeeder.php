@@ -13,16 +13,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-        // Chạy seeder cho ImageCategory
-        $this->call([
-            ImageCategorySeeder::class,
-        ]);
+        // Không seed dữ liệu mẫu/dummy trong môi trường thật
+        // Giữ file seeder để tham khảo, nhưng KHÔNG gọi ở đây.
     }
 }
