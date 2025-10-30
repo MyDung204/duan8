@@ -79,26 +79,37 @@
 
 <!-- Our Team Section -->
 <section class="py-16 scroll-reveal">
-    <div class="text-center mb-12">
-        <h2 class="text-3xl md:text-4xl font-bold mb-4">Đội ngũ của chúng tôi</h2>
-        <p class="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">Những con người tâm huyết đứng sau thành công của dự án</p>
-    </div>
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        @foreach(range(1, 4) as $i)
-            <div class="text-center bg-white dark:bg-neutral-900 p-8 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <div class="relative inline-block mb-6">
-                    <img class="w-32 h-32 rounded-full object-cover mx-auto border-4 border-neutral-200 dark:border-neutral-700 shadow-lg" src="https://i.pravatar.cc/256?u=a042581f4e29026704{{ 10 + $i }}" alt="Team member {{ $i }}">
-                    <div class="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-primary-600 flex items-center justify-center shadow-lg">
-                        <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                </div>
-                <h3 class="text-xl font-bold mb-1">Thành viên {{ $i }}</h3>
-                <p class="text-primary-600 dark:text-primary-400 font-medium mb-3">Chức vụ {{ $i }}</p>
-                <p class="text-sm text-neutral-600 dark:text-neutral-400">Chuyên gia trong lĩnh vực và đam mê chia sẻ kiến thức</p>
+    <div class="mb-12">
+        <h2 class="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">Gặp gỡ đội ngũ</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {{-- Thẻ thành viên: Nguyễn Văn Bảo Long --}}
+            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Long+Nguyen&size=128&background=7F9CF5&color=EBF4FF" alt="Nguyễn Văn Bảo Long" loading="lazy">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Lê Mỹ Dung</h4>
+                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Founder & Developer</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Sinh viên Công nghệ Thông tin, người đã xây dựng nền tảng này.
+                </p>
             </div>
-        @endforeach
+            {{-- Thẻ thành viên: Placeholder 1 --}}
+            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Minh+Anh&size=128&background=6EE7B7&color=065F46" alt="Trần Thị Minh Anh" loading="lazy">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Nguyễn Văn Bảo Long</h4>
+                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Trưởng ban Biên tập</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Đảm bảo chất lượng nội dung và định hướng phát triển chủ đề.
+                </p>
+            </div>
+            {{-- Thẻ thành viên: Placeholder 2 --}}
+            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Van+Hung&size=128&background=FDBA74&color=7C2D12" alt="Lê Văn Hùng" loading="lazy">
+                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Nguyễn Thị Quỳnh Hương</h4>
+                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Chuyên gia Tài chính</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Cung cấp các bài viết chuyên sâu về thị trường ngân hàng và đầu tư.
+                </p>
+            </div>
+        </div>
     </div>
 </section>
 

@@ -1,0 +1,33 @@
+{{-- 4. Đội ngũ của chúng tôi --}}
+                    <div class="mb-12">
+                        <h2 class="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-gray-100">Gặp gỡ đội ngũ</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {{-- Thẻ thành viên: Nguyễn Văn Bảo Long --}}
+                            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Long+Nguyen&size=128&background=7F9CF5&color=EBF4FF" alt="Nguyễn Văn Bảo Long" loading="lazy">
+                                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Nguyễn Văn Bảo Long</h4>
+                                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Founder & Developer</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                    Sinh viên Công nghệ Thông tin, người đã xây dựng nền tảng này.
+                                </p>
+                            </div>
+                            {{-- Thẻ thành viên: Placeholder 1 --}}
+                            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Minh+Anh&size=128&background=6EE7B7&color=065F46" alt="Trần Thị Minh Anh" loading="lazy">
+                                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Nguyễn Thị Quỳnh Hương</h4>
+                                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Trưởng ban Biên tập</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                    Đảm bảo chất lượng nội dung và định hướng phát triển chủ đề.
+                                </p>
+                            </div>
+                            {{-- Thẻ thành viên: Placeholder 2 --}}
+                            <div class="text-center bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <img class="w-32 h-32 rounded-full mx-auto mb-4 object-cover" src="https://ui-avatars.com/api/?name=Van+Hung&size=128&background=FDBA74&color=7C2D12" alt="Lê Văn Hùng" loading="lazy">
+                                <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Lê Mỹ Dung</h4>
+                                <p class="text-sm text-indigo-600 dark:text-indigo-400 font-medium">Chuyên gia Tài chính</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                    Cung cấp các bài viết chuyên sâu về thị trường ngân hàng và đầu tư.
+                                </p>
+                            </div>
+                        </div>
+                    </div>

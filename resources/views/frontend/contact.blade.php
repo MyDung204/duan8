@@ -160,7 +160,7 @@
                     </div>
                     <div>
                         <p class="font-semibold text-neutral-900 dark:text-white mb-1">Địa chỉ</p>
-                        <p class="text-sm text-neutral-600 dark:text-neutral-400">123 Nguyễn Văn Cừ, Quận 5, TP.HCM</p>
+                        <p class="text-sm text-neutral-600 dark:text-neutral-400">18 Phạm Hùng, Mễ Trì, Nam Từ Liêm, Hà Nội</p>
                     </div>
                 </li>
                 <li class="flex items-start gap-4 group">
@@ -171,7 +171,7 @@
                     </div>
                     <div>
                         <p class="font-semibold text-neutral-900 dark:text-white mb-1">Email</p>
-                        <a href="mailto:contact@example.com" class="text-sm text-green-600 dark:text-green-400 hover:underline">contact@example.com</a>
+                        <a href="mailto:contact@example.com" class="text-sm text-green-600 dark:text-green-400 hover:underline">lemydung204@gmail.com</a>
                     </div>
                 </li>
                 <li class="flex items-start gap-4 group">
