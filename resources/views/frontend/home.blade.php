@@ -23,7 +23,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-12">
             
             {{-- Bài viết chính (Bên trái) --}}
-            <div class="lg:col-span-2 group relative block bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden">
+            <div class="lg:col-span-2 group relative block bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden transition-all duration-300 ease-out hover:shadow-2xl hover:-translate-y-1">
                 {{-- ĐÃ SỬA: Dùng route 'posts.show.public' --}}
                 <a href="{{ route('posts.show.public', $mainHeroPost->slug) }}">
                     <div class="h-[450px] w-full">
@@ -46,7 +46,7 @@
                             {{-- ĐÃ SỬA: Dùng accessor 'created_date' từ Model Post --}}
                             <span class="ml-2">{{ $mainHeroPost->created_date }}</span>
                         </div>
-                        <h3 class="text-2xl lg:text-3xl font-bold text-white transition-colors duration-200 mb-2 leading-tight">
+                        <h3 class="text-3xl lg:text-4xl font-bold text-white transition-colors duration-200 mb-2 leading-tight">
                             {{-- ĐÃ SỬA: Dùng helper chuẩn của Laravel --}}
                             {{ \Illuminate\Support\Str::limit($mainHeroPost->title, 60, '...') }}
                         </h3>
@@ -62,7 +62,7 @@
             {{-- 2 Bài viết phụ (Bên phải) --}}
             <div class="lg:col-span-1 space-y-6">
                 @foreach($sideHeroPosts as $post)
-                <div class="group relative block bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden h-[213px]">
+                <div class="group relative block bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden h-[213px] transition-all duration-300 ease-out hover:shadow-xl hover:-translate-y-1">
                     {{-- ĐÃ SỬA: Dùng route 'posts.show.public' --}}
                     <a href="{{ route('posts.show.public', $post->slug) }}">
                         @if($post->banner_image_url)
@@ -149,29 +149,8 @@
     </div>
     <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {{-- ĐÃ SỬA: Bắt đầu từ bài thứ 4 (skip 3 bài đầu tiên đã dùng cho Hero) --}}
-        @foreach($latestPosts->skip(3) as $index => $post)
-            <a href="{{ route('posts.show.public', $post->slug) }}" class="group block bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
-                <div class="aspect-[4/3] overflow-hidden relative">
-                    {{-- Giữ nguyên logic ảnh --}}
-                    <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    @if($post->category)
-                        <span class="absolute top-4 left-4 px-3 py-1 text-xs font-semibold bg-primary-600 text-white rounded-full backdrop-blur-sm">{{ $post->category->title }}</span>
-                    @endif
-                </div>
-                <div class="p-5">
-                    <h3 class="text-lg font-bold text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-200 line-clamp-2 mb-2">{{ $post->title }}</h3>
-                    @if($post->short_description)
-                        <p class="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-3">{{ $post->short_description }}</p>
-                    @endif
-                    <div class="flex items-center gap-3 text-xs text-neutral-500">
-                         {{-- Giữ nguyên logic author/date --}}
-                        <span>{{ $post->author_name ?? 'Admin' }}</span>
-                        <span>&bull;</span>
-                        <span>{{ $post->created_date }}</span>
-                    </div>
-                </div>
-            </a>
+        @foreach($latestPosts->skip(3) as $post)
+            <x-post-card :post="$post" />
         @endforeach
     </div>
     <div class="mt-8 text-center md:hidden">
@@ -222,15 +201,22 @@
                  x-transition:enter-end="opacity-100 transform translate-y-0"
                  class="grid md:grid-cols-3 gap-6">
                 <template x-for="post in posts" :key="post.id">
-                    <a :href="`{{ url('/bai-viet') }}/${post.slug}`" class="group block bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <a :href="`{{ url('/bai-viet') }}/${post.slug}`" class="group block bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
                         <div class="aspect-[4/3] overflow-hidden relative">
                             <img :src="post.banner_image_url ? post.banner_image_url : 'https://via.placeholder.com/800x600'" :alt="post.title" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <template x-if="post.category">
+                                <span class="absolute top-4 left-4 px-3 py-1 text-xs font-semibold bg-primary-600 text-white rounded-full backdrop-blur-sm" x-text="post.category.title"></span>
+                            </template>
                         </div>
                         <div class="p-5">
                             <h3 class="text-lg font-bold text-neutral-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-200 line-clamp-2 mb-2" x-text="post.title"></h3>
-                            <p class="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2 mb-3" x-text="post.short_description || ''"></p>
-                            <p class="text-xs text-neutral-500" x-text="post.created_date"></p>
+                            <p class="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 mb-3" x-text="post.short_description || ''"></p>
+                            <div class="flex items-center gap-3 text-xs text-neutral-500">
+                                <span x-text="post.author_name || 'Admin'"></span>
+                                <span>&bull;</span>
+                                <span x-text="post.created_date"></span>
+                            </div>
                         </div>
                     </a>
                 </template>
