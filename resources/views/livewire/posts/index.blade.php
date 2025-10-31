@@ -191,6 +191,9 @@ new class extends Component
 }; ?>
 
 <div class="space-y-6">
+    @once
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    @endonce
     {{-- Header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
         <div>
@@ -200,16 +203,14 @@ new class extends Component
             </p>
         </div>
         <div class="flex gap-3">
-           <flux:button variant="outline" wire:click="exportExcel">
-                <span class="inline-flex items-center gap-x-1.5">
-                    <flux:icon name="arrow-down-tray" class="size-4" />
-                    <span>Xuất Excel</span>
-                </span>
-            </flux:button>
-            <flux:button variant="primary" :href="route('posts.create')" wire:navigate>
-                <flux:icon name="plus" class="size-4" />
+           <button type="button" wire:click="exportExcel" class="inline-flex items-center gap-x-1.5 rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700">
+                <span class="material-symbols-outlined text-base">download</span>
+                <span>Xuất Excel</span>
+            </button>
+            <a :href="route('posts.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+                <span class="material-symbols-outlined text-base">add</span>
                 Thêm bài đăng mới
-            </flux:button>
+            </a>
         </div>
     </div>
 
@@ -218,7 +219,7 @@ new class extends Component
         <div class="rounded-md bg-green-50 p-4 border border-green-200 dark:bg-green-900 dark:border-green-700">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <flux:icon name="check-circle" class="size-5 text-green-400" />
+                    <span class="material-symbols-outlined text-xl text-green-400">check_circle</span>
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-green-800 dark:text-green-200">
@@ -232,7 +233,7 @@ new class extends Component
          <div class="rounded-md bg-blue-50 p-4 border border-blue-200 dark:bg-blue-900 dark:border-blue-700">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <flux:icon name="information-circle" class="size-5 text-blue-400" />
+                    <span class="material-symbols-outlined text-xl text-blue-400">info</span>
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-blue-800 dark:text-blue-200">
@@ -246,7 +247,7 @@ new class extends Component
          <div class="rounded-md bg-red-50 p-4 border border-red-200 dark:bg-red-900 dark:border-red-700">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <flux:icon name="x-circle" class="size-5 text-red-400" />
+                    <span class="material-symbols-outlined text-xl text-red-400">cancel</span>
                 </div>
                 <div class="ml-3">
                     <p class="text-sm font-medium text-red-800 dark:text-red-200">
@@ -261,71 +262,70 @@ new class extends Component
     <div x-data="{ open: false }" class="rounded-lg bg-white dark:bg-gray-800 p-6 shadow-xl border-t-4 border-blue-500">
         <button @click="open = !open" class="flex justify-between items-center w-full">
             <span class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                <flux:icon name="magnifying-glass" class="size-5" />
+                <span class="material-symbols-outlined text-xl">search</span>
                 Tìm kiếm & Lọc
             </span>
-            <flux:icon name="chevron-down" class="size-5 text-gray-500 transition-transform" ::class="{ 'rotate-180': open }" />
+            <span class="material-symbols-outlined text-xl text-gray-500 transition-transform" ::class="{ 'rotate-180': open }">expand_more</span>
         </button>
 
         <div x-show="open" x-collapse class="mt-6 space-y-4">
             {{-- Tìm kiếm --}}
             <div class="grid grid-cols-1">
-                 <flux:field>
-                    <flux:label>Tìm kiếm</flux:label>
-                    <flux:input
+                 <div class="flex flex-col gap-1">
+                    <label class="text-sm font-medium">Tìm kiếm</label>
+                    <input
+                        type="text"
                         wire:model.live.debounce.300ms="search"
                         placeholder="Tìm theo tiêu đề, danh mục..."
-                        icon="magnifying-glass"
+                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
                     />
-                </flux:field>
+                </div>
             </div>
 
             {{-- === THAY ĐỔI: Chia bộ lọc danh mục === --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {{-- Bộ lọc danh mục cha --}}
-                <flux:field>
-                    <flux:label>Lọc theo danh mục cha</flux:label>
-                    <flux:select wire:model.live="parentCategoryFilter">
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-medium">Lọc theo danh mục cha</label>
+                    <select wire:model.live="parentCategoryFilter" class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm">
                         <option value="all">Tất cả danh mục cha</option>
                         @foreach($this->rootCategories as $category)
                             <option value="{{ $category->id }}">{{ $category->title }}</option>
                         @endforeach
-                    </flux:select>
-                </flux:field>
+                    </select>
+                </div>
 
                 {{-- Bộ lọc danh mục con --}}
-                 <flux:field>
-                    <flux:label>Lọc theo danh mục con</flux:label>
-                    <flux:select wire:model.live="childCategoryFilter">
+                 <div class="flex flex-col gap-1">
+                    <label class="text-sm font-medium">Lọc theo danh mục con</label>
+                    <select wire:model.live="childCategoryFilter" class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm">
                         <option value="all">Tất cả danh mục con</option>
                         @foreach($this->childCategories as $category)
                             {{-- Hiển thị cả đường dẫn để phân biệt các con cùng tên --}}
                             <option value="{{ $category->id }}">{{ $category->full_path }}</option>
                         @endforeach
-                    </flux:select>
-                </flux:field>
+                    </select>
+                </div>
 
                 {{-- Bộ lọc trạng thái (giữ nguyên) --}}
-                <flux:field>
-                    <flux:label>Lọc theo trạng thái</flux:label>
-                    <flux:select wire:model.live="statusFilter">
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-medium">Lọc theo trạng thái</label>
+                    <select wire:model.live="statusFilter" class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm">
                         <option value="all">Tất cả trạng thái</option>
                         <option value="published">Đã xuất bản</option>
                         <option value="draft">Bản nháp</option>
-                    </flux:select>
-                </flux:field>
+                    </select>
+                </div>
 
                 {{-- Nút Reset (thêm vào cột cuối cùng nếu cần) --}}
                  <div class="md:col-start-3"> {{-- Đặt vào cột thứ 3 trên màn hình md trở lên --}}
-                    <flux:field>
-                        <flux:label class="invisible">Reset</flux:label>
-                        <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
-                            <span class="inline-flex items-center justify-center gap-x-1.5 w-full">
-                                <flux:icon name="arrow-path" class="size-4" />
-                                <span>Reset bộ lọc</span>
-                            </span>
-                        </flux:button>
-                    </flux:field>
+                    <div class="flex flex-col gap-1">
+                        <label class="invisible">Reset</label>
+                        <button type="button" wire:click="resetFilters" class="w-full inline-flex items-center justify-center gap-x-1.5 rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
+                            <span class="material-symbols-outlined text-base">refresh</span>
+                            <span>Reset bộ lọc</span>
+                        </button>
+                    </div>
                  </div>
             </div>
             {{-- === KẾT THÚC THAY ĐỔI === --}}
@@ -349,7 +349,7 @@ new class extends Component
                                 <div class="flex items-center gap-1">
                                     Tiêu đề
                                     @if($sortField === 'title')
-                                        <flux:icon name="{{ $sortDirection === 'asc' ? 'chevron-up' : 'chevron-down' }}" class="size-4" />
+                                        <span class="material-symbols-outlined text-base">{{ $sortDirection === 'asc' ? 'expand_less' : 'expand_more' }}</span>
                                     @endif
                                 </div>
                             </th>
@@ -362,7 +362,7 @@ new class extends Component
                                 <div class="flex items-center gap-1">
                                     Ngày tạo
                                     @if($sortField === 'created_at')
-                                        <flux:icon name="{{ $sortDirection === 'asc' ? 'chevron-up' : 'chevron-down' }}" class="size-4" />
+                                        <span class="material-symbols-outlined text-base">{{ $sortDirection === 'asc' ? 'expand_less' : 'expand_more' }}</span>
                                     @endif
                                 </div>
                             </th>
@@ -418,39 +418,40 @@ new class extends Component
                                 </td>
                                 <td class="px-4 py-4 text-center whitespace-nowrap">
                                     <div class="flex items-center justify-center gap-2">
-                                        <flux:button
-                                            variant="outline"
-                                            size="sm"
-                                            :href="route('posts.show', $post->id)"
+                                        <a
+                                            href="{{ route('posts.show', $post->id) }}"
                                             wire:navigate
+                                            class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            aria-label="Xem"
                                         >
-                                            <flux:icon name="document-text" class="size-4" />
-                                        </flux:button>
-                                        <flux:button
-                                            variant="outline"
-                                            size="sm"
-                                            :href="route('posts.edit', $post->id)"
+                                            Xem
+                                        </a>
+                                        <a
+                                            href="{{ route('posts.edit', $post->id) }}"
                                             wire:navigate
+                                            class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            aria-label="Sửa"
                                         >
-                                            <flux:icon name="pencil" class="size-4" />
-                                        </flux:button>
-                                        <flux:button
-                                            variant="outline"
-                                            size="sm"
+                                            Sửa
+                                        </a>
+                                        <button
+                                            type="button"
                                             wire:click="togglePublished({{ $post->id }})"
                                             wire:loading.attr="disabled"
                                             wire:target="togglePublished({{ $post->id }})"
+                                            class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            aria-label="{{ $post->is_published ? 'Ẩn' : 'Hiển thị' }}"
                                         >
-                                            <flux:icon name="{{ $post->is_published ? 'eye-slash' : 'eye' }}" class="size-4" />
-                                        </flux:button>
-                                        <flux:button
-                                            variant="outline"
-                                            size="sm"
-                                            class="btn-delete-post"
+                                            {{ $post->is_published ? 'Ẩn' : 'Hiện' }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="inline-flex items-center rounded-md border border-red-300 text-red-700 dark:border-red-700 dark:text-red-300 px-2 py-1 text-xs hover:bg-red-50 dark:hover:bg-red-900/30 btn-delete-post"
                                             data-post-id="{{ $post->id }}"
+                                            aria-label="Xoá"
                                         >
-                                            <flux:icon name="trash" class="size-4 text-red-600" />
-                                        </flux:button>
+                                            Xoá
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -466,16 +467,16 @@ new class extends Component
         @else
             {{-- Thông báo không có bài đăng --}}
             <div class="text-center py-12">
-                <flux:icon name="document-text" class="mx-auto size-12 text-gray-400" />
+                <span class="material-symbols-outlined text-5xl mx-auto text-gray-400">description</span>
                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Không tìm thấy bài đăng</h3>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Hiện tại chưa có bài đăng nào.
                 </p>
                 <div class="mt-6">
-                    <flux:button variant="primary" :href="route('posts.create')" wire:navigate>
-                        <flux:icon name="plus" class="size-4" />
+                    <a :href="route('posts.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+                        <span class="material-symbols-outlined text-base">add</span>
                         Tạo bài đăng mới
-                    </flux:button>
+                    </a>
                 </div>
             </div>
         @endif
