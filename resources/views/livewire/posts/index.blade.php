@@ -424,7 +424,7 @@ new class extends Component
                                             class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                                             aria-label="Xem"
                                         >
-                                            Xem
+                                            <span class="material-symbols-outlined text-base">news</span>
                                         </a>
                                         <a
                                             href="{{ route('posts.edit', $post->id) }}"
@@ -432,7 +432,7 @@ new class extends Component
                                             class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                                             aria-label="Sửa"
                                         >
-                                            Sửa
+                                            <span class="material-symbols-outlined text-base">edit</span>
                                         </a>
                                         <button
                                             type="button"
@@ -442,7 +442,11 @@ new class extends Component
                                             class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                                             aria-label="{{ $post->is_published ? 'Ẩn' : 'Hiển thị' }}"
                                         >
-                                            {{ $post->is_published ? 'Ẩn' : 'Hiện' }}
+                                            @if($post->is_published)
+                                                <span class="material-symbols-outlined text-base">visibility_off</span>
+                                            @else
+                                                <span class="material-symbols-outlined text-base">visibility</span>
+                                            @endif
                                         </button>
                                         <button
                                             type="button"
@@ -450,7 +454,7 @@ new class extends Component
                                             data-post-id="{{ $post->id }}"
                                             aria-label="Xoá"
                                         >
-                                            Xoá
+                                            <span class="material-symbols-outlined text-base">delete</span>
                                         </button>
                                     </div>
                                 </td>
