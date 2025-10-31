@@ -260,74 +260,63 @@ new class extends Component {
                 Quản lý các danh mục với cấu trúc cấp cha-con
             </p>
         </div>
-        <flux:button variant="primary" :href="route('categories.create')" wire:navigate>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <flux:icon name="plus" class="size-4" />
-                <span>Thêm danh mục mới</span>
-            </div>
-        </flux:button>
+        <a :href="route('categories.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+            <span class="material-symbols-outlined text-base">add</span>
+            <span>Thêm danh mục mới</span>
+        </a>
     </div>
 
     {{-- CẬP NHẬT GIAO DIỆN KHỐI BỘ LỌC: Nền SÁNG + Viền Xanh Nổi bật --}}
     <div class="rounded-lg bg-white dark:bg-gray-800 p-6 space-y-4 shadow-xl border-t-4 border-blue-500">
         
         <div class="grid grid-cols-1">
-            <flux:field>
-                <flux:label>Tìm kiếm</flux:label>
-                
-                <flux:input 
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">Tìm kiếm</label>
+                <input
+                    type="text"
                     wire:model.live.debounce.300ms="search"
                     placeholder="Tìm theo tiêu đề, mô tả..."
-                    icon="magnifying-glass"
                     id="searchInput"
+                    class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm"
                 />
-            </flux:field>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-            <flux:field>
-                <flux:label>Lọc danh mục cha</flux:label>
-                <flux:select wire:model.live="parentFilter">
-                    
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">Lọc danh mục cha</label>
+                <select wire:model.live="parentFilter" class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm">
                     <option value="all">Tất cả danh mục cha (gốc)</option>
-                    
                     @if($this->rootCategories->count() > 0)
                         <option value="is_parent" disabled>--- Hoặc lọc theo tên cha ---</option>
                         @foreach($this->rootCategories as $rootCategory)
                             <option value="{{ $rootCategory->id }}">{{ $rootCategory->title }}</option>
                         @endforeach
                     @endif
-                    
-                </flux:select>
-            </flux:field>
+                </select>
+            </div>
 
-            <flux:field>
-                <flux:label>Lọc danh mục con</flux:label>
-                <flux:select wire:model.live="childFilter">
-                    
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-medium">Lọc danh mục con</label>
+                <select wire:model.live="childFilter" class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm">
                     <option value="all">Tất cả danh mục con</option>
-                    
                     @if($this->allChildCategories->count() > 0)
                         <option value="all" disabled>--- Lọc theo tên con ---</option>
                         @foreach($this->allChildCategories as $childCategory)
                             <option value="{{ $childCategory->id }}">{{ $childCategory->title }}</option>
                         @endforeach
                     @endif
-                </flux:select>
-            </flux:field>
+                </select>
+            </div>
 
-            <flux:field>
-                <flux:label class="invisible">Reset</flux:label>
-                
-                <flux:button variant="outline" size="sm" wire:click="resetFilters" class="w-full">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; padding: 5px 0">
-                        <flux:icon name="arrow-path" class="size-4" />
-                        <span>Reset</span>
-                    </div>
-                </flux:button>
-                
-            </flux:field>
+            <div class="flex flex-col gap-1">
+                <label class="invisible">Reset</label>
+                <button type="button" wire:click="resetFilters" class="w-full inline-flex items-center justify-center gap-x-1.5 rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <span class="material-symbols-outlined text-base">refresh</span>
+                    <span>Reset</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -349,7 +338,7 @@ new class extends Component {
                             >
                                 Tiêu đề
                                 @if($sortField === 'title')
-                                    <flux:icon name="{{ $sortDirection === 'asc' ? 'arrow-up' : 'arrow-down' }}" class="size-4 ml-1 inline" />
+                                    <span class="material-symbols-outlined text-base ml-1">{{ $sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward' }}</span>
                                 @endif
                             </th>
                             
@@ -378,7 +367,7 @@ new class extends Component {
                                         />
                                     @else
                                         <div class="h-12 w-12 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center mx-auto">
-                                            <flux:icon name="photo" class="size-6 text-gray-400" />
+                                            <span class="material-symbols-outlined text-gray-400">photo</span>
                                         </div>
                                     @endif
                                 </td>
@@ -392,73 +381,71 @@ new class extends Component {
                                 <td class="px-4 py-4 whitespace-nowrap text-center align-middle">
                                     @if($category->parent)
                                         {{-- Đây là danh mục Con (Cha -> Con) --}}
-                                        <flux:badge variant="outline" size="sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
                                             <span>{{ $category->parent->title }}</span>
                                             <span class="mx-1">→</span>
                                             <span class="font-medium text-gray-800 dark:text-gray-100">{{ $category->title }}</span>
-                                        </flux:badge>
+                                        </span>
                                         <div class="mt-1">
-                                            <flux:button 
-                                                variant="ghost" 
-                                                size="xs"
+                                            <a 
                                                 :href="route('posts.index', ['category' => $category->id])"
                                                 wire:navigate
+                                                class="inline-flex items-center px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                                             >
                                                 {{ $category->published_posts_count ?? 0 }} bài viết
-                                            </flux:button>
+                                            </a>
                                         </div>
                                     @else
                                         {{-- Đây là danh mục Cha (Gốc) --}}
-                                        <flux:badge variant="primary" size="sm">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                                             {{ $category->title }}
-                                        </flux:badge>
+                                        </span>
                                         <div class="mt-1">
-                                            <flux:button 
-                                                variant="ghost" 
-                                                size="xs"
+                                            <a 
                                                 :href="route('posts.index', ['category' => $category->id])"
                                                 wire:navigate
+                                                class="inline-flex items-center px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                                             >
                                                 {{ $category->published_posts_count ?? 0 }} bài viết
-                                            </flux:button>
+                                            </a>
                                         </div>
                                     @endif
                                 </td>
 
                                 <td class="px-4 py-4 text-center whitespace-nowrap align-middle">
-                                    <flux:badge 
-                                        variant="{{ $category->is_active ? 'success' : 'danger' }}"
-                                    >
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $category->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
                                         {{ $category->is_active ? 'Hiển thị' : 'Ẩn' }}
-                                    </flux:badge>
+                                    </span>
                                 </td>
 
                                 <td class="px-4 py-4 text-center whitespace-nowrap align-middle">
                                     <div class="flex items-center justify-center gap-2">
-                                        <flux:button 
-                                            variant="outline" 
-                                            size="sm"
-                                            :href="route('categories.edit', $category->id)"
+                                        <a
+                                            href="{{ route('categories.edit', $category->id) }}"
                                             wire:navigate
+                                            class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            aria-label="Sửa"
                                         >
-                                            <flux:icon name="pencil" class="size-4" />
-                                        </flux:button>
+                                            <span class="material-symbols-outlined text-sm">edit</span>
+                                        </a>
                                         
-                                        <flux:button 
-                                            variant="outline" 
-                                            size="sm"
+                                        <button
+                                            type="button"
                                             wire:click="toggleActive({{ $category->id }})"
+                                            class="inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            aria-label="{{ $category->is_active ? 'Ẩn' : 'Hiển thị' }}"
                                         >
-                                            <flux:icon name="{{ $category->is_active ? 'eye-slash' : 'eye' }}" class="size-4" />
-                                        </flux:button>
+                                            <span class="material-symbols-outlined text-sm">{{ $category->is_active ? 'visibility_off' : 'visibility' }}</span>
+                                        </button>
                                         
-                                        <flux:button 
-                                            variant="danger" 
-                                            size="sm"
+                                        <button
+                                            type="button"
                                             onclick="confirmDelete({{ $category->id }}, '{{ addslashes($category->title) }}', {{ $category->children_count }})"
+                                            class="inline-flex items-center rounded-md border border-red-300 text-red-700 dark:border-red-700 dark:text-red-300 px-2 py-1 text-xs hover:bg-red-50 dark:hover:bg-red-900/30"
+                                            aria-label="Xoá"
                                         >
-                                            <flux:icon name="trash" class="size-4" />
-                                        </flux:button>
+                                            <span class="material-symbols-outlined text-sm">delete</span>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -476,7 +463,7 @@ new class extends Component {
                 style="padding-top: 3rem; padding-bottom: 6rem; padding-left: 1rem; padding-right: 1rem;"
             > 
                 
-                <flux:icon name="photo" class="mx-auto size-12 text-gray-400" />
+                <span class="material-symbols-outlined text-5xl mx-auto text-gray-400">photo</span>
                 
                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Chưa có danh mục nào</h3>
                 
@@ -485,12 +472,10 @@ new class extends Component {
                 </p>
                 
                 <div class="mt-6">
-                    <flux:button variant="primary" :href="route('categories.create')" wire:navigate>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                            <flux:icon name="plus" class="size-4" />
-                            <span>Thêm danh mục mới</span>
-                        </div>
-                    </flux:button>
+                    <a :href="route('categories.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+                        <span class="material-symbols-outlined text-base">add</span>
+                        <span>Thêm danh mục mới</span>
+                    </a>
                 </div>
             </div>
         @endif
