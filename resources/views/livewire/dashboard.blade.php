@@ -9,7 +9,6 @@ use Livewire\Volt\Component;
 new class extends Component
 {
     public string $chartTimeframe = 'month';
-
     public ?object $stats = null;
 
     public function mount(): void
@@ -41,34 +40,34 @@ new class extends Component
         });
     }
 
-    public function getTotalPostsProperty(): int
+    public function getKpiCardsProperty(): array
     {
-        return $this->stats->total ?? 0;
+        return [
+            ['label' => 'Tổng số bài đăng', 'value' => $this->stats->total ?? 0, 'icon' => 'document-text'],
+            ['label' => 'Bài đăng trong tuần', 'value' => $this->stats->this_week ?? 0, 'icon' => 'calendar'],
+            ['label' => 'Bài đăng trong tháng', 'value' => $this->stats->this_month ?? 0, 'icon' => 'calendar-days'],
+            ['label' => 'Đã xuất bản', 'value' => $this->stats->published ?? 0, 'icon' => 'check-circle'],
+            ['label' => 'Bản nháp', 'value' => $this->stats->draft ?? 0, 'icon' => 'clipboard-document'],
+            ['label' => 'Hôm nay', 'value' => $this->stats->today ?? 0, 'icon' => 'sun'],
+        ];
     }
 
-    public function getPublishedPostsProperty(): int
+    public function getQuickActionsProperty(): array
     {
-        return $this->stats->published ?? 0;
+        return [
+            ['label' => 'Tạo bài đăng mới', 'icon' => 'plus', 'route' => 'posts.create', 'variant' => 'primary'],
+            ['label' => 'Thêm danh mục', 'icon' => 'folder-plus', 'route' => 'categories.create', 'variant' => 'outline'],
+            ['label' => 'Quản lý bài đăng', 'icon' => 'document-text', 'route' => 'posts.index', 'variant' => 'outline'],
+            ['label' => 'Quản lý danh mục', 'icon' => 'folder', 'route' => 'categories.index', 'variant' => 'outline'],
+        ];
     }
 
-    public function getDraftPostsProperty(): int
+    public function getPublicationRateProperty(): float
     {
-        return $this->stats->draft ?? 0;
-    }
-
-    public function getPostsThisWeekProperty(): int
-    {
-        return $this->stats->this_week ?? 0;
-    }
-
-    public function getPostsThisMonthProperty(): int
-    {
-        return $this->stats->this_month ?? 0;
-    }
-
-    public function getPostsTodayProperty(): int
-    {
-        return $this->stats->today ?? 0;
+        if (empty($this->stats->total)) {
+            return 0;
+        }
+        return round(($this->stats->published / $this->stats->total) * 100, 1);
     }
 
     public function getChartDataProperty()
@@ -228,68 +227,17 @@ new class extends Component
     </div>
 
     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-
-        {{-- Lớp gradient chung: bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 --}}
-
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Tổng số bài đăng</h3>
-                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->totalPosts }}</p>
+        @foreach ($this->kpiCards as $card)
+            <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-white opacity-90">{{ $card['label'] }}</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">{{ $card['value'] }}</p>
+                    </div>
+                    <flux:icon name="{{ $card['icon'] }}" class="size-8 text-white opacity-50" />
                 </div>
-                <flux:icon name="document-text" class="size-8 text-white opacity-50" />
             </div>
-        </div>
-
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tuần</h3>
-                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->postsThisWeek }}</p>
-                </div>
-                <flux:icon name="calendar" class="size-8 text-white opacity-50" />
-            </div>
-        </div>
-
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Bài đăng trong tháng</h3>
-                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->postsThisMonth }}</p>
-                </div>
-                <flux:icon name="calendar-days" class="size-8 text-white opacity-50" />
-            </div>
-        </div>
-
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Đã xuất bản</h3>
-                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->publishedPosts }}</p>
-                </div>
-                <flux:icon name="check-circle" class="size-8 text-white opacity-50" />
-            </div>
-        </div>
-
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Bản nháp</h3>
-                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->draftPosts }}</p>
-                </div>
-                <flux:icon name="clipboard-document" class="size-8 text-white opacity-50" />
-            </div>
-        </div>
-
-        <div class="kpi-card rounded-lg bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 p-6 shadow-lg shadow-white/10">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-medium text-white opacity-90">Hôm nay</h3>
-                    <p class="mt-2 text-3xl font-bold text-white">{{ $this->postsToday }}</p>
-                </div>
-                <flux:icon name="sun" class="size-8 text-white opacity-50" />
-            </div>
-        </div>
+        @endforeach
     </div>
 
 
@@ -381,40 +329,27 @@ new class extends Component
             <h2 class="mb-4 text-xl font-bold text-white">Thao tác nhanh</h2>
 
             <div class="space-y-3">
-                <flux:button variant="primary" class="w-full justify-start" :href="route('posts.create')" wire:navigate>
-                    <flux:icon name="plus" class="size-4" />
-                    Tạo bài đăng mới
-                </flux:button>
-
-                <flux:button variant="outline" class="w-full justify-start" :href="route('categories.create')" wire:navigate>
-                    <flux:icon name="folder-plus" class="size-4" />
-                    Thêm danh mục
-                </flux:button>
-
-                <flux:button variant="outline" class="w-full justify-start" :href="route('posts.index')" wire:navigate>
-                    <flux:icon name="document-text" class="size-4" />
-                    Quản lý bài đăng
-                </flux:button>
-
-                <flux:button variant="outline" class="w-full justify-start" :href="route('categories.index')" wire:navigate>
-                    <flux:icon name="folder" class="size-4" />
-                    Quản lý danh mục
-                </flux:button>
+                @foreach ($this->quickActions as $action)
+                    <flux:button :variant="$action['variant']" class="w-full justify-start" :href="route($action['route'])" wire:navigate>
+                        <flux:icon :name="$action['icon']" class="size-4" />
+                        {{ $action['label'] }}
+                    </flux:button>
+                @endforeach
             </div>
 
             <div class="mt-6 space-y-3 rounded-lg bg-gray-700/50 p-4">
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Tuần này</span>
-                    <span class="font-semibold text-white">{{ $this->postsThisWeek }}</span>
+                    <span class="font-semibold text-white">{{ $this->stats->this_week ?? 0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Tháng này</span>
-                    <span class="font-semibold text-white">{{ $this->postsThisMonth }}</p>
+                    <span class="font-semibold text-white">{{ $this->stats->this_month ?? 0 }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-400">Tỷ lệ xuất bản</span>
                     <span class="font-semibold text-white">
-                        {{ $this->totalPosts > 0 ? round(($this->publishedPosts / $this->totalPosts) * 100, 1) : 0 }}%
+                        {{ $this->publicationRate }}%
                     </span>
                 </div>
             </div>
