@@ -34,10 +34,6 @@
                                     <span class="material-symbols-outlined text-base">group</span>
                                     {{ __('Quản lý người dùng') }}
                                 </a>
-                                <a href="{{ route('profile.edit') }}" wire:navigate class="inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 {{ request()->routeIs('profile.edit') ? 'bg-zinc-100 dark:bg-zinc-800' : '' }}">
-                                    <span class="material-symbols-outlined text-base">person</span>
-                                    {{ __('Cập nhật thông tin') }}
-                                </a>
                             </nav>
         
                             <div x-data="{ open: false }" @click.away="open = false" class="relative mt-auto">
