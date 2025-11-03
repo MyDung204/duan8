@@ -123,8 +123,12 @@
                         Xem tất cả →
                     </a>
                 </div>
-                <div class="relative">
-                    <div class="flex space-x-6 overflow-x-auto pb-4 scrollbar-hide scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
+                <div class="relative" x-data="{ scrollContainer: null, scrollAmount: 300 }" x-init="scrollContainer = $refs.scrollContent">
+                    <button @click="scrollContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' })" 
+                            class="absolute left-0 top-2/5 -translate-y-1/2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md z-10 focus:outline-none focus:ring-2 focus:ring-red-500 hidden md:block">
+                        <span class="material-symbols-outlined">arrow_back_ios</span>
+                    </button>
+                    <div x-ref="scrollContent" class="flex space-x-6 overflow-x-auto pb-4 scrollbar-hide scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
                         @foreach($trendingPosts as $post)
                             <div class="flex-shrink-0 w-80">
                                 <a href="{{ route('posts.show.public', $post->slug) }}" class="group block rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
@@ -155,6 +159,10 @@
                             </div>
                         @endforeach
                     </div>
+                    <button @click="scrollContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' })" 
+                            class="absolute right-0 top-2/5 -translate-y-1/2 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md z-10 focus:outline-none focus:ring-2 focus:ring-red-500 hidden md:block">
+                        <span class="material-symbols-outlined">arrow_forward_ios</span>
+                    </button>
                 </div>
             </div>
         </section>
