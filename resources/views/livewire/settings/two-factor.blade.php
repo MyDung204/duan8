@@ -181,14 +181,14 @@ new class extends Component {
     @include('partials.settings-heading')
 
     <x-settings.layout
-        :heading="__('Two Factor Authentication')"
-        :subheading="__('Manage your two-factor authentication settings')"
+        :heading="__('Bảo mật hai lớp')"
+        :subheading="__('Quản lý cài đặt bảo mật hai lớp của bạn')"
     >
         <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
             @if ($twoFactorEnabled)
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
-                        <flux:badge color="green">{{ __('Enabled') }}</flux:badge>
+                        <flux:badge color="green">{{ __('Bật') }}</flux:badge>
                     </div>
 
                     <flux:text>
@@ -211,11 +211,11 @@ new class extends Component {
             @else
                 <div class="space-y-4">
                     <div class="flex items-center gap-3">
-                        <flux:badge color="red">{{ __('Disabled') }}</flux:badge>
+                        <flux:badge color="red">{{ __('Tắt') }}</flux:badge>
                     </div>
 
                     <flux:text variant="subtle">
-                        {{ __('When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.') }}
+                        {{ __('Khi bạn bật tính năng này, bạn sẽ phải nhập mã mật khẩu khi đăng nhập. Mã này có thể lấy từ ứng dụng hỗ trợ TOTP trong điện thoại của bạn.') }}
                     </flux:text>
 
                     <flux:button
@@ -224,7 +224,7 @@ new class extends Component {
                         icon:variant="outline"
                         wire:click="enable"
                     >
-                        {{ __('Enable 2FA') }}
+                        {{ __('Bật 2FA') }}
                     </flux:button>
                 </div>
             @endif

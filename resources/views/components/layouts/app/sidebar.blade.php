@@ -63,13 +63,13 @@
                         <div class="py-1">
                             <a href="{{ route('profile.edit') }}" wire:navigate class="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700">
                                 <span class="material-symbols-outlined text-base">settings</span>
-                                {{ __('Settings') }}
+                                {{ __('Cài đặt') }}
                             </a>
                             <form method="POST" action="{{ route('logout') }}" class="w-full">
                                 @csrf
                                 <button type="submit" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700">
                                     <span class="material-symbols-outlined text-base">logout</span>
-                                    {{ __('Log Out') }}
+                                    {{ __('Đăng xuất') }}
                                 </button>
                             </form>
                         </div>

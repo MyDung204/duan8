@@ -248,7 +248,7 @@
                     {{-- Sidebar --}}
                     <aside class="space-y-8">
                         {{-- Most Popular --}}
-                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md top-0 py-4">
                             <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Đọc nhiều nhất</h2>
                             <div class="space-y-5">
                                 @foreach($mostPopular as $post)
@@ -272,7 +272,7 @@
 
                         {{-- Categories --}}
                         @if(isset($topCategories) && $topCategories->count() > 0)
-                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md sticky top-[50px] py-4">
                             <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Danh mục</h2>
                             <div class="grid grid-cols-2 gap-4">
                                 @foreach($topCategories->take(6) as $category)
