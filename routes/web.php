@@ -262,7 +262,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Volt::route('users/create', 'admin.user-form')->name('admin.users.create');
     Volt::route('users/{user}/edit', 'admin.user-form')->name('admin.users.edit');
     Volt::route('users/{user}', 'admin.user-show')->name('admin.users.show');
+});
 
+Route::middleware(['auth'])->group(function () {
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
     Volt::route('settings/appearance', 'settings.appearance')->name('appearance.edit');

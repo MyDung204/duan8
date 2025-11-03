@@ -11,6 +11,7 @@ use Livewire\Volt\Component;
 use Symfony\Component\HttpFoundation\Response;
 
 new class extends Component {
+    protected static string $layout = 'layouts.user-settings-page';
     #[Locked]
     public bool $twoFactorEnabled;
 
@@ -180,7 +181,7 @@ new class extends Component {
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <x-settings.layout
+    <x-layouts.user-admin-settings
         :heading="__('Bảo mật hai lớp')"
         :subheading="__('Quản lý cài đặt bảo mật hai lớp của bạn')"
     >

@@ -6,7 +6,7 @@ use Illuminate\Validation\ValidationException;
 use Livewire\Volt\Component;
 
 new class extends Component {
-    protected static string $layout = 'layouts.user-settings-page';
+    protected static string $layout = 'layouts.user-settings-page'; // Use the full page layout
     public string $current_password = '';
     public string $password = '';
     public string $password_confirmation = '';
@@ -40,7 +40,7 @@ new class extends Component {
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <x-layouts.user-admin-settings :heading="__('Cập nhật mật khẩu')" :subheading="__('Đảm bảo tài khoản của bạn đang dùng một mật khẩu dài và ngẫu nhiên')">
+    <x-layouts.user-settings-nav :heading="__('Cập nhật mật khẩu')" :subheading="__('Đảm bảo tài khoản của bạn đang dùng một mật khẩu dài và ngẫu nhiên')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
             <flux:input
                 wire:model="current_password"
@@ -76,5 +76,5 @@ new class extends Component {
                 </x-action-message>
             </div>
         </form>
-    </x-settings.layout>
+    </x-layouts.user-settings-nav>
 </section>

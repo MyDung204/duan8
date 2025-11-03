@@ -72,7 +72,7 @@ new class extends Component {
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <x-settings.layout :heading="__('Thông tin cá nhân')" :subheading="__('Cập nhật tên và email của bạn')">
+    <x-layouts.user-admin-settings :heading="__('Thông tin cá nhân')" :subheading="__('Cập nhật tên và email của bạn')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
             <flux:input wire:model="name" :label="__('Tên')" type="text" required autofocus autocomplete="name" />
 
@@ -106,7 +106,7 @@ new class extends Component {
                 </div>
 
                 <x-action-message class="me-3" on="profile-updated">
-                    {{ __('Lưu .') }}
+                    {{ __('Lưu thành công') }}
                 </x-action-message>
             </div>
         </form>

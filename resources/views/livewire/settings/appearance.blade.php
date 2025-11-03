@@ -3,13 +3,14 @@
 use Livewire\Volt\Component;
 
 new class extends Component {
+    protected static string $layout = 'layouts.user-settings-page';
     //
 }; ?>
 
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <x-settings.layout :heading="__('Giao diện')" :subheading=" __('Cập nhật giao diện cho tài khoản của bạn')">
+    <x-layouts.user-admin-settings :heading="__('Giao diện')" :subheading="__('Cập nhật giao diện cho tài khoản của bạn')">
         <flux:radio.group x-data variant="segmented" x-model="$flux.appearance">
             <flux:radio value="light" icon="sun">{{ __('Sáng') }}</flux:radio>
             <flux:radio value="dark" icon="moon">{{ __('Tối') }}</flux:radio>

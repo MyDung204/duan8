@@ -43,6 +43,7 @@
                             @if(Auth::user()->role === 'admin')
                             <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700">Bảng điều khiển</a>
                             @endif
+                            <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700">Cập nhật thông tin</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700">Đăng xuất</button>
@@ -83,6 +84,7 @@
                 @if(Auth::user()->role === 'admin')
                 <a href="{{ route('dashboard') }}" class="px-3 py-2 rounded-md font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800">Bảng điều khiển</a>
                 @endif
+                <a href="{{ route('profile.edit') }}" class="px-3 py-2 rounded-md font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800">Cập nhật thông tin</a>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full text-left px-3 py-2 rounded-md font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800">Đăng xuất</button>
