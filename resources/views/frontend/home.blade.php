@@ -11,7 +11,7 @@
             $dontMissPosts = $popularPosts->slice(0, 6);
             $recentPosts = $latestPosts->slice(5, 9);
             $mostPopular = $mostCommentedPosts->take(4);
-            $whatsNewPosts = $latestPosts->slice(0, 5);
+            $whatsNewPosts = $latestPosts->slice(0, 6);
             $featuredSectionPosts = $latestPosts->slice(0, 5);
         @endphp
 
