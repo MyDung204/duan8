@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Redirect;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -29,6 +31,26 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+
+        // Store the intended URL before showing the login form
+        if (! session()->has('url.intended') && ! request()->routeIs('login') && ! request()->routeIs('register')) {
+            session(['url.intended' => url()->full()]);
+        }
+
+        Fortify::redirects('login', function () {
+            if (Auth::user()->role === 'admin') {
+                return Redirect::route('dashboard');
+            }
+
+            $intendedUrl = session()->pull('url.intended', route('home'));
+            $refererUrl = request()->headers->get('referer');
+
+            if ($refererUrl && $refererUrl !== route('login') && $refererUrl !== route('register')) {
+                return Redirect::to($refererUrl);
+            }
+
+            return Redirect::to($intendedUrl);
+        });
     }
 
     /**

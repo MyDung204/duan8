@@ -14,6 +14,13 @@ class ContactForm extends Component
     public $subject = '';
     public $message = '';
 
+    public function mount()
+    {
+        if (request()->has('email')) {
+            $this->email = request()->query('email');
+        }
+    }
+
     public $success = false;
     public $error = '';
 

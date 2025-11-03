@@ -76,8 +76,8 @@
         <section class="mb-12 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 py-12 rounded-2xl">
             <div class="container mx-auto px-4">
                 <div class="text-center mb-8">
-                    <h2 class="text-3xl lg:text-4xl font-bold mb-2">Latest News</h2>
-                    <p class="text-gray-600 dark:text-gray-400 text-lg">Because you deserve nothing but the truth</p>
+                    <h2 class="text-3xl lg:text-4xl font-bold mb-2">Tin tức mới nhất</h2>
+                    <p class="text-gray-600 dark:text-gray-400 text-lg">Vì bạn xứng đáng với sự thật</p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach($whatsNewPosts as $post)
@@ -118,9 +118,9 @@
         <section class="mb-12">
             <div class="container mx-auto px-4">
                 <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-3xl font-bold">Trending Stories</h2>
+                    <h2 class="text-3xl font-bold">Tin tức nổi bật</h2>
                     <a href="{{ route('posts.public') }}" class="text-red-600 dark:text-red-400 font-semibold hover:underline">
-                        View All →
+                        Xem tất cả →
                     </a>
                 </div>
                 <div class="relative">
@@ -170,9 +170,9 @@
                         {{-- Latest Posts --}}
                         <div>
                             <div class="flex items-center justify-between mb-6">
-                                <h2 class="text-3xl font-bold">Latest Posts</h2>
+                                <h2 class="text-3xl font-bold">Bài viết mới nhất</h2>
                                 <a href="{{ route('posts.public') }}" class="text-red-600 dark:text-red-400 font-semibold hover:underline">
-                                    View All →
+                                    Xem tất cả →
                                 </a>
                             </div>
                             <div class="space-y-6">
@@ -203,7 +203,7 @@
                                                     <span>{{ $post->created_date }}</span>
                                                 </div>
                                                 @if(isset($post->comments_count))
-                                                <span>{{ $post->comments_count }} comments</span>
+                                                <span>{{ $post->comments_count }} bình luận</span>
                                                 @endif
                                             </div>
                                         </div>
@@ -214,7 +214,7 @@
 
                         {{-- Don't Miss Section --}}
                         <div>
-                            <h2 class="text-3xl font-bold mb-6">Don't Miss</h2>
+                            <h2 class="text-3xl font-bold mb-6">Đừng bỏ lỡ</h2>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 @foreach($dontMissPosts as $post)
                                     <article class="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
@@ -249,7 +249,7 @@
                     <aside class="space-y-8">
                         {{-- Most Popular --}}
                         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
-                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Most Read</h2>
+                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Đọc nhiều nhất</h2>
                             <div class="space-y-5">
                                 @foreach($mostPopular as $post)
                                     <a href="{{ route('posts.show.public', $post->slug) }}" 
@@ -262,7 +262,7 @@
                                                 {{ $post->title }}
                                             </h3>
                                             <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                {{ $post->comments_count ?? 0 }} comments
+                                                {{ $post->comments_count ?? 0 }} bình luận
                                             </div>
                                         </div>
                                     </a>
@@ -273,19 +273,22 @@
                         {{-- Categories --}}
                         @if(isset($topCategories) && $topCategories->count() > 0)
                         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
-                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Categories</h2>
+                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Danh mục</h2>
                             <div class="grid grid-cols-2 gap-4">
                                 @foreach($topCategories->take(6) as $category)
                                     <a href="{{ route('categories.show.public', $category->slug ?? $category->id) }}" 
                                        class="group relative block rounded-lg overflow-hidden aspect-square shadow-md hover:shadow-xl transition-all duration-300">
-                                        <div class="absolute inset-0 bg-gradient-to-br from-red-600/80 to-red-700/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
-                                        <div class="relative z-20 h-full flex items-center justify-center">
-                                            <span class="text-white font-bold text-center px-2 group-hover:scale-110 transition-transform duration-300">
+                                        <img src="{{ $category->banner_image_url ?? 'https://source.unsplash.com/random/400x300?sig=cat-'.$category->id }}" 
+                                             alt="{{ $category->title }}" 
+                                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                                        <div class="absolute inset-0 bg-gradient-to-br from-black/60 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                                        <div class="absolute inset-0 flex flex-col justify-center items-center z-20 p-2">
+                                            <span class="text-white font-bold text-center px-2 text-lg group-hover:scale-110 transition-transform duration-300">
                                                 {{ $category->title }}
                                             </span>
-                                        </div>
-                                        <div class="absolute bottom-0 left-0 right-0 p-2 bg-black/50 text-white text-xs font-semibold text-center z-20">
-                                            {{ $category->posts_count ?? 0 }} posts
+                                            <span class="text-white text-xs font-semibold text-center mt-1">
+                                                {{ $category->posts_count ?? 0 }} bài viết
+                                            </span>
                                         </div>
                                     </a>
                                 @endforeach
@@ -293,19 +296,12 @@
                         </div>
                         @endif
 
-                        {{-- Newsletter --}}
-                        <div class="bg-gradient-to-br from-red-600 to-red-700 rounded-xl p-6 shadow-xl text-white">
-                            <h2 class="text-2xl font-bold mb-2">Newsletter</h2>
-                            <p class="text-red-100 text-sm mb-6">Subscribe to our mailing list to get the new updates!</p>
-                            <div class="newsletter-in-red">
-                                @livewire('frontend.newsletter-form')
-                            </div>
-                        </div>
+
 
                         {{-- Tags --}}
                         @if(isset($topTags) && $topTags->count() > 0)
                         <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
-                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Tags</h2>
+                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Thẻ</h2>
                             <div class="flex flex-wrap gap-2">
                                 @foreach($topTags as $tag)
                                 <a href="#" 

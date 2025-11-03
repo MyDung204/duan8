@@ -180,16 +180,6 @@
             </ul>
         </div>
 
-        <div class="bg-gradient-to-br from-indigo-600 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
-            <h3 class="text-xl font-bold mb-2">Đăng ký nhận tin</h3>
-            <p class="text-sm text-white/90 mb-4">Nhận các bài viết mới nhất trực tiếp vào hộp thư của bạn.</p>
-            <form class="space-y-3">
-                <input type="email" placeholder="Email của bạn" required class="w-full px-4 py-3 rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition" />
-                <button type="submit" class="w-full px-4 py-3 rounded-lg bg-white text-indigo-600 font-semibold hover:bg-neutral-100 transition shadow-sm hover:shadow-md">
-                    Đăng ký ngay
-                </button>
-            </form>
-        </div>
     </aside>
 </div>
 

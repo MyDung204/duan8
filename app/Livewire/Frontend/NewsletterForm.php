@@ -14,7 +14,7 @@ class NewsletterForm extends Component
     protected function rules()
     {
         return [
-            'email' => 'required|email|unique:newsletter_subscriptions,email',
+            'email' => 'required|email',
         ];
     }
 
@@ -28,21 +28,9 @@ class NewsletterForm extends Component
 
     public function subscribe()
     {
-        $this->validate();
-        $this->success = false;
-        $this->error = '';
+        $this->validateOnly('email'); // Validate only the email field
 
-        try {
-            NewsletterSubscription::create(['email' => $this->email]);
-            $this->success = true;
-            $this->reset('email');
-        } catch (\Exception $e) {
-            if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                $this->error = 'Địa chỉ email này đã được đăng ký.';
-            } else {
-                $this->error = 'Đã có lỗi xảy ra. Vui lòng thử lại.';
-            }
-        }
+        return redirect()->route('contact', ['email' => $this->email]);
     }
 
     public function render()

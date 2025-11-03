@@ -129,18 +129,7 @@
                     Đăng ký nhận bản tin
                 </h4>
                 <p class="text-neutral-600 dark:text-neutral-300 text-sm mb-6 leading-relaxed">Nhận thông tin và bài viết mới nhất trực tiếp vào email của bạn.</p>
-                <form class="space-y-4" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký!');">
-                    <input type="email" 
-                           placeholder="Nhập email của bạn" 
-                           required 
-                           class="w-full px-5 py-3.5 rounded-xl bg-white dark:bg-neutral-800 border-2 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition shadow-sm hover:shadow-md" />
-                    <button type="submit" class="w-full px-5 py-3.5 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2">
-                        <span>Đăng ký ngay</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                        </svg>
-                    </button>
-                </form>
+                @livewire('frontend.newsletter-form')
                 <div class="mt-6 p-4 bg-gradient-to-r from-primary-50 to-purple-50 dark:from-primary-900/20 dark:to-purple-900/20 rounded-xl border border-primary-200 dark:border-primary-800">
                     <p class="text-xs text-neutral-600 dark:text-neutral-400 flex items-start gap-2">
                         <svg class="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
