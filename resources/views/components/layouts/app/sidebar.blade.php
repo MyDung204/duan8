@@ -25,6 +25,14 @@
                         <span class="material-symbols-outlined text-base">description</span>
                         {{ __('Quản lý bài đăng') }}
                     </a>
+                    <a href="{{ route('comments.index') }}" wire:navigate class="inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 {{ request()->routeIs('comments.*') ? 'bg-zinc-100 dark:bg-zinc-800' : '' }}">
+                        <span class="material-symbols-outlined text-base">comment</span>
+                        {{ __('Quản lý bình luận') }}
+                    </a>
+                    <a href="{{ route('admin.users.index') }}" wire:navigate class="inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 {{ request()->routeIs('admin.users.*') ? 'bg-zinc-100 dark:bg-zinc-800' : '' }}">
+                        <span class="material-symbols-outlined text-base">group</span>
+                        {{ __('Quản lý người dùng') }}
+                    </a>
                 </nav>
 
                 <div x-data="{ open: false }" @click.away="open = false" class="relative mt-auto">

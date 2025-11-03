@@ -6,240 +6,387 @@
 
     @if (isset($latestPosts) && $latestPosts->count() > 0)
         @php
-            $slideshowPosts = $latestPosts->take(4);
-            $remainingPosts = $latestPosts->slice(4);
+            $featuredPosts = $latestPosts->take(5);
+            $trendingPosts = $popularPosts->take(8);
+            $dontMissPosts = $popularPosts->slice(0, 6);
+            $recentPosts = $latestPosts->slice(5, 9);
+            $mostPopular = $mostCommentedPosts->take(4);
+            $whatsNewPosts = $latestPosts->slice(0, 5);
+            $featuredSectionPosts = $latestPosts->slice(0, 5);
         @endphp
 
         {{-- ====================================================== --}}
-        {{-- ================== HERO SLIDESHOW ================== --}}
+        {{-- ================== FEATURED AREA ===================== --}}
         {{-- ====================================================== --}}
-        <section x-data="heroSlideshow({{ $slideshowPosts->map(function($post) { return ['title' => $post->title, 'category' => $post->category?->title, 'category_slug' => $post->category?->slug, 'author' => $post->author_name ?? 'Admin', 'date' => $post->created_date, 'slug' => $post->slug, 'image' => $post->banner_image_url ?? 'https://source.unsplash.com/random/1920x1080?sig='.$post->id]; })->toJson() }})" x-init="init()"
-            class="relative w-full min-h-[90vh] flex items-center mb-24 overflow-hidden">
-            
-            {{-- Slides --}}
-            <div class="absolute inset-0 w-full h-full">
-                <template x-for="(slide, index) in slides" :key="index">
-                    <div x-show="activeIndex === index"
-                        x-transition:enter="transition ease-in-out duration-1000"
-                        x-transition:enter-start="opacity-0"
-                        x-transition:enter-end="opacity-100"
-                        x-transition:leave="transition ease-in-out duration-1000"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0"
-                        class="absolute inset-0 w-full h-full">
-                        
-                        {{-- Background Image with Ken Burns Effect --}}
-                        <div class="absolute inset-0 w-full h-full bg-neutral-800" :class="{'ken-burns': activeIndex === index}">
-                            <img :src="slide.image" :alt="slide.title" class="w-full h-full object-cover">
-                        </div>
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                    </div>
-                </template>
-            </div>
-
-            {{-- Content --}}
-            <div class="relative z-10 container mx-auto px-4">
-                <div class="max-w-3xl text-center mx-auto">
-                    <template x-for="(slide, index) in slides" :key="index">
-                        <div x-show="activeIndex === index" 
-                             x-transition:enter="transition ease-out duration-1000 delay-300"
-                             x-transition:enter-start="opacity-0 translate-y-8"
-                             x-transition:enter-end="opacity-100 translate-y-0"
-                             class="flex flex-col items-center">
-                            
-                            <a :href="`{{ url('/danh-muc') }}/${slide.category_slug}`" x-show="slide.category" class="inline-block bg-white/10 backdrop-blur-md text-white text-sm font-bold px-4 py-2 rounded-full mb-6 transition hover:bg-white/20">
-                                <span x-text="slide.category"></span>
-                            </a>
-
-                            <h1 class="text-4xl md:text-6xl font-extrabold text-white !leading-tight mb-6">
-                                <a :href="`{{ url('/bai-viet') }}/${slide.slug}`" class="hover:opacity-80 transition-opacity">
-                                    <span x-text="slide.title"></span>
-                                </a>
-                            </h1>
-
-                            <div class="flex items-center justify-center gap-4 text-neutral-200">
-                                <span x-text="slide.author"></span>
-                                <span class="opacity-60">&bull;</span>
-                                <span x-text="slide.date"></span>
+        <section class="mb-12">
+            <div class="container mx-auto px-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[600px]">
+                    @if($featuredPosts->first())
+                        <a href="{{ route('posts.show.public', $featuredPosts->first()->slug) }}" 
+                           class="group relative block rounded-xl overflow-hidden h-[400px] lg:h-full shadow-lg hover:shadow-2xl transition-all duration-500">
+                            <img src="{{ $featuredPosts->first()->banner_image_url ?? 'https://source.unsplash.com/random/800x1000?sig='.$featuredPosts->first()->id }}" 
+                                 alt="{{ $featuredPosts->first()->title }}" 
+                                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
+                                @if($featuredPosts->first()->category)
+                                <span class="inline-block bg-red-600 text-white text-xs font-bold px-4 py-2 rounded-full mb-3 uppercase tracking-wide">
+                                    {{ $featuredPosts->first()->category->title }}
+                                </span>
+                                @endif
+                                <h2 class="text-2xl lg:text-3xl font-bold text-white leading-tight mb-2 line-clamp-3 group-hover:text-red-400 transition-colors duration-300">
+                                    {{ $featuredPosts->first()->title }}
+                                </h2>
+                                <div class="flex items-center text-white/80 text-sm">
+                                    <span class="mr-3">{{ $featuredPosts->first()->author_name ?? 'Admin' }}</span>
+                                    <span>•</span>
+                                    <span class="ml-3">{{ $featuredPosts->first()->created_date }}</span>
+                                </div>
                             </div>
-                        </div>
-                    </template>
+                        </a>
+                    @endif
+                    <div class="grid grid-cols-2 gap-4 h-[400px] lg:h-full">
+                        @foreach($featuredPosts->slice(1, 4) as $post)
+                            <a href="{{ route('posts.show.public', $post->slug) }}" 
+                               class="group relative block rounded-xl overflow-hidden h-full shadow-md hover:shadow-xl transition-all duration-500">
+                                <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/400x300?sig='.$post->id }}" 
+                                     alt="{{ $post->title }}" 
+                                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
+                                <div class="absolute bottom-0 left-0 right-0 p-4">
+                                    @if($post->category)
+                                    <span class="inline-block bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-2 uppercase">
+                                        {{ $post->category->title }}
+                                    </span>
+                                    @endif
+                                    <h3 class="text-sm lg:text-base font-bold text-white leading-tight line-clamp-2 group-hover:text-red-400 transition-colors duration-300">
+                                        {{ Str::limit($post->title, 60) }}
+                                    </h3>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
             </div>
-
-            {{-- Navigation --}}
-            <div class="absolute z-20 bottom-8 left-1/2 -translate-x-1/2 flex gap-3">
-                <template x-for="(slide, index) in slides" :key="index">
-                    <button @click="setActive(index)" class="w-3 h-3 rounded-full transition-all duration-300"
-                            :class="activeIndex === index ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/70'"></button>
-                </template>
-            </div>
-            <button @click="prev()" class="absolute z-20 left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-            </button>
-            <button @click="next()" class="absolute z-20 right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 transition">
-                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-            </button>
         </section>
 
         {{-- ====================================================== --}}
-        {{-- ================= SECTION 1: LATEST ================== --}}
+        {{-- =================== LATEST NEWS ====================== --}}
         {{-- ====================================================== --}}
-        @if ($remainingPosts->count() > 0)
-            <section class="mb-24 scroll-reveal">
-                <div class="container mx-auto px-4">
-                    <div class="flex items-baseline justify-between mb-10">
-                        <h2 class="text-3xl md:text-4xl font-bold">Bài viết khác</h2>
-                        <a href="{{ route('posts.public') }}"
-                            class="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors group flex items-center gap-2">
-                            Xem tất cả
-                            <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                        </a>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        @foreach ($remainingPosts as $key => $post)
-                            <div class="scroll-reveal-item" style="transition-delay: {{ $key * 100 }}ms">
-                                <x-post-card :post="$post" />
-                            </div>
-                        @endforeach
-                    </div>
+        <section class="mb-12 bg-gradient-to-r from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 py-12 rounded-2xl">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl lg:text-4xl font-bold mb-2">Latest News</h2>
+                    <p class="text-gray-600 dark:text-gray-400 text-lg">Because you deserve nothing but the truth</p>
                 </div>
-            </section>
-        @endif
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach($whatsNewPosts as $post)
+                        <article class="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300">
+                            <a href="{{ route('posts.show.public', $post->slug) }}" class="block relative overflow-hidden">
+                                <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/400x250?sig=new-'.$post->id }}" 
+                                     alt="{{ $post->title }}" 
+                                     class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110">
+                                <div class="absolute top-4 left-4">
+                                    @if($post->category)
+                                    <span class="inline-block bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs font-bold px-3 py-1 rounded-full">
+                                        {{ $post->category->title }}
+                                    </span>
+                                    @endif
+                                </div>
+                            </a>
+                            <div class="p-5">
+                                <h3 class="text-lg font-bold mb-2 line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                    <a href="{{ route('posts.show.public', $post->slug) }}">{{ $post->title }}</a>
+                                </h3>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                                    {{ $post->short_description ?? Str::limit($post->title, 100) }}
+                                </p>
+                                <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                    <span>{{ $post->author_name ?? 'Admin' }}</span>
+                                    <span>{{ $post->created_date }}</span>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
 
         {{-- ====================================================== --}}
-        {{-- ================= SECTION 2: CATEGORIES ============ --}}
+        {{-- =================== TRENDING STORIES ================== --}}
         {{-- ====================================================== --}}
-        @if ($topCategories->count() > 0)
-            <section class="mb-24 scroll-reveal">
-                <div class="container mx-auto px-4">
-                    <div class="text-center mb-12">
-                        <h2 class="text-3xl md:text-4xl font-bold mb-2">Khám phá chủ đề</h2>
-                        <p class="text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">Tìm đọc các bài viết theo những chủ đề mà bạn quan tâm.</p>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        @foreach ($topCategories->take(4) as $key => $category)
-                            <div class="scroll-reveal-item" style="transition-delay: {{ $key * 100 }}ms">
-                                <a href="{{ route('categories.show.public', $category->slug) }}" class="group block relative rounded-2xl overflow-hidden aspect-square">
-                                    <img src="{{ $category->banner_image_url ?? 'https://source.unsplash.com/random/800x800?sig=' . $key }}" 
-                                         alt="{{ $category->title }}" 
-                                         class="w-full h-full object-cover transition-all duration-500 group-hover:scale-110 group-hover:rotate-3">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                                    <div class="absolute bottom-0 left-0 p-6">
-                                        <h3 class="text-2xl font-bold text-white">{{ $category->title }}</h3>
-                                        <p class="text-white/80 text-sm">{{ $category->posts_count }} bài viết</p>
+        <section class="mb-12">
+            <div class="container mx-auto px-4">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-3xl font-bold">Trending Stories</h2>
+                    <a href="{{ route('posts.public') }}" class="text-red-600 dark:text-red-400 font-semibold hover:underline">
+                        View All →
+                    </a>
+                </div>
+                <div class="relative">
+                    <div class="flex space-x-6 overflow-x-auto pb-4 scrollbar-hide scroll-smooth" style="scrollbar-width: none; -ms-overflow-style: none;">
+                        @foreach($trendingPosts as $post)
+                            <div class="flex-shrink-0 w-80">
+                                <a href="{{ route('posts.show.public', $post->slug) }}" class="group block rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
+                                    <div class="relative overflow-hidden">
+                                        <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/320x400?sig='.$post->id }}" 
+                                             alt="{{ $post->title }}" 
+                                             class="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                        <div class="absolute top-4 left-4">
+                                            @if($post->category)
+                                            <span class="inline-block bg-white text-gray-900 text-xs font-bold px-3 py-1 rounded-full">
+                                                {{ $post->category->title }}
+                                            </span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </a>
+                                <div class="pt-4">
+                                    <h3 class="text-lg font-bold mb-2 line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                        <a href="{{ route('posts.show.public', $post->slug) }}">{{ $post->title }}</a>
+                                    </h3>
+                                    <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                        <span>{{ $post->author_name ?? 'Admin' }}</span>
+                                        <span class="mx-2">•</span>
+                                        <span>{{ $post->created_date }}</span>
+                                    </div>
+                                </div>
                             </div>
                         @endforeach
                     </div>
                 </div>
-            </section>
-        @endif
+            </div>
+        </section>
 
         {{-- ====================================================== --}}
-        {{-- ================= SECTION 3: NEWSLETTER ============ --}}
+        {{-- =================== MAIN CONTENT AREA ================= --}}
         {{-- ====================================================== --}}
-        <section class="mb-24 scroll-reveal">
+        <section class="mb-12">
             <div class="container mx-auto px-4">
-                <div class="relative bg-neutral-100 dark:bg-neutral-900 rounded-3xl px-8 py-16 md:p-20 lg:p-24 overflow-hidden">
-                    <div class="absolute -top-10 -right-10 w-40 h-40 bg-primary-200/50 dark:bg-primary-900/30 rounded-full blur-3xl"></div>
-                    <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-purple-200/50 dark:bg-purple-900/30 rounded-full blur-3xl"></div>
-                    <div class="relative z-10 text-center max-w-2xl mx-auto">
-                        <h2 class="text-3xl md:text-4xl font-bold mb-4">Tham gia cùng chúng tôi</h2>
-                        <p class="text-neutral-600 dark:text-neutral-400 text-lg mb-8">Nhận những bài viết, tin tức và kiến thức mới nhất được gửi thẳng đến hộp thư của bạn hàng tuần.</p>
-                        <form action="#" method="POST" class="w-full max-w-lg mx-auto">
-                            <div class="flex flex-col sm:flex-row gap-4 p-2 rounded-xl bg-white/60 dark:bg-white/10 backdrop-blur-sm shadow-md">
-                                <input type="email" placeholder="Nhập email của bạn..." required class="w-full px-5 py-3 rounded-lg border-0 bg-transparent focus:ring-2 focus:ring-primary-500 transition">
-                                <button type="submit" class="px-8 py-3 rounded-lg bg-neutral-900 dark:bg-white text-white dark:text-black font-bold hover:bg-black dark:hover:bg-neutral-200 transition-colors">Đăng ký</button>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {{-- Main Content Column --}}
+                    <div class="lg:col-span-2 space-y-8">
+                        {{-- Latest Posts --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-3xl font-bold">Latest Posts</h2>
+                                <a href="{{ route('posts.public') }}" class="text-red-600 dark:text-red-400 font-semibold hover:underline">
+                                    View All →
+                                </a>
                             </div>
-                        </form>
+                            <div class="space-y-6">
+                                @foreach($recentPosts->take(6) as $post)
+                                    <article class="group grid grid-cols-1 md:grid-cols-3 gap-4 items-center bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md hover:shadow-xl transition-all duration-300">
+                                        <a href="{{ route('posts.show.public', $post->slug) }}" class="block rounded-lg overflow-hidden md:col-span-1">
+                                            <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/300x200?sig='.$post->id }}" 
+                                                 alt="{{ $post->title }}" 
+                                                 class="w-full h-40 object-cover transition-transform duration-500 group-hover:scale-110">
+                                        </a>
+                                        <div class="md:col-span-2">
+                                            @if($post->category)
+                                            <a href="{{ route('categories.show.public', $post->category->slug ?? $post->category->id) }}" 
+                                               class="text-red-600 dark:text-red-400 font-bold text-xs uppercase tracking-wide">
+                                                {{ $post->category->title }}
+                                            </a>
+                                            @endif
+                                            <h3 class="text-xl font-bold mt-2 mb-2 line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                                <a href="{{ route('posts.show.public', $post->slug) }}">{{ $post->title }}</a>
+                                            </h3>
+                                            <p class="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">
+                                                {{ $post->short_description ?? Str::limit($post->title, 120) }}
+                                            </p>
+                                            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                                <div class="flex items-center">
+                                                    <span>{{ $post->author_name ?? 'Admin' }}</span>
+                                                    <span class="mx-2">•</span>
+                                                    <span>{{ $post->created_date }}</span>
+                                                </div>
+                                                @if(isset($post->comments_count))
+                                                <span>{{ $post->comments_count }} comments</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </article>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Don't Miss Section --}}
+                        <div>
+                            <h2 class="text-3xl font-bold mb-6">Don't Miss</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                @foreach($dontMissPosts as $post)
+                                    <article class="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
+                                        <a href="{{ route('posts.show.public', $post->slug) }}" class="block relative overflow-hidden">
+                                            <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/400x250?sig=miss-'.$post->id }}" 
+                                                 alt="{{ $post->title }}" 
+                                                 class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110">
+                                        </a>
+                                        <div class="p-5">
+                                            @if($post->category)
+                                            <a href="{{ route('categories.show.public', $post->category->slug ?? $post->category->id) }}" 
+                                               class="text-red-600 dark:text-red-400 font-bold text-xs uppercase tracking-wide">
+                                                {{ $post->category->title }}
+                                            </a>
+                                            @endif
+                                            <h3 class="text-lg font-bold mt-2 mb-2 line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                                <a href="{{ route('posts.show.public', $post->slug) }}">{{ $post->title }}</a>
+                                            </h3>
+                                            <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                                <span>{{ $post->author_name ?? 'Admin' }}</span>
+                                                <span class="mx-2">•</span>
+                                                <span>{{ $post->created_date }}</span>
+                                            </div>
+                                        </div>
+                                    </article>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
+
+                    {{-- Sidebar --}}
+                    <aside class="space-y-8">
+                        {{-- Most Popular --}}
+                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Most Read</h2>
+                            <div class="space-y-5">
+                                @foreach($mostPopular as $post)
+                                    <a href="{{ route('posts.show.public', $post->slug) }}" 
+                                       class="group flex items-start gap-4 pb-5 border-b border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
+                                        <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-red-600 to-red-700 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                                            {{ $loop->iteration }}
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="text-sm font-bold mb-1 line-clamp-2 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                                {{ $post->title }}
+                                            </h3>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                {{ $post->comments_count ?? 0 }} comments
+                                            </div>
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        {{-- Categories --}}
+                        @if(isset($topCategories) && $topCategories->count() > 0)
+                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Categories</h2>
+                            <div class="grid grid-cols-2 gap-4">
+                                @foreach($topCategories->take(6) as $category)
+                                    <a href="{{ route('categories.show.public', $category->slug ?? $category->id) }}" 
+                                       class="group relative block rounded-lg overflow-hidden aspect-square shadow-md hover:shadow-xl transition-all duration-300">
+                                        <div class="absolute inset-0 bg-gradient-to-br from-red-600/80 to-red-700/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
+                                        <div class="relative z-20 h-full flex items-center justify-center">
+                                            <span class="text-white font-bold text-center px-2 group-hover:scale-110 transition-transform duration-300">
+                                                {{ $category->title }}
+                                            </span>
+                                        </div>
+                                        <div class="absolute bottom-0 left-0 right-0 p-2 bg-black/50 text-white text-xs font-semibold text-center z-20">
+                                            {{ $category->posts_count ?? 0 }} posts
+                                        </div>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+
+                        {{-- Newsletter --}}
+                        <div class="bg-gradient-to-br from-red-600 to-red-700 rounded-xl p-6 shadow-xl text-white">
+                            <h2 class="text-2xl font-bold mb-2">Newsletter</h2>
+                            <p class="text-red-100 text-sm mb-6">Subscribe to our mailing list to get the new updates!</p>
+                            <div class="newsletter-in-red">
+                                @livewire('frontend.newsletter-form')
+                            </div>
+                        </div>
+
+                        {{-- Tags --}}
+                        @if(isset($topTags) && $topTags->count() > 0)
+                        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
+                            <h2 class="text-2xl font-bold mb-6 pb-3 border-b-2 border-gray-200 dark:border-gray-700">Tags</h2>
+                            <div class="flex flex-wrap gap-2">
+                                @foreach($topTags as $tag)
+                                <a href="#" 
+                                   class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold px-4 py-2 rounded-full hover:bg-red-600 hover:text-white dark:hover:bg-red-600 transition-all duration-300">
+                                    {{ $tag->name }}
+                                </a>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                    </aside>
                 </div>
             </div>
         </section>
 
     @else
-        {{-- Fallback if no posts at all --}}
         <section class="flex items-center justify-center h-[80vh]">
             <div class="text-center">
-                <svg class="w-16 h-16 mx-auto text-neutral-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                <p class="text-xl text-neutral-500 dark:text-neutral-400">Chào mừng! Hiện chưa có bài viết nào.</p>
+                <p class="text-xl text-gray-500 dark:text-gray-400">Chào mừng! Hiện chưa có bài viết nào.</p>
             </div>
         </section>
     @endif
 
-@endsection
-
-@push('styles')
-<style>
-    .scroll-reveal, .scroll-reveal-item {
-        opacity: 0;
-        transform: translateY(50px);
-        transition: opacity 0.8s cubic-bezier(0.5, 0, 0, 1), transform 0.8s cubic-bezier(0.5, 0, 0, 1);
-    }
-    .scroll-reveal.is-visible, .scroll-reveal-item.is-visible {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    @keyframes ken-burns-animation {
-        0% { transform: scale(1) rotate(0deg); }
-        100% { transform: scale(1.1) rotate(1deg); }
-    }
-    .ken-burns img {
-        animation: ken-burns-animation 7s ease-in-out infinite alternate-reverse both;
-    }
-</style>
-@endpush
-
-@push('scripts')
-<script>
-document.addEventListener('alpine:init', () => {
-    Alpine.data('heroSlideshow', (slidesData) => ({
-        slides: slidesData,
-        activeIndex: 0,
-        autoplayInterval: null,
-        init() {
-            if (this.slides.length > 0) {
-                this.startAutoplay();
-            }
-        },
-        startAutoplay() {
-            this.autoplayInterval = setInterval(() => {
-                this.next();
-            }, 7000); // 7 seconds per slide
-        },
-        stopAutoplay() {
-            clearInterval(this.autoplayInterval);
-        },
-        next() {
-            this.activeIndex = (this.activeIndex + 1) % this.slides.length;
-        },
-        prev() {
-            this.activeIndex = (this.activeIndex - 1 + this.slides.length) % this.slides.length;
-        },
-        setActive(index) {
-            this.activeIndex = index;
-            this.stopAutoplay();
-            this.startAutoplay(); // Restart timer on manual interaction
+    {{-- Custom Styles --}}
+    <style>
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
         }
-    }));
-});
+        
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .newsletter-in-red form {
+            max-width: 100%;
+        }
+        
+        .newsletter-in-red .bg-white\/60,
+        .newsletter-in-red .dark\:bg-white\/10 {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            backdrop-filter: blur(8px);
+        }
+        
+        .newsletter-in-red input {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        .newsletter-in-red input::placeholder {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        .newsletter-in-red button {
+            background-color: white !important;
+            color: #dc2626 !important;
+        }
+        
+        .newsletter-in-red button:hover {
+            background-color: rgba(255, 255, 255, 0.9) !important;
+        }
+        
+        .newsletter-in-red .text-red-500,
+        .newsletter-in-red .text-red-700 {
+            color: #fee2e2 !important;
+        }
+        
+        .newsletter-in-red .bg-red-100,
+        .newsletter-in-red .bg-red-200 {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+        }
+    </style>
 
-document.addEventListener('DOMContentLoaded', () => {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('is-visible');
-            }
-        });
-    }, { threshold: 0.05 });
-
-    document.querySelectorAll('.scroll-reveal, .scroll-reveal-item').forEach(el => {
-        observer.observe(el);
-    });
-});
-</script>
-@endpush
+@endsection

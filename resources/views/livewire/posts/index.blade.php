@@ -79,8 +79,8 @@ new class extends Component
             $categories = Category::query()
                 ->select('id', 'title', 'parent_id')
                 ->where('is_active', true)
-                ->with(['parent' => function($query) { $query->select('id', 'title', 'parent_id');
-                    // Eager load parent's parent to avoid lazy loading
+                ->with(['parent' => function($query) { 
+                    $query->select('id', 'title', 'parent_id');
                     // Eager load parent's parent to avoid lazy loading
                     $query->with('parent:id,title');
                 }])
@@ -207,7 +207,7 @@ new class extends Component
                 <span class="material-symbols-outlined text-base">download</span>
                 <span>Xuất Excel</span>
             </button>
-            <a :href="route('posts.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+            <a href="{{ route('posts.create') }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
                 <span class="material-symbols-outlined text-base">add</span>
                 Thêm bài đăng mới
             </a>
@@ -477,7 +477,7 @@ new class extends Component
                     Hiện tại chưa có bài đăng nào.
                 </p>
                 <div class="mt-6">
-                    <a :href="route('posts.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+                    <a href="{{ route('posts.create') }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
                         <span class="material-symbols-outlined text-base">add</span>
                         Tạo bài đăng mới
                     </a>

@@ -34,7 +34,35 @@
                 </h2>
                 <p class="text-neutral-600 dark:text-neutral-400">Điền thông tin bên dưới và chúng tôi sẽ phản hồi trong vòng 24 giờ</p>
             </div>
-            <form x-data="contactForm()" @submit.prevent="submitForm" class="space-y-6">
+            <form action="{{ route('contact.store') }}" method="POST" class="space-y-6">
+                @csrf
+                @if (session('success'))
+                    <div class="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
+                        <svg class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-green-800 dark:text-green-300">Gửi thành công!</p>
+                            <p class="text-sm text-green-700 dark:text-green-400">{{ session('success') }}</p>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+                        <svg class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-red-800 dark:text-red-300">Có lỗi xảy ra</p>
+                            <ul class="mt-1 text-sm text-red-700 dark:text-red-400 list-disc list-inside">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @endif
             <div class="grid sm:grid-cols-2 gap-6">
                     <div>
                         <label for="name" class="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
@@ -43,12 +71,13 @@
                         <input 
                             type="text" 
                             id="name" 
-                            x-model="form.name"
+                            name="name"
+                            value="{{ old('name') }}"
                             required
                             class="w-full px-4 py-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" 
                             placeholder="Nhập họ và tên"
                         />
-                        <p x-show="errors.name" class="mt-1 text-xs text-red-500" x-text="errors.name"></p>
+                        @error('name')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                     </div>
                     <div>
                         <label for="email" class="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
@@ -57,12 +86,13 @@
                         <input 
                             type="email" 
                             id="email" 
-                            x-model="form.email"
+                            name="email"
+                            value="{{ old('email') }}"
                             required
                             class="w-full px-4 py-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" 
                             placeholder="your@email.com"
                         />
-                        <p x-show="errors.email" class="mt-1 text-xs text-red-500" x-text="errors.email"></p>
+                        @error('email')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                     </div>
                 </div>
                 <div>
@@ -72,12 +102,13 @@
                     <input 
                         type="text" 
                         id="subject" 
-                        x-model="form.subject"
+                        name="subject"
+                        value="{{ old('subject') }}"
                         required
                         class="w-full px-4 py-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition" 
                         placeholder="Tiêu đề tin nhắn"
                     />
-                    <p x-show="errors.subject" class="mt-1 text-xs text-red-500" x-text="errors.subject"></p>
+                    @error('subject')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label for="message" class="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-2">
@@ -86,56 +117,20 @@
                     <textarea 
                         id="message" 
                         rows="6" 
-                        x-model="form.message"
+                        name="message"
                         required
                         class="w-full px-4 py-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-none" 
                         placeholder="Viết tin nhắn của bạn ở đây..."
-                    ></textarea>
-                    <p x-show="errors.message" class="mt-1 text-xs text-red-500" x-text="errors.message"></p>
-                    <p class="mt-1 text-xs text-neutral-500" x-text="`${form.message.length} ký tự`"></p>
+                    >{{ old('message') }}</textarea>
+                    @error('message')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    <p class="mt-1 text-xs text-neutral-500">{{ strlen(old('message')) }} ký tự</p>
                 </div>
                 
-                <!-- Success Message -->
-                <div x-show="success" 
-                     x-transition:enter="transition ease-out duration-300"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     class="p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg flex items-start gap-3">
-                    <svg class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <div>
-                        <p class="font-semibold text-green-800 dark:text-green-300">Gửi thành công!</p>
-                        <p class="text-sm text-green-700 dark:text-green-400">Cảm ơn bạn đã liên hệ. Chúng tôi sẽ phản hồi sớm nhất có thể.</p>
-            </div>
-            </div>
-
-                <!-- Error Message -->
-                <div x-show="error" 
-                     x-transition:enter="transition ease-out duration-300"
-                     x-transition:enter-start="opacity-0"
-                     x-transition:enter-end="opacity-100"
-                     class="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
-                    <svg class="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-            <div>
-                        <p class="font-semibold text-red-800 dark:text-red-300">Có lỗi xảy ra</p>
-                        <p class="text-sm text-red-700 dark:text-red-400" x-text="error"></p>
-            </div>
-            </div>
-
                 <button 
                     type="submit" 
-                    :disabled="loading"
                     class="w-full px-6 py-4 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 transition shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                    <svg x-show="loading" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span x-show="!loading">Gửi tin nhắn</span>
-                    <span x-show="loading">Đang gửi...</span>
+                    <span>Gửi tin nhắn</span>
                 </button>
         </form>
         </div>
@@ -267,101 +262,5 @@
 @endsection
 
 @push('scripts')
-<script>
-function contactForm() {
-    return {
-        form: {
-            name: '',
-            email: '',
-            subject: '',
-            message: ''
-        },
-        errors: {},
-        loading: false,
-        success: false,
-        error: '',
 
-        validate() {
-            this.errors = {};
-            
-            if (!this.form.name.trim()) {
-                this.errors.name = 'Vui lòng nhập họ và tên';
-            }
-            
-            if (!this.form.email.trim()) {
-                this.errors.email = 'Vui lòng nhập email';
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.email)) {
-                this.errors.email = 'Email không hợp lệ';
-            }
-            
-            if (!this.form.subject.trim()) {
-                this.errors.subject = 'Vui lòng nhập chủ đề';
-            }
-            
-            if (!this.form.message.trim()) {
-                this.errors.message = 'Vui lòng nhập nội dung';
-            } else if (this.form.message.length < 10) {
-                this.errors.message = 'Nội dung phải có ít nhất 10 ký tự';
-            }
-
-            return Object.keys(this.errors).length === 0;
-        },
-
-        async submitForm() {
-            this.success = false;
-            this.error = '';
-
-            if (!this.validate()) {
-                return;
-            }
-
-            this.loading = true;
-
-            try {
-                // Simulate API call - replace with actual endpoint
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                // In a real app, you would make an actual API call here:
-                // const response = await fetch('/api/contact', {
-                //     method: 'POST',
-                //     headers: { 'Content-Type': 'application/json' },
-                //     body: JSON.stringify(this.form)
-                // });
-                
-                this.success = true;
-                this.form = { name: '', email: '', subject: '', message: '' };
-                
-                // Scroll to success message
-                setTimeout(() => {
-                    document.querySelector('[x-show="success"]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                }, 100);
-            } catch (err) {
-                this.error = 'Có lỗi xảy ra khi gửi tin nhắn. Vui lòng thử lại sau.';
-            } finally {
-                this.loading = false;
-            }
-        }
-    }
-}
-</script>
-
-<style>
-    @keyframes blob {
-        0%, 100% {
-            transform: translate(0px, 0px) scale(1);
-        }
-        33% {
-            transform: translate(30px, -50px) scale(1.1);
-        }
-        66% {
-            transform: translate(-20px, 20px) scale(0.9);
-        }
-    }
-    .animate-blob {
-        animation: blob 7s infinite;
-    }
-    .animation-delay-2000 {
-        animation-delay: 2s;
-    }
-</style>
 @endpush

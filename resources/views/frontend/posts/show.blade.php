@@ -72,12 +72,7 @@
                             {{ $post->formatted_published_at }}
                         </span>
                     @endif
-                    <span>&bull;</span>
-                    <span class="flex items-center gap-2" x-data="{ readingTime: calculateReadingTime({{ Str::length(strip_tags($post->content)) }}) }" x-text="`${readingTime} phút đọc`">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </span>
+
                     @if($post->views_count)
                         <span>&bull;</span>
                         <span class="flex items-center gap-2">
@@ -194,6 +189,11 @@
                 </div>
             </div>
         </article>
+
+        <!-- Comments Section -->
+        <div class="mt-12">
+            @livewire('post-comments', ['post' => $post])
+        </div>
 
         <!-- Previous/Next Navigation -->
         <div class="mt-12 grid md:grid-cols-2 gap-6">
@@ -404,12 +404,7 @@ document.addEventListener('alpine:init', () => {
     });
 });
 
-// Calculate reading time
-function calculateReadingTime(wordCount) {
-    const wordsPerMinute = 200;
-    const minutes = Math.ceil(wordCount / wordsPerMinute);
-    return minutes || 1;
-}
+
 
 // Copy to clipboard
 function copyToClipboard() {

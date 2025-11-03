@@ -88,6 +88,14 @@ class Post extends Model
     }
 
     /**
+     * Relationship: Post has many Comments
+     */
+    public function comments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    /**
      * Scope: Lấy các bài đăng đã xuất bản
      */
     public function scopePublished(Builder $query): Builder

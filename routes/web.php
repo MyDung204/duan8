@@ -7,12 +7,20 @@ use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 use App\Models\Post;
 use App\Models\Category;
+use App\Models\Tag;
 
 Route::get('/', function () {
     $latestPosts = Cache::remember('home_latest_posts', 300, function () {
         return Post::published()
             ->with('category')
             ->latest()
+            ->take(12)
+            ->get();
+    });
+    $popularPosts = Cache::remember('home_popular_posts', 300, function () {
+        return Post::published()
+            ->with('category')
+            ->orderByDesc('views_count')
             ->take(6)
             ->get();
     });
@@ -23,22 +31,31 @@ Route::get('/', function () {
                 $query->published();
             }])
             ->orderBy('title')
+            ->take(8)
             ->get();
     });
-    return view('frontend.home', compact('latestPosts', 'topCategories'));
+    $topTags = Cache::remember('home_top_tags', 300, function () {
+        return Tag::withCount('posts')->orderByDesc('posts_count')->take(10)->get();
+    });
+    $mostCommentedPosts = Cache::remember('home_most_commented_posts', 300, function () {
+        return Post::published()
+            ->withCount('comments')
+            ->orderByDesc('comments_count')
+            ->take(5)
+            ->get();
+    });
+    return view('frontend.home', compact('latestPosts', 'popularPosts', 'topCategories', 'topTags', 'mostCommentedPosts'));
 })->name('home');
 
 Route::get('/bai-viet/{post:slug}', function (Post $post) {
-    // Increment view count with simple throttling per session (5 minutes)
+    // Increment view count once per session
     $sessionKey = 'viewed_post_' . $post->id;
-    $lastViewedAt = session($sessionKey);
-    $nowTs = now()->getTimestamp();
-    $throttleSeconds = 300; // 5 minutes
 
-    if (!$lastViewedAt || ($nowTs - (int) $lastViewedAt) > $throttleSeconds) {
+    if (!session()->has($sessionKey)) {
         $post->increment('views_count');
-        session([$sessionKey => $nowTs]);
+        session([$sessionKey => true]);
     }
+    
     $post->refresh();
     
     // Get related posts
@@ -179,6 +196,8 @@ Route::get('/danh-muc/{category:slug}', function (Category $category) {
 // Public: About
 Route::view('/ve-chung-toi', 'frontend.about')->name('about');
 
+Route::post('/lien-he', [App\Http\Controllers\Frontend\ContactController::class, 'store'])->name('contact.store');
+
 // Public: Contact
 Route::view('/lien-he', 'frontend.contact')->name('contact');
 
@@ -231,6 +250,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Volt::route('posts/create', 'posts.form')->name('posts.create'); 
     Volt::route('posts/edit/{id}', 'posts.form')->name('posts.edit');
     Volt::route('posts/show/{id}', 'posts.show')->name('posts.show');
+
+    // Comment Management Route
+    Volt::route('comments', 'admin.comment-manager')->name('comments.index');
+
+    // Contact Management Route
+    Volt::route('contacts', 'admin.contact-manager')->name('admin.contacts.index');
+
+    // User Management Routes
+    Volt::route('users', 'admin.user-manager')->name('admin.users.index');
+    Volt::route('users/create', 'admin.user-form')->name('admin.users.create');
+    Volt::route('users/{user}/edit', 'admin.user-form')->name('admin.users.edit');
+    Volt::route('users/{user}', 'admin.user-show')->name('admin.users.show');
 
     Volt::route('settings/profile', 'settings.profile')->name('profile.edit');
     Volt::route('settings/password', 'settings.password')->name('user-password.edit');
