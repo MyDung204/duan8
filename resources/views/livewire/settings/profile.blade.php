@@ -70,7 +70,7 @@ new class extends Component {
 }; ?>
 
 <section class="w-full">
-    @include('partials.settings-heading')
+    @include('partials.shared.settings-heading')
 
     <x-layouts.user-admin-settings :heading="__('Thông tin cá nhân')" :subheading="__('Cập nhật tên và email của bạn')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
@@ -112,5 +112,5 @@ new class extends Component {
         </form>
 
         <livewire:settings.delete-user-form />
-    </x-settings.layout>
+    </x-layouts.user-admin-settings>
 </section>

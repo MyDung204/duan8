@@ -47,6 +47,6 @@ class CommentManager extends Component
 
         return view('livewire.admin.comment-manager', [
             'comments' => $comments,
-        ])->layout('components.layouts.app');
+        ])->layout('layouts.app');
     }
 }

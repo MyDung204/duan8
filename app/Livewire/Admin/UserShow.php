@@ -23,6 +23,6 @@ class UserShow extends Component
 
         return view('livewire.admin.user-show', [
             'comments' => $comments,
-        ])->layout('components.layouts.app');
+        ])->layout('layouts.app');
     }
 }

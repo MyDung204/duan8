@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
-        @include('partials.head')
+        @include('partials.shared.head')
         @vite(['resources/css/admin.css','resources/js/admin.js'])
         <link rel="preload" href="{{ Vite::asset('resources/css/app.css') }}" as="style" />
     </head>
@@ -79,8 +79,9 @@
                         </aside>
                     @endif
         
-                    <main class="flex-1 @if(Auth::check() && Auth::user()->role === 'admin') pl-64 @endif">                {{ $slot }}
-            </main>
+                    <main class="flex-1 @if(Auth::check() && Auth::user()->role === 'admin') pl-64 @endif">
+                        {{ $slot ?? $content ?? '' }}
+                    </main>
         </div>
 
         @fluxScripts

@@ -1,5 +1,5 @@
 @php
-    // Component wrapper trỏ đến layout thực tế trong layouts/app/sidebar.blade.php
+    // Layout trỏ đến layout thực tế trong layouts/app/sidebar.blade.php
     // Render $slot thành HTML để truyền qua @include
     $content = isset($slot) ? $slot->toHtml() : '';
 @endphp
@@ -12,4 +12,3 @@
 
 {{-- @stack('scripts') cho các script con (như confirmDelete) --}}
 @stack('scripts')
-

@@ -26,7 +26,7 @@ class TagManager extends Component
         $tags = Tag::latest()->paginate(10);
         return view('livewire.admin.tag-manager', [
             'tags' => $tags,
-        ]);
+        ])->layout('layouts.app');
     }
 
     public function generateSlug()

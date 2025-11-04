@@ -20,6 +20,6 @@ class ContactManager extends Component
     {
         return view('livewire.admin.contact-manager', [
             'contacts' => Contact::latest()->paginate(10),
-        ]);
+        ])->layout('layouts.app');
     }
 }

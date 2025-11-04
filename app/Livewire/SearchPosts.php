@@ -9,7 +9,7 @@ use Livewire\Attributes\Url;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 
-#[Layout('frontend.layouts.app')]
+#[Layout('layouts.frontend.app')]
 #[Title('Tìm kiếm bài viết')]
 class SearchPosts extends Component
 {

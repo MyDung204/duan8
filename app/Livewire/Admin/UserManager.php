@@ -44,6 +44,6 @@ class UserManager extends Component
         return view('livewire.admin.user-manager', [
             'users' => $users,
             'roles' => $roles,
-        ])->layout('components.layouts.app');
+        ])->layout('layouts.app');
     }
 }

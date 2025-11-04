@@ -179,7 +179,7 @@ new class extends Component {
 } ?>
 
 <section class="w-full">
-    @include('partials.settings-heading')
+    @include('partials.shared.settings-heading')
 
     <x-layouts.user-admin-settings
         :heading="__('Bảo mật hai lớp')"
@@ -230,7 +230,7 @@ new class extends Component {
                 </div>
             @endif
         </div>
-    </x-settings.layout>
+    </x-layouts.user-admin-settings>
 
     <flux:modal
         name="two-factor-setup-modal"

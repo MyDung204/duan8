@@ -38,7 +38,7 @@ new class extends Component {
 }; ?>
 
 <section class="w-full">
-    @include('partials.settings-heading')
+    @include('partials.shared.settings-heading')
 
     <x-layouts.user-admin-settings :heading="__('Cập nhật mật khẩu')" :subheading="__('Đảm bảo tài khoản của bạn đang dùng một mật khẩu dài và ngẫu nhiên')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
@@ -76,5 +76,5 @@ new class extends Component {
                 </x-action-message>
             </div>
         </form>
-    </x-settings.layout>
+    </x-layouts.user-admin-settings>
 </section>

@@ -8,7 +8,7 @@ new class extends Component {
 }; ?>
 
 <section class="w-full">
-    @include('partials.settings-heading')
+    @include('partials.shared.settings-heading')
 
     <x-layouts.user-admin-settings :heading="__('Giao diện')" :subheading="__('Cập nhật giao diện cho tài khoản của bạn')">
         <flux:radio.group x-data variant="segmented" x-model="$flux.appearance">
@@ -16,5 +16,5 @@ new class extends Component {
             <flux:radio value="dark" icon="moon">{{ __('Tối') }}</flux:radio>
             <flux:radio value="system" icon="computer-desktop">{{ __('Theo hệ thống') }}</flux:radio>
         </flux:radio.group>
-    </x-settings.layout>
+    </x-layouts.user-admin-settings>
 </section>

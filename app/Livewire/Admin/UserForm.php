@@ -78,6 +78,6 @@ class UserForm extends Component
     {
         return view('livewire.admin.user-form', [
             'availableRoles' => $this->availableRoles,
-        ])->layout('components.layouts.app');
+        ])->layout('layouts.app');
     }
 }

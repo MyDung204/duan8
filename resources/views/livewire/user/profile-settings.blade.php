@@ -71,7 +71,7 @@ new class extends Component {
 }; ?>
 
 <section class="w-full">
-    @include('partials.settings-heading')
+    @include('partials.shared.settings-heading')
 
     <h2 class="text-2xl font-bold">Thông tin cá nhân</h2>
     <p class="text-gray-600">Cập nhật tên và email của bạn</p>
