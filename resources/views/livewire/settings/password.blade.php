@@ -40,7 +40,7 @@ new class extends Component {
 <section class="w-full">
     @include('partials.shared.settings-heading')
 
-    <x-layouts.user-admin-settings :heading="__('Cập nhật mật khẩu')" :subheading="__('Đảm bảo tài khoản của bạn đang dùng một mật khẩu dài và ngẫu nhiên')">
+    <x-settings.layout :heading="__('Cập nhật mật khẩu')" :subheading="__('Đảm bảo tài khoản của bạn đang dùng một mật khẩu dài và ngẫu nhiên')">
         <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
             <flux:input
                 wire:model="current_password"
@@ -76,5 +76,5 @@ new class extends Component {
                 </x-action-message>
             </div>
         </form>
-    </x-layouts.user-admin-settings>
+    </x-settings.layout>
 </section>
