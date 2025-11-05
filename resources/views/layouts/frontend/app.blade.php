@@ -13,7 +13,6 @@
         <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
         <link rel="icon" href="{{ asset('image/favicon.png') }}" type="image/png">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     </head>
     <body class="min-h-dvh bg-neutral-50 text-neutral-900 antialiased dark:bg-neutral-950 dark:text-neutral-100">
         @include('frontend.partials.header')
