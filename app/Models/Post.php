@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Post extends Model
@@ -149,6 +150,57 @@ class Post extends Model
         }
         
         return asset('storage/posts/banners/' . $this->banner_image);
+    }
+
+    /**
+     * Accessor: srcset cho ảnh banner
+     */
+    public function getBannerSrcsetAttribute(): ?string
+    {
+        if (!$this->banner_image) {
+            return null;
+        }
+
+        $sizes = ['small' => 480, 'medium' => 800, 'large' => 1200];
+        $srcset = [];
+
+        $path_info = pathinfo($this->banner_image);
+        $filename = $path_info['filename'];
+        $extension = $path_info['extension'];
+
+        foreach ($sizes as $name => $width) {
+            $resized_image_name = "{$filename}-{$name}.{$extension}";
+            if (Storage::disk('public')->exists('posts/banners/' . $resized_image_name)) {
+                $srcset[] = asset('storage/posts/banners/' . $resized_image_name) . " {$width}w";
+            }
+        }
+
+        // Thêm ảnh gốc vào cuối danh sách
+        $srcset[] = $this->banner_image_url . " 1920w"; // Giả sử ảnh gốc có chiều rộng tối đa là 1920px
+
+        return implode(', ', $srcset);
+    }
+
+    /**
+     * Accessor: URL ảnh thumbnail (phiên bản nhỏ)
+     */
+    public function getBannerThumbnailUrlAttribute(): ?string
+    {
+        if (!$this->banner_image) {
+            return $this->banner_image_url; // Fallback to original or placeholder
+        }
+
+        $path_info = pathinfo($this->banner_image);
+        $filename = $path_info['filename'];
+        $extension = $path_info['extension'];
+
+        $thumbnail_name = "{$filename}-small.{$extension}";
+
+        if (Storage::disk('public')->exists('posts/banners/' . $thumbnail_name)) {
+            return asset('storage/posts/banners/' . $thumbnail_name);
+        }
+
+        return $this->banner_image_url; // Fallback to original if small version doesn't exist
     }
 
     /**

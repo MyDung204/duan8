@@ -6,6 +6,8 @@ use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On; 
+use Intervention\Image\Laravel\Facades\Image;
+use Illuminate\Support\Facades\Storage;
 
 new class extends Component
 {
@@ -166,10 +168,30 @@ new class extends Component
             'is_published' => $this->isPublished,
         ];
 
-        // Handle banner image
+        // Handle banner image with resizing
         if ($this->bannerImage) {
-            $bannerPath = $this->bannerImage->store('posts/banners', 'public');
-            $data['banner_image'] = basename($bannerPath);
+            // 1. Store the original image and get its generated name
+            $originalPath = $this->bannerImage->store('posts/banners', 'public');
+            $baseFilename = basename($originalPath);
+            $data['banner_image'] = $baseFilename; // Save the original's name to DB
+
+            // 2. Define sizes and path info
+            $sizes = ['large' => 1200, 'medium' => 800, 'small' => 480];
+            $storagePath = Storage::disk('public')->path('posts/banners/');
+            $originalImageFullPath = $storagePath . $baseFilename;
+
+            // 3. Generate and save resized versions
+            foreach ($sizes as $name => $width) {
+                try {
+                    $image = Image::read($originalImageFullPath);
+                    $image->scaleDown(width: $width);
+                    $newFilename = pathinfo($baseFilename, PATHINFO_FILENAME) . '-' . $name . '.' . pathinfo($baseFilename, PATHINFO_EXTENSION);
+                    $image->save($storagePath . $newFilename);
+                } catch (\Exception $e) {
+                    // Log error if resizing fails, but don't block the process
+                    Log::error('Image resizing failed for ' . $baseFilename . ': ' . $e->getMessage());
+                }
+            }
         }
 
         // Handle gallery images
