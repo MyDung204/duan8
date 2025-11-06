@@ -37,7 +37,10 @@
         @foreach($posts->take(3) as $index => $post)
             <a href="{{ route('posts.show.public', $post->slug) }}" class="group block bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
                 <div class="aspect-[16/9] overflow-hidden relative">
-                    <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                    <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $post->title }}"
+                         loading="eager"
+                         fetchpriority="{{ $index === 0 ? 'high' : 'auto' }}"
+                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     @if($post->category)
                         <span class="absolute top-4 left-4 px-3 py-1 text-xs font-semibold bg-indigo-600 text-white rounded-full">{{ $post->category->title }}</span>
@@ -84,7 +87,7 @@
                 @foreach($posts->skip(3) as $post)
                     <a href="{{ route('posts.show.public', $post->slug) }}" class="group block bg-white dark:bg-neutral-900 rounded-xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                         <div class="aspect-[16/9] overflow-hidden relative">
-                            <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                            <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $post->title }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                             <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
                         <div class="p-5">
@@ -168,7 +171,7 @@
                     <li>
                         <a href="{{ route('posts.show.public', $post->slug) }}" class="group flex items-start gap-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-lg p-2 -m-2 transition">
                             <div class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
-                                <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/400x400' }}" alt="{{ $post->title }}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                                <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/400x400' }}" alt="{{ $post->title }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                             </div>
                             <div class="flex-1 min-w-0">
                                 <h4 class="font-semibold text-sm text-neutral-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors line-clamp-2">{{ $post->title }}</h4>

@@ -46,7 +46,7 @@
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     @foreach($posts as $post)
-                        <x-post-card :post="$post" />
+                        <x-post-card :post="$post" :isFirst="$loop->first" />
                     @endforeach
                 </div>
                 <div class="mt-12">

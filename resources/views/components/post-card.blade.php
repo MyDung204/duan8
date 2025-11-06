@@ -1,9 +1,11 @@
-@props(['post'])
+@props(['post', 'isFirst' => false])
 
 <a href="{{ route('posts.show.public', $post->slug) }}"
    class="group block bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
     <div class="aspect-[4/3] overflow-hidden relative">
         <img src="{{ $post->banner_image_url ?? 'https://via.placeholder.com/800x600' }}" alt="{{ $post->title }}"
+             loading="{{ $isFirst ? 'eager' : 'lazy' }}"
+             fetchpriority="{{ $isFirst ? 'high' : 'auto' }}"
              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
         <div
             class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">

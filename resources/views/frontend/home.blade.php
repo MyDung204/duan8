@@ -24,10 +24,11 @@
                     @if($featuredPosts->first())
                         <a href="{{ route('posts.show.public', $featuredPosts->first()->slug) }}" 
                            class="group relative block rounded-xl overflow-hidden h-[400px] lg:h-full shadow-lg hover:shadow-2xl transition-all duration-500">
-                            <img src="{{ $featuredPosts->first()->banner_image_url ?? 'https://source.unsplash.com/random/800x1000?sig='.$featuredPosts->first()->id }}" 
-                                 alt="{{ $featuredPosts->first()->title }}" 
-                                 width="800" height="1000"
-                                 class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                            <x-progressive-image 
+                                :src="$featuredPosts->first()->banner_image_url ?? 'https://source.unsplash.com/random/800x1000?sig='.$featuredPosts->first()->id" 
+                                alt="{{ $featuredPosts->first()->title }}" 
+                                width="800" height="1000"
+                                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                             <div class="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
                                 @if($featuredPosts->first()->category)
@@ -50,10 +51,11 @@
                         @foreach($featuredPosts->slice(1, 4) as $post)
                             <a href="{{ route('posts.show.public', $post->slug) }}" 
                                class="group relative block rounded-xl overflow-hidden h-full shadow-md hover:shadow-xl transition-all duration-500">
-                                <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/400x300?sig='.$post->id }}" 
-                                     alt="{{ $post->title }}" 
-                                     width="400" height="300"
-                                     class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                                <x-progressive-image 
+                                    :src="$post->banner_image_url ?? 'https://source.unsplash.com/random/400x300?sig='.$post->id" 
+                                    alt="{{ $post->title }}" 
+                                    width="400" height="300"
+                                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"></div>
                                 <div class="absolute bottom-0 left-0 right-0 p-4">
                                     @if($post->category)
@@ -85,10 +87,11 @@
                     @foreach($whatsNewPosts as $post)
                         <article class="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300">
                             <a href="{{ route('posts.show.public', $post->slug) }}" class="block relative overflow-hidden">
-                                <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/400x250?sig=new-'.$post->id }}" 
-                                     alt="{{ $post->title }}" 
-                                     width="400" height="250" loading="lazy"
-                                     class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110">
+                                <x-progressive-image 
+                                    :src="$post->banner_image_url ?? 'https://source.unsplash.com/random/400x250?sig=new-'.$post->id" 
+                                    alt="{{ $post->title }}" 
+                                    width="400" height="250" 
+                                    class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110" />
                                 <div class="absolute top-4 left-4">
                                     @if($post->category)
                                     <span class="inline-block bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs font-bold px-3 py-1 rounded-full">
@@ -136,10 +139,11 @@
                             <div class="flex-shrink-0 w-80">
                                 <a href="{{ route('posts.show.public', $post->slug) }}" class="group block rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
                                     <div class="relative overflow-hidden">
-                                        <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/320x400?sig='.$post->id }}" 
-                                             alt="{{ $post->title }}" 
-                                             width="320" height="400" loading="lazy"
-                                             class="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110">
+                                        <x-progressive-image 
+                                            :src="$post->banner_image_url ?? 'https://source.unsplash.com/random/320x400?sig='.$post->id" 
+                                            alt="{{ $post->title }}" 
+                                            width="320" height="400" 
+                                            class="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110" />
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                                         <div class="absolute top-4 left-4">
                                             @if($post->category)
@@ -191,10 +195,11 @@
                                 @foreach($recentPosts->take(6) as $post)
                                     <article class="group grid grid-cols-1 md:grid-cols-3 gap-4 items-center bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md hover:shadow-xl transition-all duration-300">
                                         <a href="{{ route('posts.show.public', $post->slug) }}" class="block rounded-lg overflow-hidden md:col-span-1">
-                                            <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/300x200?sig='.$post->id }}" 
-                                                 alt="{{ $post->title }}" 
-                                                 width="300" height="200" loading="lazy"
-                                                 class="w-full h-40 object-cover transition-transform duration-500 group-hover:scale-110">
+                                            <x-progressive-image 
+                                                :src="$post->banner_image_url ?? 'https://source.unsplash.com/random/300x200?sig='.$post->id" 
+                                                alt="{{ $post->title }}" 
+                                                width="300" height="200" 
+                                                class="w-full h-40 object-cover transition-transform duration-500 group-hover:scale-110" />
                                         </a>
                                         <div class="md:col-span-2">
                                             @if($post->category)
@@ -232,10 +237,11 @@
                                 @foreach($dontMissPosts as $post)
                                     <article class="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
                                         <a href="{{ route('posts.show.public', $post->slug) }}" class="block relative overflow-hidden">
-                                            <img src="{{ $post->banner_image_url ?? 'https://source.unsplash.com/random/400x250?sig=miss-'.$post->id }}" 
-                                                 alt="{{ $post->title }}" 
-                                                 width="400" height="250" loading="lazy"
-                                                 class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110">
+                                            <x-progressive-image 
+                                                :src="$post->banner_image_url ?? 'https://source.unsplash.com/random/400x250?sig=miss-'.$post->id" 
+                                                alt="{{ $post->title }}" 
+                                                width="400" height="250" 
+                                                class="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110" />
                                         </a>
                                         <div class="p-5">
                                             @if($post->category)
@@ -292,10 +298,11 @@
                                 @foreach($topCategories->take(6) as $category)
                                     <a href="{{ route('categories.show.public', $category->slug ?? $category->id) }}" 
                                        class="group relative block rounded-lg overflow-hidden aspect-square shadow-md hover:shadow-xl transition-all duration-300">
-                                        <img src="{{ $category->banner_image_url ?? 'https://source.unsplash.com/random/400x300?sig=cat-'.$category->id }}" 
-                                             alt="{{ $category->title }}" 
-                                             width="400" height="300" loading="lazy"
-                                             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                                        <x-progressive-image 
+                                            :src="$category->banner_image_url ?? 'https://source.unsplash.com/random/400x300?sig=cat-'.$category->id" 
+                                            alt="{{ $category->title }}" 
+                                            width="400" height="300" 
+                                            class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                                         <div class="absolute inset-0 bg-gradient-to-br from-black/60 to-transparent opacity-100 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
                                         <div class="absolute inset-0 flex flex-col justify-center items-center z-20 p-2">
                                             <span class="text-white font-bold text-center px-2 text-lg group-hover:scale-110 transition-transform duration-300">

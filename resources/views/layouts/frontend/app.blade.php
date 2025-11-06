@@ -10,7 +10,8 @@
         {{-- Fonts are self-hosted via resources/css/fonts.css and Vite build --}}
 
         <link rel="preload" href="{{ Vite::asset('resources/css/app.css') }}" as="style" />
-        <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+                <link rel="preload" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined"></noscript>
         <link rel="icon" href="{{ asset('image/favicon.png') }}" type="image/png">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
