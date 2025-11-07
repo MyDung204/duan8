@@ -29,7 +29,9 @@ new class extends Component
 
     // Thuộc tính preview
     public $bannerPreview = null;
-    public $galleryPreviews = [];
+    public $galleryPreviews = []; // Ảnh cũ (khi edit)
+    public $newGalleryPreviews = []; // Ảnh mới đang upload
+    public $existingGalleryImages = []; // Lưu tên file ảnh cũ khi edit
 
     // Thuộc tính tính toán - Lấy danh sách danh mục
     public function getCategoriesProperty()
@@ -57,6 +59,7 @@ new class extends Component
             
             if ($post->gallery_images) {
                 $this->galleryPreviews = $post->gallery_image_urls;
+                $this->existingGalleryImages = $post->gallery_images; // Lưu tên file ảnh cũ
             }
         }
     }
@@ -74,17 +77,21 @@ new class extends Component
 
         // SỬA LỖI VALIDATION: Yêu cầu thư viện ảnh khi tạo mới hoặc khi edit nhưng không có ảnh cũ
         $galleryRule = 'nullable|array|max:5';
+        $existingCount = count($this->existingGalleryImages);
+        
         if (!$this->postId) {
             // Tạo mới: yêu cầu ít nhất 2 ảnh
             $galleryRule = 'required|array|min:2|max:5';
-        } elseif (empty($this->galleryPreviews)) {
+        } elseif ($existingCount === 0) {
             // Edit nhưng không có ảnh cũ: yêu cầu ít nhất 2 ảnh
             $galleryRule = 'required|array|min:2|max:5';
         } elseif (!empty($this->galleryImages)) {
             // Edit, có ảnh cũ, nhưng có upload ảnh mới: validate ảnh mới (tổng số không quá 5)
-            $totalImages = count($this->galleryPreviews) + count($this->galleryImages);
+            $totalImages = $existingCount + count($this->galleryImages);
             if ($totalImages > 5) {
-                $galleryRule = 'array|max:' . (5 - count($this->galleryPreviews));
+                $galleryRule = 'array|max:' . (5 - $existingCount);
+            } else {
+                $galleryRule = 'array|max:5';
             }
         }
 
@@ -113,7 +120,15 @@ new class extends Component
             'bannerImage.image' => 'Ảnh banner phải là file ảnh.',
             'bannerImage.max' => 'Ảnh banner không được vượt quá 2MB.',
             'galleryImages.min' => 'Thư viện ảnh phải có ít nhất 2 ảnh.',
-            'galleryImages.max' => 'Thư viện ảnh không được vượt quá 5 ảnh.',
+            'galleryImages.max' => function ($attribute, $value, $parameters) {
+                $existingCount = count($this->existingGalleryImages);
+                $newCount = is_array($value) ? count($value) : 0;
+                $total = $existingCount + $newCount;
+                if ($total > 5) {
+                    return "Tổng số ảnh không được vượt quá 5 ảnh. Hiện có {$existingCount} ảnh cũ, bạn chỉ có thể thêm tối đa " . (5 - $existingCount) . " ảnh mới.";
+                }
+                return 'Thư viện ảnh không được vượt quá 5 ảnh.';
+            },
             'galleryImages.*.image' => 'Tất cả ảnh trong thư viện phải là file ảnh.',
             'galleryImages.*.max' => 'Mỗi ảnh trong thư viện không được vượt quá 2MB.',
             'authorName.required' => 'Tên tác giả là bắt buộc.',
@@ -134,11 +149,26 @@ new class extends Component
     // Updated gallery images
     public function updatedGalleryImages(): void
     {
+        // Validate tổng số ảnh trước
+        $existingCount = count($this->existingGalleryImages);
+        $newCount = count(array_filter($this->galleryImages));
+        $totalCount = $existingCount + $newCount;
+        
+        if ($totalCount > 5) {
+            $this->addError('galleryImages', "Tổng số ảnh không được vượt quá 5 ảnh. Hiện có {$existingCount} ảnh cũ, bạn chỉ có thể thêm tối đa " . (5 - $existingCount) . " ảnh mới.");
+            // Reset galleryImages về rỗng nếu vượt quá
+            $this->galleryImages = [];
+            $this->newGalleryPreviews = [];
+            return;
+        }
+        
         $this->validateOnly('galleryImages');
-        $this->galleryPreviews = [];
+        
+        // Chỉ tạo preview cho ảnh mới (không merge với ảnh cũ)
+        $this->newGalleryPreviews = [];
         foreach ($this->galleryImages as $image) {
             if (empty($image)) continue;
-            $this->galleryPreviews[] = $image->temporaryUrl();
+            $this->newGalleryPreviews[] = $image->temporaryUrl();
         }
     }
 
@@ -149,20 +179,38 @@ new class extends Component
         $this->bannerPreview = null;
     }
 
-    // Remove gallery image
+    // Remove gallery image (ảnh cũ)
     public function removeGalleryImage($index): void
     {
-        // Chuyển mảng galleryImages sang kiểu collection để dễ thao tác
+        // Xóa ảnh cũ
+        $existing = collect($this->existingGalleryImages);
+        $existing->forget($index);
+        $this->existingGalleryImages = $existing->values()->all();
+        
+        // Cập nhật previews ảnh cũ
+        if (!empty($this->existingGalleryImages)) {
+            $this->galleryPreviews = array_map(function($image) {
+                return asset('storage/posts/gallery/' . ltrim((string) $image, '/'));
+            }, $this->existingGalleryImages);
+        } else {
+            $this->galleryPreviews = [];
+        }
+    }
+    
+    // Remove new gallery image (ảnh mới)
+    public function removeNewGalleryImage($index): void
+    {
+        // Xóa ảnh mới
         $images = collect($this->galleryImages);
-        $previews = collect($this->galleryPreviews);
-
-        // Xóa phần tử tại index
         $images->forget($index);
-        $previews->forget($index);
-
-        // Đặt lại giá trị
         $this->galleryImages = $images->values()->all();
-        $this->galleryPreviews = $previews->values()->all();
+        
+        // Cập nhật previews ảnh mới
+        $this->newGalleryPreviews = [];
+        foreach ($this->galleryImages as $image) {
+            if (empty($image)) continue;
+            $this->newGalleryPreviews[] = $image->temporaryUrl();
+        }
     }
 
     // SỬA LỖI TRIX: Dùng "On" attribute
@@ -229,18 +277,18 @@ new class extends Component
                 }
             }
             
-            // Nếu đang edit và có ảnh cũ, giữ lại ảnh cũ
-            if ($existingPost && !empty($this->galleryPreviews) && $existingPost->gallery_images && is_array($existingPost->gallery_images)) {
+            // Nếu đang edit và có ảnh cũ, merge ảnh cũ với ảnh mới
+            if ($existingPost && !empty($this->existingGalleryImages) && is_array($this->existingGalleryImages)) {
                 // Merge ảnh cũ với ảnh mới
-                $galleryPaths = array_merge($existingPost->gallery_images, $galleryPaths);
+                $galleryPaths = array_merge($this->existingGalleryImages, $galleryPaths);
                 // Giới hạn tối đa 5 ảnh
                 $galleryPaths = array_slice($galleryPaths, 0, 5);
             }
             
             $data['gallery_images'] = $galleryPaths;
-        } elseif ($existingPost && !empty($this->galleryPreviews) && $existingPost->gallery_images && is_array($existingPost->gallery_images)) {
+        } elseif ($existingPost && !empty($this->existingGalleryImages) && is_array($this->existingGalleryImages)) {
             // Không có ảnh mới upload nhưng có ảnh cũ, giữ lại ảnh cũ
-            $data['gallery_images'] = $existingPost->gallery_images;
+            $data['gallery_images'] = $this->existingGalleryImages;
         }
 
         // Set published_at if publishing
@@ -456,15 +504,16 @@ new class extends Component
                     <flux:description>Chọn 2-5 ảnh cùng một lần, mỗi ảnh tối đa 2MB</flux:description>
                 </flux:field>
 
+                {{-- Hiển thị ảnh cũ (khi edit) --}}
                 @if(count($galleryPreviews) > 0)
                     <div class="mt-4">
                         <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Ảnh đã chọn ({{ count($galleryPreviews) }}/5):
+                            Ảnh hiện có ({{ count($galleryPreviews) }}):
                         </h4>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
                             @foreach($galleryPreviews as $index => $preview)
-                                <div class="relative group" wire:key="gallery-preview-{{ $index }}">
-                                    <img src="{{ $preview }}" alt="Gallery Preview {{ $index + 1 }}" class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                <div class="relative group" wire:key="gallery-preview-old-{{ $index }}">
+                                    <img src="{{ $preview }}" alt="Gallery Preview {{ $index + 1 }}" class="w-full h-24 object-cover rounded-lg border-2 border-gray-300 dark:border-gray-500">
                                     
                                     <button 
                                         type="button" 
@@ -477,6 +526,42 @@ new class extends Component
                                 </div>
                             @endforeach
                         </div>
+                    </div>
+                @endif
+
+                {{-- Hiển thị ảnh mới đang upload --}}
+                @if(count($newGalleryPreviews) > 0)
+                    <div class="mt-4">
+                        <h4 class="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base">upload</span>
+                            Ảnh mới đang thêm ({{ count($newGalleryPreviews) }}):
+                        </h4>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            @foreach($newGalleryPreviews as $index => $preview)
+                                <div class="relative group" wire:key="gallery-preview-new-{{ $index }}">
+                                    <img src="{{ $preview }}" alt="New Gallery Preview {{ $index + 1 }}" class="w-full h-24 object-cover rounded-lg border-2 border-blue-400 dark:border-blue-500">
+                                    
+                                    <button 
+                                        type="button" 
+                                        wire:click="removeNewGalleryImage({{ $index }})"
+                                        class="absolute top-2 right-2 bg-blue-600 bg-opacity-80 text-white rounded-full w-6 h-6 flex items-center justify-center text-lg font-bold hover:bg-opacity-100 transition-colors"
+                                        title="Xóa ảnh mới"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Hiển thị tổng số ảnh --}}
+                @php
+                    $totalImages = count($galleryPreviews) + count($newGalleryPreviews);
+                @endphp
+                @if($totalImages > 0)
+                    <div class="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                        Tổng số ảnh: <span class="font-semibold {{ $totalImages > 5 ? 'text-red-500' : 'text-gray-900 dark:text-gray-100' }}">{{ $totalImages }}/5</span>
                     </div>
                 @endif
             </div>

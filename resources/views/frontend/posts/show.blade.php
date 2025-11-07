@@ -118,7 +118,18 @@
                         </svg>
                         Thư viện ảnh
                     </h2>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <style>
+                        .gallery-grid > * {
+                            width: 100%;
+                            max-width: 100%;
+                            min-width: 0;
+                        }
+                        .gallery-grid button {
+                            width: 100%;
+                            aspect-ratio: 1 / 1;
+                        }
+                    </style>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 gallery-grid">
                     @foreach($post->gallery_image_urls as $index => $imageUrl)
                             <button type="button" 
                                     onclick="openLightbox({{ $index }})"
@@ -303,10 +314,11 @@
         </button>
 
         <!-- Main Image -->
-        <div class="relative">
+        <div class="relative flex items-center justify-center min-h-[60vh] max-h-[70vh] w-full">
             <img :src="images[currentIndex]" 
                  alt="Gallery Image" 
-                 class="max-w-full max-h-[85vh] object-contain mx-auto rounded-lg shadow-2xl cursor-pointer"
+                 class="max-w-full max-h-full w-auto h-auto object-contain mx-auto rounded-lg shadow-2xl cursor-pointer"
+                 style="image-rendering: auto;"
                  @click.stop="nextImage()">
 
         <!-- Navigation Buttons -->
