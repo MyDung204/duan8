@@ -128,7 +128,7 @@
                                     <svg class="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7"></path>
                                     </svg>
-                        </div>
+                                </div>
                             </button>
                     @endforeach
                     </div>
@@ -326,9 +326,11 @@
         </button>
         </div>
         
-        <!-- Image Counter -->
-        <div x-show="images.length > 1" class="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium">
-            <span x-text="currentIndex + 1"></span> / <span x-text="images.length"></span>
+        <!-- Image Counter - Hiển thị dưới ảnh thay vì overlay -->
+        <div x-show="images.length > 1" class="mt-4 text-center">
+            <span class="px-4 py-2 rounded-full bg-white/20 backdrop-blur-sm text-white text-sm font-medium">
+                <span x-text="currentIndex + 1"></span> / <span x-text="images.length"></span>
+            </span>
         </div>
         
         <!-- Thumbnail Navigation -->
@@ -338,7 +340,7 @@
                         class="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all"
                         :class="currentIndex === idx ? 'border-white scale-110' : 'border-white/30 opacity-60 hover:opacity-100'">
                     <img :src="img" :alt="`Thumbnail ${idx + 1}`" class="w-full h-full object-cover">
-        </button>
+                </button>
             </template>
         </div>
     </div>
@@ -432,6 +434,17 @@ function openLightbox(index) {
         const lightbox = Alpine.$data(lightboxEl);
         if (lightbox && lightbox.open) {
             lightbox.open(index);
+        }
+    }
+}
+
+// Close lightbox if open
+function closeLightboxIfOpen() {
+    const lightboxEl = document.getElementById('lightbox');
+    if (lightboxEl) {
+        const lightbox = Alpine.$data(lightboxEl);
+        if (lightbox && lightbox.isOpen && lightbox.close) {
+            lightbox.close();
         }
     }
 }
