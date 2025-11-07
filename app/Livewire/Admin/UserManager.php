@@ -25,6 +25,20 @@ class UserManager extends Component
         $this->resetPage();
     }
 
+    public function deleteUser($userId)
+    {
+        $user = User::find($userId);
+        if ($user) {
+            // Không cho phép xóa tài khoản admin
+            if ($user->role === 'admin') {
+                $this->dispatch('show-error', message: 'Không thể xóa tài khoản quản trị viên!');
+                return;
+            }
+            $user->delete();
+            $this->dispatch('show-success', message: 'Người dùng đã được xóa thành công!');
+        }
+    }
+
     public function render()
     {
         $users = User::query()

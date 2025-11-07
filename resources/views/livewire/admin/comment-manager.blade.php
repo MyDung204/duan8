@@ -5,12 +5,6 @@
             <span class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ $comments->total() }} bình luận</span>
         </div>
 
-        @if (session()->has('message'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
-                <p class="font-bold">Thành công</p>
-                <p>{{ session('message') }}</p>
-            </div>
-        @endif
 
         <div class="grid gap-6">
             @forelse ($comments as $comment)
@@ -59,21 +53,38 @@
                         <p class="text-gray-700 dark:text-gray-300 mt-4 pl-16">{{ $comment->content }}</p>
 
                         <div class="flex items-center justify-end gap-2 mt-4 pl-16">
-                            @if ($comment->status == 'pending')
-                                <button wire:click="approveComment({{ $comment->id }})" 
-                                        class="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/50 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-800 transition" 
-                                        title="Phê duyệt">
-                                    <span class="material-symbols-outlined text-xl">check_circle</span>
-                                </button>
-                                <button wire:click="rejectComment({{ $comment->id }})" 
-                                        class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 transition" 
-                                        title="Từ chối">
-                                    <span class="material-symbols-outlined text-xl">block</span>
-                                </button>
-                            @endif
-                            <button wire:click="deleteComment({{ $comment->id }})" 
-                                    onclick="return confirm('Bạn có chắc muốn xóa bình luận này?')" 
-                                    class="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800 transition" 
+                            {{-- Nút phê duyệt - luôn hiển thị --}}
+                            <button type="button"
+                                    class="btn-approve-comment flex items-center justify-center w-10 h-10 rounded-full transition
+                                        @if($comment->status == 'approved')
+                                            bg-green-200 dark:bg-green-700 text-green-700 dark:text-green-200 border-2 border-green-500
+                                        @else
+                                            bg-green-100 dark:bg-green-800/50 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-800
+                                        @endif" 
+                                    data-comment-id="{{ $comment->id }}"
+                                    data-comment-status="{{ $comment->status }}"
+                                    title="@if($comment->status == 'approved') Đã phê duyệt - Click để thay đổi @else Phê duyệt @endif">
+                                <span class="material-symbols-outlined text-xl">check_circle</span>
+                            </button>
+                            
+                            {{-- Nút từ chối - luôn hiển thị --}}
+                            <button type="button"
+                                    class="btn-reject-comment flex items-center justify-center w-10 h-10 rounded-full transition
+                                        @if($comment->status == 'rejected')
+                                            bg-red-200 dark:bg-red-700 text-red-700 dark:text-red-200 border-2 border-red-500
+                                        @else
+                                            bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600
+                                        @endif" 
+                                    data-comment-id="{{ $comment->id }}"
+                                    data-comment-status="{{ $comment->status }}"
+                                    title="@if($comment->status == 'rejected') Đã từ chối - Click để thay đổi @else Từ chối @endif">
+                                <span class="material-symbols-outlined text-xl">block</span>
+                            </button>
+                            
+                            {{-- Nút xóa - luôn hiển thị --}}
+                            <button type="button"
+                                    class="btn-delete-comment flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800 transition" 
+                                    data-comment-id="{{ $comment->id }}"
                                     title="Xóa vĩnh viễn">
                                 <span class="material-symbols-outlined text-xl">delete</span>
                             </button>
@@ -93,4 +104,132 @@
             {{ $comments->links() }}
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('livewire:init', () => {
+            // Lắng nghe sự kiện show-success
+            Livewire.on('show-success', (event) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: event.message,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            });
+        });
+
+        // Xử lý xóa bình luận với SweetAlert
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-delete-comment');
+            if (!btn) return;
+            e.preventDefault();
+            const commentId = parseInt(btn.getAttribute('data-comment-id'));
+            if (!commentId) return;
+            
+            Swal.fire({
+                title: 'Bạn có chắc chắn?',
+                text: 'Bạn sẽ không thể hoàn tác hành động này!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Có, xóa!',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    @this.call('deleteComment', commentId);
+                }
+            });
+        });
+
+        // Xử lý phê duyệt bình luận với SweetAlert
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-approve-comment');
+            if (!btn) return;
+            e.preventDefault();
+            const commentId = parseInt(btn.getAttribute('data-comment-id'));
+            const currentStatus = btn.getAttribute('data-comment-status');
+            if (!commentId) return;
+            
+            let title, text, icon, confirmText;
+            
+            if (currentStatus === 'approved') {
+                title = 'Bình luận đã được phê duyệt';
+                text = 'Bình luận này đã ở trạng thái "Đã duyệt". Bạn có muốn giữ nguyên trạng thái này?';
+                icon = 'info';
+                confirmText = 'Giữ nguyên';
+            } else if (currentStatus === 'rejected') {
+                title = 'Chuyển sang trạng thái "Đã duyệt"?';
+                text = 'Bình luận này đang bị từ chối. Bạn có muốn chuyển sang trạng thái "Đã duyệt" để hiển thị công khai?';
+                icon = 'question';
+                confirmText = 'Có, phê duyệt!';
+            } else {
+                title = 'Phê duyệt bình luận?';
+                text = 'Bình luận này sẽ được hiển thị công khai.';
+                icon = 'question';
+                confirmText = 'Có, phê duyệt!';
+            }
+            
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: confirmText,
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed && currentStatus !== 'approved') {
+                    @this.call('approveComment', commentId);
+                }
+            });
+        });
+
+        // Xử lý từ chối bình luận với SweetAlert
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-reject-comment');
+            if (!btn) return;
+            e.preventDefault();
+            const commentId = parseInt(btn.getAttribute('data-comment-id'));
+            const currentStatus = btn.getAttribute('data-comment-status');
+            if (!commentId) return;
+            
+            let title, text, icon, confirmText;
+            
+            if (currentStatus === 'rejected') {
+                title = 'Bình luận đã bị từ chối';
+                text = 'Bình luận này đã ở trạng thái "Từ chối". Bạn có muốn giữ nguyên trạng thái này?';
+                icon = 'info';
+                confirmText = 'Giữ nguyên';
+            } else if (currentStatus === 'approved') {
+                title = 'Chuyển sang trạng thái "Từ chối"?';
+                text = 'Bình luận này đang được phê duyệt. Bạn có muốn chuyển sang trạng thái "Từ chối" để ẩn khỏi công khai?';
+                icon = 'warning';
+                confirmText = 'Có, từ chối!';
+            } else {
+                title = 'Từ chối bình luận?';
+                text = 'Bình luận này sẽ bị từ chối và không hiển thị công khai.';
+                icon = 'warning';
+                confirmText = 'Có, từ chối!';
+            }
+            
+            Swal.fire({
+                title: title,
+                text: text,
+                icon: icon,
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: confirmText,
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed && currentStatus !== 'rejected') {
+                    @this.call('rejectComment', commentId);
+                }
+            });
+        });
+    </script>
 </div>

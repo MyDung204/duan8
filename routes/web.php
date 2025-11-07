@@ -261,7 +261,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Volt::route('users', 'admin.user-manager')->name('admin.users.index');
     Volt::route('users/create', 'admin.user-form')->name('admin.users.create');
     Volt::route('users/{user}/edit', 'admin.user-form')->name('admin.users.edit');
-    Volt::route('users/{user}', 'admin.user-show')->name('admin.users.show');
+    Volt::route('users/{user}/show', 'admin.user-show')->name('admin.users.show');
 });
 
 Route::middleware(['auth'])->group(function () {

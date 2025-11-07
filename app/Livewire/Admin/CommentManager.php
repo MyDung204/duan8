@@ -16,7 +16,7 @@ class CommentManager extends Component
         if ($comment) {
             $comment->status = 'approved';
             $comment->save();
-            session()->flash('message', 'Bình luận đã được phê duyệt.');
+            $this->dispatch('show-success', message: 'Bình luận đã được phê duyệt.');
         }
     }
 
@@ -26,7 +26,7 @@ class CommentManager extends Component
         if ($comment) {
             $comment->status = 'rejected';
             $comment->save();
-            session()->flash('message', 'Bình luận đã bị từ chối.');
+            $this->dispatch('show-success', message: 'Bình luận đã bị từ chối.');
         }
     }
 
@@ -35,7 +35,7 @@ class CommentManager extends Component
         $comment = Comment::find($commentId);
         if ($comment) {
             $comment->delete();
-            session()->flash('message', 'Bình luận đã được xóa.');
+            $this->dispatch('show-success', message: 'Bình luận đã được xóa thành công!');
         }
     }
 

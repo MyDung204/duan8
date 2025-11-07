@@ -2,18 +2,12 @@
     <div class="container mx-auto px-4 sm:px-8 py-8">
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Quản lý Người dùng</h1>
-            <a href="{{ route('admin.users.create') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-md">
+            <a href="{{ route('admin.users.create') }}" wire:navigate class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-md">
                 <span class="material-symbols-outlined text-lg">add</span>
                 Thêm người dùng mới
             </a>
         </div>
 
-        @if (session()->has('message'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg mb-6" role="alert">
-                <p class="font-bold">Thành công</p>
-                <p>{{ session('message') }}</p>
-            </div>
-        @endif
 
         <div class="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="w-full md:w-1/3">
@@ -83,12 +77,22 @@
                                            title="Chỉnh sửa">
                                             <span class="material-symbols-outlined text-xl">edit</span>
                                         </a>
-                                        <button wire:click="deleteUser({{ $user->id }})" 
-                                                onclick="return confirm('Bạn có chắc muốn xóa người dùng này?')" 
-                                                class="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800 transition" 
-                                                title="Xóa">
-                                            <span class="material-symbols-outlined text-xl">delete</span>
-                                        </button>
+                                        @if($user->role !== 'admin')
+                                            <button type="button"
+                                                    class="btn-delete-user flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-800/50 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800 transition" 
+                                                    data-user-id="{{ $user->id }}"
+                                                    data-user-name="{{ $user->name }}"
+                                                    title="Xóa">
+                                                <span class="material-symbols-outlined text-xl">delete</span>
+                                            </button>
+                                        @else
+                                            <button type="button"
+                                                    disabled
+                                                    class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800/50 text-gray-400 dark:text-gray-600 cursor-not-allowed transition" 
+                                                    title="Không thể xóa tài khoản quản trị viên">
+                                                <span class="material-symbols-outlined text-xl">lock</span>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -105,4 +109,56 @@
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('livewire:init', () => {
+            // Lắng nghe sự kiện show-success
+            Livewire.on('show-success', (event) => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: event.message,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            });
+            
+            // Lắng nghe sự kiện show-error
+            Livewire.on('show-error', (event) => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi!',
+                    text: event.message,
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            });
+        });
+
+        // Xử lý xóa người dùng với SweetAlert
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-delete-user');
+            if (!btn) return;
+            e.preventDefault();
+            const userId = parseInt(btn.getAttribute('data-user-id'));
+            const userName = btn.getAttribute('data-user-name');
+            if (!userId) return;
+            
+            Swal.fire({
+                title: 'Bạn có chắc chắn?',
+                html: `Bạn chuẩn bị xóa người dùng <strong>${userName}</strong>.<br>Bạn sẽ không thể hoàn tác hành động này!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Có, xóa!',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    @this.call('deleteUser', userId);
+                }
+            });
+        });
+    </script>
 </div>

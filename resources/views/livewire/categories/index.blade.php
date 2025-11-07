@@ -260,7 +260,7 @@ new class extends Component {
                 Quản lý các danh mục với cấu trúc cấp cha-con
             </p>
         </div>
-        <a :href="route('categories.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+        <a href="{{ route('categories.create') }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
             <span class="material-symbols-outlined text-base">add</span>
             <span>Thêm danh mục mới</span>
         </a>
@@ -388,7 +388,7 @@ new class extends Component {
                                         </span>
                                         <div class="mt-1">
                                             <a 
-                                                :href="route('posts.index', ['category' => $category->id])"
+                                                href="{{ route('posts.index', ['category' => $category->id]) }}"
                                                 wire:navigate
                                                 class="inline-flex items-center px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                                             >
@@ -402,7 +402,7 @@ new class extends Component {
                                         </span>
                                         <div class="mt-1">
                                             <a 
-                                                :href="route('posts.index', ['category' => $category->id])"
+                                                href="{{ route('posts.index', ['category' => $category->id]) }}"
                                                 wire:navigate
                                                 class="inline-flex items-center px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
                                             >
@@ -472,7 +472,7 @@ new class extends Component {
                 </p>
                 
                 <div class="mt-6">
-                    <a :href="route('categories.create')" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
+                    <a href="{{ route('categories.create') }}" wire:navigate class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 text-white px-3 py-2 text-sm hover:bg-blue-700">
                         <span class="material-symbols-outlined text-base">add</span>
                         <span>Thêm danh mục mới</span>
                     </a>

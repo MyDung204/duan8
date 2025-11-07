@@ -156,24 +156,24 @@ new class extends Component {
     {
         if ($this->twoFactorEnabled) {
             return [
-                'title' => __('Two-Factor Authentication Enabled'),
-                'description' => __('Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.'),
-                'buttonText' => __('Close'),
+                'title' => __('Bảo mật hai lớp đã được bật'),
+                'description' => __('Bảo mật hai lớp hiện đã được bật. Quét mã QR hoặc nhập khóa thiết lập trong ứng dụng xác thực của bạn.'),
+                'buttonText' => __('Đóng'),
             ];
         }
 
         if ($this->showVerificationStep) {
             return [
-                'title' => __('Verify Authentication Code'),
-                'description' => __('Enter the 6-digit code from your authenticator app.'),
-                'buttonText' => __('Continue'),
+                'title' => __('Xác minh mã xác thực'),
+                'description' => __('Nhập mã 6 chữ số từ ứng dụng xác thực của bạn.'),
+                'buttonText' => __('Tiếp tục'),
             ];
         }
 
         return [
-            'title' => __('Enable Two-Factor Authentication'),
-            'description' => __('To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app.'),
-            'buttonText' => __('Continue'),
+            'title' => __('Bật bảo mật hai lớp'),
+            'description' => __('Để hoàn tất việc bật bảo mật hai lớp, quét mã QR hoặc nhập khóa thiết lập trong ứng dụng xác thực của bạn.'),
+            'buttonText' => __('Tiếp tục'),
         ];
     }
 } ?>
@@ -193,7 +193,7 @@ new class extends Component {
                     </div>
 
                     <flux:text>
-                        {{ __('With two-factor authentication enabled, you will be prompted for a secure, random pin during login, which you can retrieve from the TOTP-supported application on your phone.') }}
+                        {{ __('Với bảo mật hai lớp được bật, bạn sẽ được yêu cầu nhập mã PIN ngẫu nhiên an toàn khi đăng nhập, mã này có thể lấy từ ứng dụng hỗ trợ TOTP trên điện thoại của bạn.') }}
                     </flux:text>
 
                     <livewire:settings.two-factor.recovery-codes :$requiresConfirmation/>
@@ -205,7 +205,7 @@ new class extends Component {
                             icon:variant="outline"
                             wire:click="disable"
                         >
-                            {{ __('Disable 2FA') }}
+                            {{ __('Tắt 2FA') }}
                         </flux:button>
                     </div>
                 </div>
@@ -286,7 +286,7 @@ new class extends Component {
                             class="flex-1"
                             wire:click="resetVerification"
                         >
-                            {{ __('Back') }}
+                            {{ __('Quay lại') }}
                         </flux:button>
 
                         <flux:button
@@ -295,7 +295,7 @@ new class extends Component {
                             wire:click="confirmTwoFactor"
                             x-bind:disabled="$wire.code.length < 6"
                         >
-                            {{ __('Confirm') }}
+                            {{ __('Xác nhận') }}
                         </flux:button>
                     </div>
                 </div>
@@ -335,7 +335,7 @@ new class extends Component {
                     <div class="relative flex items-center justify-center w-full">
                         <div class="absolute inset-0 w-full h-px top-1/2 bg-stone-200 dark:bg-stone-600"></div>
                         <span class="relative px-2 text-sm bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-400">
-                            {{ __('or, enter the code manually') }}
+                            {{ __('hoặc, nhập mã thủ công') }}
                         </span>
                     </div>
 

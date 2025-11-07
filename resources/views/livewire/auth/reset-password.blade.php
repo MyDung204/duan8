@@ -14,7 +14,7 @@
             <flux:input
                 name="email"
                 value="{{ request('email') }}"
-                :label="__('Email')"
+                :label="__('Địa chỉ email')"
                 type="email"
                 required
                 autocomplete="email"
@@ -23,28 +23,28 @@
             <!-- Password -->
             <flux:input
                 name="password"
-                :label="__('Password')"
+                :label="__('Mật khẩu')"
                 type="password"
                 required
                 autocomplete="new-password"
-                :placeholder="__('Password')"
+                :placeholder="__('Nhập mật khẩu mới')"
                 viewable
             />
 
             <!-- Confirm Password -->
             <flux:input
                 name="password_confirmation"
-                :label="__('Confirm password')"
+                :label="__('Xác nhận lại mật khẩu')"
                 type="password"
                 required
                 autocomplete="new-password"
-                :placeholder="__('Confirm password')"
+                :placeholder="__('Xác nhận lại mật khẩu')"
                 viewable
             />
 
             <div class="flex items-center justify-end">
                 <flux:button type="submit" variant="primary" class="w-full" data-test="reset-password-button">
-                    {{ __('Reset password') }}
+                    {{ __('Đặt lại mật khẩu') }}
                 </flux:button>
             </div>
         </form>

@@ -16,7 +16,7 @@
                             <nav class="flex flex-col gap-1 text-sm">
                                 <a href="{{ route('dashboard') }}" wire:navigate class="inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 {{ request()->routeIs('dashboard') ? 'bg-zinc-100 dark:bg-zinc-800' : '' }}">
                                     <span class="material-symbols-outlined text-base">home</span>
-                                    {{ __('Dashboard') }}
+                                    {{ __('Bảng điều khiển') }}
                                 </a>
                                 <a href="{{ route('categories.index') }}" wire:navigate class="inline-flex items-center gap-2 px-3 py-2 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 {{ request()->routeIs('categories.*') ? 'bg-zinc-100 dark:bg-zinc-800' : '' }}">
                                     <span class="material-symbols-outlined text-base">photo</span>

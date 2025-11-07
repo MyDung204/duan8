@@ -12,11 +12,11 @@
 
             <flux:input
                 name="password"
-                :label="__('Password')"
+                :label="__('Mật khẩu')"
                 type="password"
                 required
                 autocomplete="current-password"
-                :placeholder="__('Password')"
+                :placeholder="__('Nhập mật khẩu')"
                 viewable
             />
 

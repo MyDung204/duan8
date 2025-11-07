@@ -6,8 +6,10 @@ use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Str;
 use Livewire\Attributes\On; 
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 new class extends Component
 {
@@ -70,13 +72,29 @@ new class extends Component
             $bannerRule = 'required|image|max:2048'; // Thì cũng validate file đó
         }
 
+        // SỬA LỖI VALIDATION: Yêu cầu thư viện ảnh khi tạo mới hoặc khi edit nhưng không có ảnh cũ
+        $galleryRule = 'nullable|array|max:5';
+        if (!$this->postId) {
+            // Tạo mới: yêu cầu ít nhất 2 ảnh
+            $galleryRule = 'required|array|min:2|max:5';
+        } elseif (empty($this->galleryPreviews)) {
+            // Edit nhưng không có ảnh cũ: yêu cầu ít nhất 2 ảnh
+            $galleryRule = 'required|array|min:2|max:5';
+        } elseif (!empty($this->galleryImages)) {
+            // Edit, có ảnh cũ, nhưng có upload ảnh mới: validate ảnh mới (tổng số không quá 5)
+            $totalImages = count($this->galleryPreviews) + count($this->galleryImages);
+            if ($totalImages > 5) {
+                $galleryRule = 'array|max:' . (5 - count($this->galleryPreviews));
+            }
+        }
+
         return [
             'title' => 'required|string|max:255',
             'shortDescription' => 'required|string|max:500',
             'content' => 'required|string',
             'bannerImage' => $bannerRule, // Áp dụng quy tắc đã sửa
             'galleryImages.*' => 'nullable|image|max:2048',
-            'galleryImages' => 'nullable|array|min:2|max:5',
+            'galleryImages' => $galleryRule,
             'authorName' => 'required|string|max:255',
             'categoryId' => 'required|exists:categories,id',
             'isPublished' => 'boolean',
@@ -181,9 +199,10 @@ new class extends Component
             $originalImageFullPath = $storagePath . $baseFilename;
 
             // 3. Generate and save resized versions
+            $imageManager = new ImageManager(new Driver());
             foreach ($sizes as $name => $width) {
                 try {
-                    $image = Image::read($originalImageFullPath);
+                    $image = $imageManager->read($originalImageFullPath);
                     $image->scaleDown(width: $width);
                     $newFilename = pathinfo($baseFilename, PATHINFO_FILENAME) . '-' . $name . '.' . pathinfo($baseFilename, PATHINFO_EXTENSION);
                     $image->save($storagePath . $newFilename);
@@ -195,7 +214,13 @@ new class extends Component
         }
 
         // Handle gallery images
+        $existingPost = null;
+        if ($this->postId) {
+            $existingPost = Post::findOrFail($this->postId);
+        }
+        
         if (!empty($this->galleryImages)) {
+            // Có ảnh mới upload
             $galleryPaths = [];
             foreach ($this->galleryImages as $image) {
                 if ($image) {
@@ -203,23 +228,41 @@ new class extends Component
                     $galleryPaths[] = basename($galleryPath);
                 }
             }
+            
+            // Nếu đang edit và có ảnh cũ, giữ lại ảnh cũ
+            if ($existingPost && !empty($this->galleryPreviews) && $existingPost->gallery_images && is_array($existingPost->gallery_images)) {
+                // Merge ảnh cũ với ảnh mới
+                $galleryPaths = array_merge($existingPost->gallery_images, $galleryPaths);
+                // Giới hạn tối đa 5 ảnh
+                $galleryPaths = array_slice($galleryPaths, 0, 5);
+            }
+            
             $data['gallery_images'] = $galleryPaths;
+        } elseif ($existingPost && !empty($this->galleryPreviews) && $existingPost->gallery_images && is_array($existingPost->gallery_images)) {
+            // Không có ảnh mới upload nhưng có ảnh cũ, giữ lại ảnh cũ
+            $data['gallery_images'] = $existingPost->gallery_images;
         }
 
         // Set published_at if publishing
         if ($this->isPublished && !$this->postId) { // Chỉ set khi tạo mới
             $data['published_at'] = now();
         } elseif ($this->isPublished && $this->postId) { // Xử lý khi cập nhật
-            $postCheck = Post::find($this->postId);
-            if (!$postCheck->is_published) { // Nếu trước đó chưa publish thì mới set
+            // Sử dụng $existingPost đã query ở trên để tránh query lại
+            if (!$existingPost) {
+                $existingPost = Post::findOrFail($this->postId);
+            }
+            if (!$existingPost->is_published) { // Nếu trước đó chưa publish thì mới set
                 $data['published_at'] = now();
             }
         }
 
         // SỬA LỖI THÔNG BÁO: Dùng session() flash cho redirect
         if ($this->postId) {
-            $post = Post::findOrFail($this->postId);
-            $post->update($data);
+            // Sử dụng $existingPost đã query ở trên để tránh query lại
+            if (!$existingPost) {
+                $existingPost = Post::findOrFail($this->postId);
+            }
+            $existingPost->update($data);
             session()->flash('show_toast_message', [
                 'text' => 'Bài đăng đã được cập nhật thành công!',
                 'icon' => 'success'
@@ -307,7 +350,7 @@ new class extends Component
                         wire:model="content" 
                         id="content-backup"
                         style="display: none;"
-                    ></textarea>
+                    >{{ $this->content }}</textarea>
                     
                     <trix-editor 
                         input="content-input"
@@ -318,7 +361,8 @@ new class extends Component
                     <input 
                         id="content-input" 
                         type="hidden" 
-                        name="content" 
+                        name="content"
+                        value="{{ $this->content }}"
                     >
                 </div>
                 <flux:error name="content" />
@@ -374,8 +418,6 @@ new class extends Component
                     <flux:error name="bannerImage" />
                     <flux:description>Kích thước tối đa: 2MB</flux:description>
                 </flux:field>
-                
-                <div wire:loading wire:target="bannerImage" class="text-sm text-blue-500">Đang tải lên...</div>
 
                 @if($bannerPreview)
                     <div class="mt-4 relative group">
@@ -413,8 +455,6 @@ new class extends Component
                     <flux:error name="galleryImages.*" />
                     <flux:description>Chọn 2-5 ảnh cùng một lần, mỗi ảnh tối đa 2MB</flux:description>
                 </flux:field>
-                
-                <div wire:loading wire:target="galleryImages" class="text-sm text-blue-500">Đang tải lên...</div>
 
                 @if(count($galleryPreviews) > 0)
                     <div class="mt-4">
@@ -723,41 +763,58 @@ new class extends Component
         // Chỉ chạy nếu Trix Editor tồn tại trên trang này
         if (trixEditor && hiddenInput) {
             
-            // Ngăn khởi tạo lại nếu đã có
-            if (trixEditor.listenerAttached) {
-                return;
-            }
+            // Ngăn khởi tạo lại nếu đã có (nhưng vẫn load nội dung nếu cần)
+            const isFirstInit = !trixEditor.listenerAttached;
 
-            // Load nội dung ban đầu (khi edit)
-            // Dùng json_encode để lấy giá trị $this->content từ PHP
-            const initialContent = {!! json_encode($this->content) !!} || '';
+            // Load nội dung ban đầu (khi edit hoặc khi Livewire re-render)
+            // Lấy từ hidden input trước, nếu không có thì lấy từ PHP
+            let initialContent = hiddenInput.value || '';
+            if (!initialContent) {
+                // Fallback: lấy từ PHP nếu hidden input trống
+                initialContent = {!! json_encode($this->content ?? '') !!} || '';
+            }
+            
+            // Chỉ load nếu có nội dung và editor đang trống (hoặc lần đầu khởi tạo)
             if (initialContent) {
-                // Chỉ load nếu editor rỗng, tránh ghi đè khi validation fail
-                if (!trixEditor.editor.getDocument().toString().trim()) {
-                    trixEditor.editor.loadHTML(initialContent);
+                const currentContent = trixEditor.editor.getDocument().toString().trim();
+                // Load nếu editor trống hoặc nội dung khác với nội dung hiện tại
+                if (!currentContent || (isFirstInit && currentContent !== initialContent)) {
+                    // Đợi một chút để đảm bảo Trix đã sẵn sàng
+                    setTimeout(() => {
+                        try {
+                            trixEditor.editor.loadHTML(initialContent);
+                            hiddenInput.value = initialContent;
+                            console.log('Đã load nội dung vào Trix editor:', initialContent.substring(0, 50) + '...');
+                        } catch (e) {
+                            console.error('Lỗi khi load nội dung vào Trix:', e);
+                        }
+                    }, 100);
                 }
             }
             
-            // Sync với Livewire khi nội dung thay đổi
-            trixEditor.addEventListener('trix-change', function(event) {
-                const content = event.target.innerHTML;
-                hiddenInput.value = content;
-                // Dispatch sự kiện để PHP #[On('sync-content')] bắt
-                Livewire.dispatch('sync-content', { content: content }); 
-            });
-            
-            // Sync khi paste
-            trixEditor.addEventListener('trix-paste', function(event) {
-                setTimeout(function() {
-                    const content = trixEditor.innerHTML;
+            // Chỉ gắn listener một lần
+            if (isFirstInit) {
+                // Sync với Livewire khi nội dung thay đổi
+                trixEditor.addEventListener('trix-change', function(event) {
+                    const content = event.target.innerHTML;
                     hiddenInput.value = content;
-                    Livewire.dispatch('sync-content', { content: content });
-                }, 100);
-            });
+                    // Dispatch sự kiện để PHP #[On('sync-content')] bắt
+                    Livewire.dispatch('sync-content', { content: content }); 
+                });
+                
+                // Sync khi paste
+                trixEditor.addEventListener('trix-paste', function(event) {
+                    setTimeout(function() {
+                        const content = trixEditor.innerHTML;
+                        hiddenInput.value = content;
+                        Livewire.dispatch('sync-content', { content: content });
+                    }, 100);
+                });
 
-            // Đánh dấu là đã khởi tạo
-            trixEditor.listenerAttached = true;
-            console.log('Trix Editor đã được khởi tạo và gắn listener.');
+                // Đánh dấu là đã khởi tạo
+                trixEditor.listenerAttached = true;
+                console.log('Trix Editor đã được khởi tạo và gắn listener.');
+            }
         }
     }
 
@@ -766,7 +823,9 @@ new class extends Component
     // 1. Chạy khi trang được điều hướng bằng wire:navigate
     document.addEventListener('livewire:navigated', () => {
         console.log('Sự kiện: livewire:navigated');
-        initializeTrix();
+        setTimeout(() => {
+            initializeTrix();
+        }, 200);
     });
     
     // 2. Chạy khi trang được tải lần đầu (F5, tải cứng)
@@ -774,7 +833,9 @@ new class extends Component
     document.addEventListener('livewire:init', () => {
          console.log('Sự kiện: livewire:init');
          // Chạy lần đầu phòng trường hợp tải F5
-         initializeTrix(); 
+         setTimeout(() => {
+             initializeTrix();
+         }, 200);
 
         // Đăng ký listener cho SweetAlert (chỉ cần 1 lần)
         // Listener này sẽ KHÔNG chạy ở trang này vì có redirect
@@ -787,6 +848,31 @@ new class extends Component
                 showConfirmButton: false
             });
         });
+    });
+    
+    // 3. Chạy khi Livewire update (sau validation fail hoặc re-render)
+    document.addEventListener('livewire:update', () => {
+        // Đảm bảo nội dung được giữ lại sau khi Livewire update
+        const trixEditor = document.querySelector('trix-editor');
+        const hiddenInput = document.getElementById('content-input');
+        if (trixEditor && hiddenInput) {
+            const currentContent = trixEditor.editor.getDocument().toString().trim();
+            const savedContent = hiddenInput.value || '';
+            // Nếu editor có nội dung nhưng hidden input trống, sync lại
+            if (currentContent && !savedContent) {
+                hiddenInput.value = currentContent;
+            }
+            // Nếu hidden input có nội dung nhưng editor trống, load lại
+            else if (savedContent && !currentContent) {
+                setTimeout(() => {
+                    try {
+                        trixEditor.editor.loadHTML(savedContent);
+                    } catch (e) {
+                        console.error('Lỗi khi load nội dung sau Livewire update:', e);
+                    }
+                }, 100);
+            }
+        }
     });
 
     </script>

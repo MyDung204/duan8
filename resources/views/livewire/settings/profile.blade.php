@@ -82,16 +82,16 @@ new class extends Component {
                 @if (auth()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail &&! auth()->user()->hasVerifiedEmail())
                     <div>
                         <flux:text class="mt-4">
-                            {{ __('Your email address is unverified.') }}
+                            {{ __('Địa chỉ email của bạn chưa được xác minh.') }}
 
                             <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
-                                {{ __('Click here to re-send the verification email.') }}
+                                {{ __('Nhấp vào đây để gửi lại email xác minh.') }}
                             </flux:link>
                         </flux:text>
 
                         @if (session('status') === 'verification-link-sent')
                             <flux:text class="mt-2 font-medium !dark:text-green-400 !text-green-600">
-                                {{ __('A new verification link has been sent to your email address.') }}
+                                {{ __('Một liên kết xác minh mới đã được gửi đến địa chỉ email của bạn.') }}
                             </flux:text>
                         @endif
                     </div>
