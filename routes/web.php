@@ -202,7 +202,7 @@ Route::post('/lien-he', [App\Http\Controllers\Frontend\ContactController::class,
 Route::view('/lien-he', 'frontend.contact')->name('contact');
 
 Volt::route('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified', 'role:admin'])
+    ->middleware(['auth', 'role:admin'])
     ->name('dashboard');
 
 Route::get('/api/categories/{category}/posts', function (Category $category) {
