@@ -8,9 +8,7 @@
             <!-- Company Info -->
             <div class="lg:col-span-1">
                 <a href="{{ route('home') }}" class="inline-flex items-center gap-3 font-bold text-2xl tracking-tight mb-6 group">
-                    <div class="p-2 bg-gradient-to-br from-primary-500 to-purple-600 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
-                        <x-app-logo-icon class="size-6 text-white" />
-                    </div>
+                    <img src="{{ asset('image/logo.png') }}" alt="{{ config('app.name', 'Dự án') }}" class="h-12 w-auto group-hover:opacity-90 transition-opacity">
                     <span class="text-neutral-900 dark:text-white">{{ config('app.name', 'Dự án') }}</span>
                 </a>
                 <p class="text-neutral-600 dark:text-neutral-300 leading-relaxed mb-6 text-sm">Nền tảng cung cấp kiến thức và thông tin hữu ích, được cập nhật liên tục để phục vụ cộng đồng.</p>

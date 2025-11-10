@@ -139,28 +139,6 @@
     </div>
 </section>
 
-<!-- FAQ/Support Links Section -->
-<section class="mt-16 py-12 bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/80 dark:border-neutral-800 shadow-sm">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-3xl font-bold mb-4">Cần hỗ trợ thêm?</h2>
-        <p class="mt-4 max-w-2xl mx-auto text-neutral-600 dark:text-neutral-400 mb-8">Nếu bạn có bất kỳ câu hỏi nào khác hoặc cần hỗ trợ, vui lòng kiểm tra các tài nguyên sau hoặc liên hệ trực tiếp với chúng tôi.</p>
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <a href="#" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition shadow-sm hover:shadow-md">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Xem FAQs
-            </a>
-            <a href="#" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg border-2 border-green-600 text-green-600 font-semibold hover:bg-green-50 dark:hover:bg-green-900/20 transition">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-                Trung tâm hỗ trợ
-            </a>
-        </div>
-    </div>
-</section>
-
 @endsection
 
 @push('scripts')
