@@ -2,6 +2,8 @@
 
 @section('title', 'Về chúng tôi')
 
+
+
 @section('banner')
 <section class="relative py-16 md:py-24 bg-gradient-to-br from-rose-600 via-red-600 to-orange-600 overflow-hidden">
     <div class="absolute inset-0 bg-black/20"></div>
